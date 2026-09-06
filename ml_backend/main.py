@@ -1,5 +1,6 @@
 import datetime as dt
 import logging
+import os
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +11,8 @@ from services.indicators import compute_all
 from services.predictor import predict
 from services.sentiment import analyze as analyze_sentiment
 from services.signal import build_signal
+
+PORT = int(os.getenv("PORT", "8000"))
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api")

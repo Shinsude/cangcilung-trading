@@ -31,7 +31,7 @@ Flutter App (HP) ⇄ FastAPI API (cloud) ⇄ Yahoo Finance
 │   │   └── signal.py         # generator sinyal BUY/SELL/HOLD
 │   └── Dockerfile
 ├── .github/workflows/build-apk.yml   # Build APK otomatis di cloud
-└── render.yaml                        # Deploy backend ke Render
+└── vercel.json                       # Konfigurasi deploy backend ke Vercel
 ```
 
 ## Cara Menggunakan (Cloud, tanpa install apapun)
@@ -45,13 +45,13 @@ git remote add origin https://github.com/USERNAME/cangcilung-trading.git
 git push -u origin main
 ```
 
-### 2. Deploy backend (AI API) ke Render
-1. Buat akun gratis di https://render.com
-2. Klik **New → Blueprint**, connect repository GitHub kamu
-3. Render akan otomatis membaca `render.yaml` dan deploy backend
-4. Dapatkan URL backend, contoh: `https://cangcilung-trading-api.onrender.com`
-5. Cek dengan membuka `https://URL/health` → harus `{"status": "ok"}`
-6. (Opsional) Isi **FINNHUB_API_KEY** gratis dari https://finnhub.io untuk sentiment berita aktual
+### 2. Deploy backend (AI API) ke Vercel
+1. Install Vercel CLI: `npm i -g vercel`, lalu login: `vercel login`
+2. Dari folder `ml_backend`, jalankan: `vercel deploy --prod --yes`
+3. Dapatkan URL produksi: `https://cangcilung-trading-api.vercel.app`
+4. Vercel otomatis mendeteksi FastAPI di `main.py` (tanpa Docker/mangum)
+5. Cek dengan membuka `https://cangcilung-trading-api.vercel.app/health` → harus `{"status": "ok"}`
+6. (Opsional) Set **FINNHUB_API_KEY** gratis dari https://finnhub.io di **Vercel → Settings → Environment Variables** untuk sentiment berita aktual
 
 ### 3. Build APK di cloud (GitHub Actions)
 Setelah push, buka tab **Actions** di GitHub:
@@ -65,10 +65,10 @@ Setelah push, buka tab **Actions** di GitHub:
 - **Catatan:** APK ini unsigned. Untuk publish di **Google Play**, kubutuhkan keystore signing & akun Play Console ($25).
 
 ### 5. Base URL API di aplikasi
-Aplikasi sudah memakai `https://cangcilung-trading-api.onrender.com` sebagai default.
-Jika URL Render kamu beda, ubah di `flutter_app/lib/services/api_service.dart` baris `defaultBaseUrl`, atau lewati saat build:
+Aplikasi sudah memakai `https://cangcilung-trading-api.vercel.app` sebagai default.
+Jika URL Vercel kamu beda, ubah di `flutter_app/lib/services/api_service.dart` baris `defaultBaseUrl`, atau lewati saat build:
 ```
-flutter build apk --release --dart-define=API_URL=https://URL-ANDA.onrender.com
+flutter build apk --release --dart-define=API_URL=https://URL-ANDA.vercel.app
 ```
 
 ## Endpoint API

@@ -11,7 +11,7 @@ class ApiService {
 
   static const String defaultBaseUrl = String.fromEnvironment(
     'API_URL',
-    defaultValue: 'https://cangcilung-trading-api.onrender.com',
+    defaultValue: 'https://cangcilung-trading-api.vercel.app',
   );
 
   Future<TradingData> fetchSignal(String symbol) async {
