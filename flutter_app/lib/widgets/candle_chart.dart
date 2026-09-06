@@ -66,7 +66,6 @@ class _CandlePainter extends CustomPainter {
     for (int i = 0; i < candles.length; i++) {
       final c = candles[i];
       final isUp = c.c >= c.o;
-      final color = isUp ? AppColors.green : AppColors.red;
       final x = xFor(i);
       canvas.drawLine(Offset(x, yFor(c.h)), Offset(x, yFor(c.l)), wickPaint);
       final top = yFor(isUp ? c.h : c.l);
@@ -78,7 +77,7 @@ class _CandlePainter extends CustomPainter {
       canvas.drawRRect(rect, isUp ? greenPaint : redPaint);
     }
 
-    final textStyle = TextStyle(
+    const textStyle = TextStyle(
       color: AppColors.textSecondary,
       fontSize: 9,
     );
@@ -87,7 +86,7 @@ class _CandlePainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
     tp.layout();
-    tp.paint(canvas, Offset(4, 2));
+    tp.paint(canvas, const Offset(4, 2));
     final bp = TextPainter(
       text: TextSpan(text: _fmt(minPrice), style: textStyle),
       textDirection: TextDirection.ltr,
