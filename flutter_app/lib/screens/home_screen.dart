@@ -190,7 +190,7 @@ class _LiveIndicator extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: c,
-              boxShadow: live ? [BoxShadow(color: AppColors.green, blurRadius: 8, spreadRadius: 1)] : null,
+              boxShadow: live ? [const BoxShadow(color: AppColors.green, blurRadius: 8, spreadRadius: 1)] : null,
             ),
           ),
           const SizedBox(width: 6),
