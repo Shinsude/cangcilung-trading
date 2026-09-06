@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../models/models.dart';
@@ -18,7 +20,7 @@ class CandleChart extends StatelessWidget {
       );
     }
     return SizedBox(
-      height: 220,
+      height: 240,
       width: double.infinity,
       child: CustomPaint(painter: _CandlePainter(candles, decimals)),
     );
@@ -31,8 +33,8 @@ class _CandlePainter extends CustomPainter {
   final List<Candle> candles;
   final int decimals;
 
-  static const double _topPad = 16;
-  static const double _bottomPad = 22;
+  static const double _topPad = 20;
+  static const double _bottomPad = 28;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -49,19 +51,29 @@ class _CandlePainter extends CustomPainter {
     double xFor(int i) => (size.width / candles.length) * i + size.width / candles.length / 2;
     double yFor(double price) => _topPad + (chartH * (maxPrice - price) / span);
 
-    final gridColor = AppColors.border.withValues(alpha: 0.35);
     final gridPaint = Paint()
-      ..color = gridColor
-      ..strokeWidth = 1;
+      ..color = AppColors.border.withValues(alpha: 0.3)
+      ..strokeWidth = 0.5;
     for (int i = 0; i <= 4; i++) {
       final y = _topPad + chartH * i / 4;
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+      final priceLabel = maxPrice - span * i / 4;
+      final tp = TextPainter(
+        text: TextSpan(
+          text: _fmt(priceLabel),
+          style: const TextStyle(color: AppColors.textTertiary, fontSize: 8, fontWeight: FontWeight.w500),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, Offset(size.width - tp.width - 4, y - tp.height / 2));
     }
 
-    final candleWidth = size.width / candles.length * 0.62;
+    final candleWidth = size.width / candles.length * 0.6;
     final greenPaint = Paint()..color = AppColors.green;
     final redPaint = Paint()..color = AppColors.red;
-    final wickPaint = Paint()..color = AppColors.textSecondary..strokeWidth = 1;
+    final wickPaint = Paint()
+      ..color = AppColors.textTertiary
+      ..strokeWidth = 0.8;
 
     for (int i = 0; i < candles.length; i++) {
       final c = candles[i];
@@ -70,65 +82,76 @@ class _CandlePainter extends CustomPainter {
       canvas.drawLine(Offset(x, yFor(c.h)), Offset(x, yFor(c.l)), wickPaint);
       final top = yFor(isUp ? c.h : c.l);
       final bottom = yFor(isUp ? c.l : c.h);
+      final h = (bottom - top).clamp(1.0, double.infinity);
       final rect = RRect.fromRectAndRadius(
-        Rect.fromLTRB(x - candleWidth / 2, top, x + candleWidth / 2, bottom),
-        const Radius.circular(1.5),
+        Rect.fromLTWH(x - candleWidth / 2, top, candleWidth, h),
+        const Radius.circular(2),
       );
       canvas.drawRRect(rect, isUp ? greenPaint : redPaint);
     }
-
-    const textStyle = TextStyle(
-      color: AppColors.textSecondary,
-      fontSize: 9,
-    );
-    final tp = TextPainter(
-      text: TextSpan(text: _fmt(maxPrice), style: textStyle),
-      textDirection: TextDirection.ltr,
-    );
-    tp.layout();
-    tp.paint(canvas, const Offset(4, 2));
-    final bp = TextPainter(
-      text: TextSpan(text: _fmt(minPrice), style: textStyle),
-      textDirection: TextDirection.ltr,
-    );
-    bp.layout();
-    bp.paint(canvas, Offset(4, size.height - _bottomPad + 6));
 
     final last = candles.last;
     final isUp = last.c >= last.o;
     final lastColor = isUp ? AppColors.green : AppColors.red;
     final lastY = yFor(last.c);
+
     final guidePaint = Paint()
-      ..color = lastColor.withValues(alpha: 0.5)
+      ..color = lastColor.withValues(alpha: 0.35)
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(0, lastY), Offset(size.width, lastY), guidePaint);
+    canvas.drawDashedLine(Offset(0, lastY), Offset(size.width, lastY), guidePaint, dashLen: 4, gapLen: 3);
 
-    final tagPaint = Paint()..color = lastColor;
-    const tagWidth = 54.0;
-    const tagH = 16.0;
-    final tagLeft = size.width - tagWidth - 4;
-    final tagTop = lastY - 8;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(tagLeft, tagTop, tagWidth, tagH),
-        const Radius.circular(4),
-      ),
-      tagPaint,
-    );
     final tagText = TextPainter(
       text: TextSpan(
-        text: _fmt(last.c),
-        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+        text: ' ${_fmt(last.c)} ',
+        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800, backgroundColor: lastColor),
       ),
       textDirection: TextDirection.ltr,
+    )..layout();
+    final tagLeft = size.width - tagText.width - 6;
+    final tagTop = lastY - tagText.height / 2;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(tagLeft - 4, tagTop, tagText.width + 8, tagText.height),
+        const Radius.circular(4),
+      ),
+      Paint()..color = lastColor,
     );
-    tagText.layout();
-    tagText.paint(canvas, Offset(tagLeft + (tagWidth - tagText.width) / 2, tagTop + 3));
+    tagText.paint(canvas, Offset(tagLeft, tagTop));
+
+    final minLabel = TextPainter(
+      text: TextSpan(text: _fmt(minPrice), style: const TextStyle(color: AppColors.textTertiary, fontSize: 8, fontWeight: FontWeight.w500)),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    minLabel.paint(canvas, Offset(4, size.height - _bottomPad + 8));
+
+    final maxLabel = TextPainter(
+      text: TextSpan(text: _fmt(maxPrice), style: const TextStyle(color: AppColors.textTertiary, fontSize: 8, fontWeight: FontWeight.w500)),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    maxLabel.paint(canvas, const Offset(4, 4));
   }
 
   String _fmt(double v) => v.toStringAsFixed(decimals);
 
   @override
   bool shouldRepaint(covariant _CandlePainter old) => old.candles != candles;
+}
+
+extension on Canvas {
+  void drawDashedLine(Offset start, Offset end, Paint paint, {double dashLen = 5, double gapLen = 3}) {
+    final dx = end.dx - start.dx;
+    final dy = end.dy - start.dy;
+    final len = sqrt(dx * dx + dy * dy);
+    if (len == 0) return;
+    final ux = dx / len;
+    final uy = dy / len;
+    double d = 0;
+    while (d < len) {
+      final s = Offset(start.dx + ux * d, start.dy + uy * d);
+      final e = Offset(start.dx + ux * (d + dashLen).clamp(0, len), start.dy + uy * (d + dashLen).clamp(0, len));
+      drawLine(s, e, paint);
+      d += dashLen + gapLen;
+    }
+  }
 }
