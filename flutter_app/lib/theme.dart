@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color background = Color(0xFF0B0F19);
-  static const Color surface = Color(0xFF151B29);
-  static const Color surfaceAlt = Color(0xFF1D2536);
-  static const Color border = Color(0xFF273349);
-  static const Color green = Color(0xFF22C55E);
-  static const Color red = Color(0xFFEF4444);
-  static const Color amber = Color(0xFFF59E0B);
+  static const Color background = Color(0xFF080C14);
+  static const Color surface = Color(0xFF121826);
+  static const Color surfaceAlt = Color(0xFF1B2333);
+  static const Color border = Color(0xFF232F44);
+  static const Color green = Color(0xFF2EE6A8);
+  static const Color greenSoft = Color(0xFF1B4A3A);
+  static const Color red = Color(0xFFF6465D);
+  static const Color redSoft = Color(0xFF4A1B26);
+  static const Color amber = Color(0xFFF0B90B);
   static const Color blue = Color(0xFF3B82F6);
   static const Color textPrimary = Color(0xFFF1F5F9);
-  static const Color textSecondary = Color(0xFF8B97A8);
+  static const Color textSecondary = Color(0xFF7C8AA5);
+  static const Color success = Color(0xFF16C784);
 }
 
 const Color _seed = AppColors.blue;
@@ -36,7 +39,7 @@ ThemeData buildAppTheme() {
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         side: const BorderSide(color: AppColors.border),
       ),
     ),

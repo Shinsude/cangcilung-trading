@@ -93,6 +93,38 @@ class _CandlePainter extends CustomPainter {
     );
     bp.layout();
     bp.paint(canvas, Offset(4, size.height - _bottomPad + 6));
+
+    final last = candles.last;
+    final isUp = last.c >= last.o;
+    final lastColor = isUp ? AppColors.green : AppColors.red;
+    final lastY = yFor(last.c);
+    final guidePaint = Paint()
+      ..color = lastColor.withValues(alpha: 0.5)
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(0, lastY), Offset(size.width, lastY), guidePaint);
+
+    final tagPaint = Paint()..color = lastColor;
+    final tagWidth = 54.0;
+    final tagH = 16.0;
+    final tagLeft = size.width - tagWidth - 4;
+    final tagTop = lastY - 8;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(tagLeft, tagTop, tagWidth, tagH),
+        const Radius.circular(4),
+      ),
+      tagPaint,
+    );
+    final tagText = TextPainter(
+      text: TextSpan(
+        text: _fmt(last.c),
+        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    tagText.layout();
+    tagText.paint(canvas, Offset(tagLeft + (tagWidth - tagText.width) / 2, tagTop + 3));
   }
 
   String _fmt(double v) => v.toStringAsFixed(decimals);
