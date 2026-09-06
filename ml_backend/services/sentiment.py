@@ -8,12 +8,15 @@ from config import FINNHUB_API_KEY, NEWS_LIMIT, SYMBOLS
 
 logger = logging.getLogger("sentiment")
 
+ACTUALLY_FREE_API = "https://actually-free-api.vercel.app/api/news"
+
 BULLISH = {
     "rally", "surge", "surges", "gain", "gains", "up", "higher", "high",
     "breakout", "break", "beat", "beats", "strong", "growth", "grow",
     "upgrade", "optimistic", "buy", "bullish", "jump", "soar", "soars",
     "record", "boost", "inflation eases", "rate cut", "dovish", "recovery",
-    "expansion", "profit", "exceed", "support",
+    "expansion", "profit", "exceed", "support", "recover", "rebound",
+    "lifts", "gain", "climb", "climbs",
 }
 BEARISH = {
     "drop", "drops", "fall", "falls", "plunge", "plunges", "crash", "down",
@@ -21,6 +24,7 @@ BEARISH = {
     "sell", "recession", "cut forecast", "loss", "loses", "slump", "slumps",
     "disappoint", "hawkish", "rate hike", "uncertainty", "fear", "risk-off",
     "decline", "declines", "turmoil", "pressure", "shakeout", "retreat",
+    "slump", "slip", "slips", "tumble", "plunge", "caution",
 }
 
 KEYWORDS = {
@@ -29,6 +33,13 @@ KEYWORDS = {
                "semiconductor", "ai", "fed", "earnings", "big tech"],
     "AUDUSD": ["aud", "australia", "rba", "dollar", "usd", "reserve bank australia",
                "miners", "china"],
+}
+
+# Query pencarian gratis (tanpa kunci) per simbol di ActuallyFreeAPI
+SEARCH_QUERIES = {
+    "XAUUSD": "gold",
+    "NASDAQ": "nasdaq",
+    "AUDUSD": "usd",
 }
 
 
@@ -46,7 +57,6 @@ def _score_text(text: str) -> float:
 
 
 def _finnhub_news(symbol: str) -> list:
-    yahoo = SYMBOLS[symbol]["yahoo"]
     query = "gold" if symbol == "XAUUSD" else ("nasdaq" if symbol == "NASDAQ" else "audusd")
     if not FINNHUB_API_KEY:
         return []
@@ -73,8 +83,39 @@ def _finnhub_news(symbol: str) -> list:
     return []
 
 
+def _actually_free_news(symbol: str) -> list:
+    """Berita gratis tanpa API key dari ActuallyFreeAPI."""
+    query = SEARCH_QUERIES.get(symbol)
+    if not query:
+        return []
+    try:
+        resp = requests.get(
+            ACTUALLY_FREE_API,
+            params={"search": query, "limit": NEWS_LIMIT, "sort": "pub_date", "order": "desc"},
+            timeout=12,
+        )
+        if resp.status_code != 200:
+            return []
+        data = resp.json().get("data") or []
+        out = []
+        for it in data:
+            title = (it.get("title") or "").strip()
+            if title:
+                out.append({
+                    "source": (it.get("source") or "news").lower(),
+                    "headline": title,
+                    "url": it.get("link", ""),
+                    "time": it.get("pub_date", ""),
+                })
+        return out[:NEWS_LIMIT]
+    except Exception as exc:
+        logger.warning("actually-free news failed: %s", exc)
+        return []
+
+
 def analyze(symbol, price_momentum: float) -> dict:
-    headlines = _finnhub_news(symbol)
+    # Prioritas: ActuallyFreeAPI (gratis) -> Finnhub (jika key) -> momentum
+    headlines = _actually_free_news(symbol) or _finnhub_news(symbol)
     if headlines:
         scores = [math.tanh(_score_text(h["headline"]) * 3) for h in headlines]
         score = float(sum(scores) / len(scores))
@@ -82,7 +123,7 @@ def analyze(symbol, price_momentum: float) -> dict:
         return {
             "score": round(score, 3),
             "label": label,
-            "source": "finnhub",
+            "source": headlines[0]["source"],
             "headlines": headlines,
         }
 
