@@ -105,8 +105,8 @@ class _CandlePainter extends CustomPainter {
     canvas.drawLine(Offset(0, lastY), Offset(size.width, lastY), guidePaint);
 
     final tagPaint = Paint()..color = lastColor;
-    final tagWidth = 54.0;
-    final tagH = 16.0;
+    const tagWidth = 54.0;
+    const tagH = 16.0;
     final tagLeft = size.width - tagWidth - 4;
     final tagTop = lastY - 8;
     canvas.drawRRect(

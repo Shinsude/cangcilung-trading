@@ -70,9 +70,9 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               width: 26,
               height: 26,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   colors: [AppColors.green, Colors.tealAccent],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -550,11 +550,11 @@ class _IndicatorsCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
-                const Icon(Icons.insights, size: 16, color: AppColors.textSecondary),
-                const SizedBox(width: 8),
-                const Text('Technical Indicators', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                Icon(Icons.insights, size: 16, color: AppColors.textSecondary),
+                SizedBox(width: 8),
+                Text('Technical Indicators', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
               ],
             ),
             const SizedBox(height: 12),
@@ -668,11 +668,11 @@ class _SentimentCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
-                const Icon(Icons.newspaper, size: 16, color: AppColors.textSecondary),
-                const SizedBox(width: 8),
-                const Text('Market Sentiment', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                Icon(Icons.newspaper, size: 16, color: AppColors.textSecondary),
+                SizedBox(width: 8),
+                Text('Market Sentiment', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
               ],
             ),
             const SizedBox(height: 12),
