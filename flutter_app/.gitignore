@@ -1,0 +1,30 @@
+# Android
+**/android/**/gradle-wrapper.jar
+**/.gradle/
+**/local.properties
+**/android/.idea/
+**/android/app/.cxx/
+**/android/app/build/
+**/android/build/
+**/android/.dart_tool/
+**/android/.generated/
+
+# iOS
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/.generated/
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/Generated.xcconfig
+
+# Dart / Flutter
+**/.dart_tool/
+**/.flutter-plugins*
+**/.packages
+**/build/
+**/pubspec.lock
+
+# Misc
+**/*.iml
+**/.idea/
+.vscode/
+*.log

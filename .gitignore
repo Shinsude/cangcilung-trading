@@ -1,0 +1,20 @@
+# OS
+Thumbs.db
+.DS_Store
+
+# Python backend
+ml_backend/.venv/
+ml_backend/__pycache__/
+ml_backend/.env
+*.pyc
+
+# IDE
+.idea/
+.vscode/
+
+# Flutter app (per-platform ignored inside flutter_app/.gitignore)
+flutter_app/build/
+flutter_app/.dart_tool/
+
+# Logs
+*.log

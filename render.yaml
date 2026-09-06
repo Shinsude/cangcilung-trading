@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: cangcilung-trading-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./ml_backend/Dockerfile
+    buildFilter:
+      paths:
+        - ml_backend/**
+    healthCheckPath: /health
+    envVars:
+      - key: FINNHUB_API_KEY
+        sync: false
+      - key: CACHE_TTL_SECONDS
+        value: "180"

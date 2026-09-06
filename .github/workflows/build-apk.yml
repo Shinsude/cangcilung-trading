@@ -1,0 +1,100 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Scaffold platform folders
+        working-directory: flutter_app
+        run: |
+          flutter create --platforms=android,ios --org com.cangcilung --project-name cangcilung_trading .
+          flutter config --no-analytics
+
+      - name: Add INTERNET permission for release
+        working-directory: flutter_app
+        run: |
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          python3 - <<'PY'
+          import re
+          path = "android/app/src/main/AndroidManifest.xml"
+          with open(path) as f:
+              content = f.read()
+          if "android.permission.INTERNET" not in content:
+              content = content.replace(
+                  "<application",
+                  '<uses-permission android:name="android.permission.INTERNET"/>\n    <application',
+                  1,
+              )
+              with open(path, "w") as f:
+                  f.write(content)
+          print("manifest patched")
+          PY
+          cat android/app/src/main/AndroidManifest.xml | head -8
+
+      - name: Install dependencies
+        working-directory: flutter_app
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: flutter_app
+        run: flutter analyze
+
+      - name: Build APK
+        working-directory: flutter_app
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: cangcilung-trading-apk
+          path: flutter_app/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+
+  build-aab:
+    runs-on: ubuntu-latest
+    needs: build-apk
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Scaffold platform folders
+        working-directory: flutter_app
+        run: |
+          flutter create --platforms=android --org com.cangcilung --project-name cangcilung_trading .
+          flutter config --no-analytics
+
+      - name: Install dependencies
+        working-directory: flutter_app
+        run: flutter pub get
+
+      - name: Build App Bundle (AAB)
+        working-directory: flutter_app
+        run: flutter build appbundle --release
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: cangcilung-trading-aab
+          path: flutter_app/build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
