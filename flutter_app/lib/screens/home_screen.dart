@@ -326,6 +326,7 @@ class _SignalCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Text('Sinyal', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
             const SizedBox(height: 8),
@@ -359,7 +360,6 @@ class _SignalCard extends StatelessWidget {
               style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
             ),
           ],
-          mainAxisSize: MainAxisSize.min,
         ),
       ),
     );
