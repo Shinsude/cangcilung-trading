@@ -98,3 +98,41 @@ jobs:
           name: cangcilung-trading-aab
           path: flutter_app/build/app/outputs/bundle/release/app-release.aab
           if-no-files-found: error
+
+  build-web:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Scaffold platform folders (include web)
+        working-directory: flutter_app
+        run: |
+          flutter create --platforms=web --org com.cangcilung --project-name cangcilung_trading .
+          flutter config --no-analytics
+
+      - name: Install dependencies
+        working-directory: flutter_app
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: flutter_app
+        run: flutter analyze
+
+      - name: Build Web
+        working-directory: flutter_app
+        run: flutter build web --release --base-href /cangcilung-trading/
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: flutter_app/build/web
+          branch: gh-pages
+          clean: true
