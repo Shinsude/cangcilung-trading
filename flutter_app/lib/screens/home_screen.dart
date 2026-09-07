@@ -1205,6 +1205,14 @@ class _ModelPageState extends State<_ModelPage> {
   bool _btLoading = false;
   String? _btError;
   BacktestResponse? _btResult;
+  List<Map<String, dynamic>> _history = [];
+  bool _historyLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => _loadHistory());
+  }
 
   Future<void> _runBacktest() async {
     setState(() {
@@ -1220,6 +1228,20 @@ class _ModelPageState extends State<_ModelPage> {
       setState(() => _btError = 'Gagal menjalankan backtest: $e');
     } finally {
       if (mounted) setState(() => _btLoading = false);
+    }
+  }
+
+  Future<void> _loadHistory() async {
+    setState(() => _historyLoading = true);
+    try {
+      final data = await widget.api.fetchHistory(_btSymbol, limit: 30);
+      if (!mounted) return;
+      setState(() => _history = data);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _history = []);
+    } finally {
+      if (mounted) setState(() => _historyLoading = false);
     }
   }
 
@@ -1268,10 +1290,20 @@ class _ModelPageState extends State<_ModelPage> {
           loading: _btLoading,
           result: _btResult,
           error: _btError,
-          onSymbol: (s) => setState(() => _btSymbol = s),
+          onSymbol: (s) {
+            setState(() => _btSymbol = s);
+            unawaited(_loadHistory());
+          },
           onDays: (d) => setState(() => _btDays = d),
-          onRun: _runBacktest,
+          onRun: () {
+            unawaited(_runBacktest());
+            unawaited(_loadHistory());
+          },
         ),
+        if (_history.isNotEmpty || _historyLoading) ...[
+          const SizedBox(height: 14),
+          _SignalHistoryCard(loading: _historyLoading, entries: _history),
+        ],
         const SizedBox(height: 14),
         for (final e in entries) ...[
           _ModelCard(symbol: e.key, stats: e.value),
@@ -1798,6 +1830,81 @@ class _NewsItem extends StatelessWidget {
               style: const TextStyle(fontSize: 12, color: AppColors.textPrimary, height: 1.4, fontWeight: FontWeight.w500),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SignalHistoryCard extends StatelessWidget {
+  const _SignalHistoryCard({required this.loading, required this.entries});
+  final bool loading;
+  final List<Map<String, dynamic>> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.purple.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('RIWAYAT SINYAL (LOG AKURASI NYATA)', style: TextStyle(color: AppColors.purple, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          const SizedBox(height: 4),
+          const Text('Hasil sinyal harian yang tercatat otomatis vs close hari berikutnya.', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, height: 1.4)),
+          const SizedBox(height: 10),
+          if (loading)
+            const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.purple)))
+          else if (entries.isEmpty)
+            const Text('Belum ada data riwayat. Log dimulai besok.', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontStyle: FontStyle.italic))
+          else
+            ...entries.map((e) {
+              final action = (e['action'] as String?) ?? 'HOLD';
+              final outcome = (e['outcome'] as String?) ?? 'pending';
+              final date = (e['date'] as String?) ?? '';
+              final cThen = (e['close_then'] as num?)?.toDouble();
+              final cNext = (e['close_next'] as num?)?.toDouble();
+              final oc = outcome == 'win' ? AppColors.green : (outcome == 'loss' ? AppColors.red : AppColors.textSecondary);
+              final ac = action == 'BUY' ? AppColors.green : (action == 'SELL' ? AppColors.red : AppColors.textSecondary);
+              return Container(
+                padding: const EdgeInsets.symmetric(vertical: 7),
+                decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5))),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 70,
+                      child: Text(date.length > 5 ? date.substring(5) : date, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      decoration: BoxDecoration(color: ac.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                      child: Text(action, style: TextStyle(color: ac, fontSize: 10, fontWeight: FontWeight.w800)),
+                    ),
+                    const SizedBox(width: 8),
+                    if (cThen != null && cNext != null)
+                      Expanded(
+                        child: Text(
+                          '${cThen.toStringAsFixed(cThen > 100 ? 0 : 5)} → ${cNext.toStringAsFixed(cNext > 100 ? 0 : 5)}',
+                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                          textAlign: TextAlign.right,
+                        ),
+                      )
+                    else
+                      const Expanded(child: SizedBox()),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      decoration: BoxDecoration(color: oc.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                      child: Text(outcome.toUpperCase(), style: TextStyle(color: oc, fontSize: 10, fontWeight: FontWeight.w800)),
+                    ),
+                  ],
+                ),
+              );
+            }),
         ],
       ),
     );

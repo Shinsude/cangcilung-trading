@@ -25,15 +25,17 @@ class DataService:
         with self._lock:
             self._cache[key] = {"df": df, "expires": time.time() + ttl}
 
-    def fetch(self, symbol: str, ttl: int = 180) -> pd.DataFrame:
+    def fetch(self, symbol: str, ttl: int = 180, interval: str | None = None, period: str | None = None) -> pd.DataFrame:
         if symbol not in SYMBOLS:
             raise ValueError(f"Unsupported symbol: {symbol}")
         yahoo = SYMBOLS[symbol]["yahoo"]
-        cache_key = f"{yahoo}|{PERIOD}|{INTERVAL}"
+        interval = interval or INTERVAL
+        period = period or PERIOD
+        cache_key = f"{yahoo}|{period}|{interval}"
         cached = self._get(cache_key)
         if cached is not None:
             return cached.copy()
-        df = self._download(yahoo)
+        df = self._download(yahoo, period=period, interval=interval)
         if df is None or df.empty:
             logger.warning("yfinance returned empty data, using synthetic fallback")
             df = self._synthetic(symbol)
@@ -41,7 +43,7 @@ class DataService:
         self._put(cache_key, df, ttl)
         return df.copy()
 
-    def _download(self, yahoo: str) -> pd.DataFrame:
+    def _download(self, yahoo: str, period: str = PERIOD, interval: str = INTERVAL) -> pd.DataFrame:
         import time as _time
 
         last_error = None
@@ -50,7 +52,7 @@ class DataService:
                 import yfinance as yf
 
                 ticker = yf.Ticker(yahoo)
-                df = ticker.history(period=PERIOD, interval=INTERVAL, auto_adjust=False)
+                df = ticker.history(period=period, interval=interval, auto_adjust=False)
                 if df is None or df.empty:
                     last_error = ValueError("empty result")
                 else:

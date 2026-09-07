@@ -18,7 +18,7 @@ DEFAULT_THRESHOLDS = {
 }
 
 
-def build_signal(ind, prediction, sentiment, weights: dict | None = None, thresholds: dict | None = None) -> dict:
+def build_signal(ind, prediction, sentiment, weights: dict | None = None, thresholds: dict | None = None, extra: float = 0.0) -> dict:
     w = {**DEFAULT_WEIGHTS, **(weights or {})}
     t = {**DEFAULT_THRESHOLDS, **(thresholds or {})}
     score = 0.0
@@ -70,6 +70,8 @@ def build_signal(ind, prediction, sentiment, weights: dict | None = None, thresh
 
     sent_score = sentiment.get("score", 0.0)
     score += sent_score * 1.5 * w["sentiment"]
+
+    score += extra
 
     buy_th = t["buy"]
     sell_th = t["sell"]

@@ -8,10 +8,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import CACHE_TTL_SECONDS, SYMBOLS
-from services import backtest, tuner
+from services import backtest, timeframe, tuner
 from services.data_service import data_service
 from services.indicators import compute_all
-from services.predictor import predict, directional_accuracy
+from services.predictor import predict, directional_accuracy, hp_validation
 from services.sentiment import analyze as analyze_sentiment
 from services.signal import build_signal
 
@@ -123,7 +123,19 @@ def _build_payload(symbol: str) -> dict:
     sentiment = analyze_sentiment(symbol, price_momentum)
 
     tuning = tuner.tuned(df, symbol)
-    signal = build_signal(ind, prediction, sentiment, weights=tuning["weights"])
+
+    df_1h = df_4h = None
+    try:
+        df_1h = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS, interval="1h", period="1mo")
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        df_4h = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS, interval="4h", period="3mo")
+    except Exception:  # noqa: BLE001
+        pass
+    tf_value, tf_parts = timeframe.alignment(df_1h, df_4h)
+
+    signal = build_signal(ind, prediction, sentiment, weights=tuning["weights"], extra=tf_value * timeframe.TF_WEIGHT)
 
     candles = []
     last_rows = df.tail(40)
@@ -163,6 +175,7 @@ def _build_payload(symbol: str) -> dict:
         "candles": candles,
         "data_points": len(df),
         "weights": tuning["weights"],
+        "timeframe": {"value": tf_value, "parts": tf_parts},
     }
 
 
@@ -252,6 +265,10 @@ def model_info():
             mlp_acc = directional_accuracy(mdf["Close"].to_numpy())
         except Exception as exc:  # noqa: BLE001
             mlp_acc = {"error": f"{type(exc).__name__}: {exc}"}
+        try:
+            hp = hp_validation(mdf["Close"].to_numpy())
+        except Exception:  # noqa: BLE001
+            hp = {"error": "hp validation failed"}
         real = _real_accuracy(_fetch_real_log(), symbol, mdf)
         out[symbol] = {
             "trained_at": dt.datetime.fromtimestamp(cached["at"]).isoformat() + "Z",
@@ -260,6 +277,7 @@ def model_info():
             "backtest": cached["metrics"],
             "rolling_accuracy": acc,
             "mlp_validation": mlp_acc,
+            "hp_validation": hp,
             "real_accuracy": real,
         }
     return {
@@ -267,6 +285,47 @@ def model_info():
         "lookbacks": [12, 24, 36],
         "symbols": out,
     }
+
+
+@app.get("/history/{symbol}")
+def get_history(symbol: str, limit: int = 30):
+    symbol = symbol.upper()
+    if symbol not in SYMBOLS:
+        raise HTTPException(status_code=404, detail=f"Symbol tidak didukung. Gunakan: {', '.join(SYMBOLS)}")
+
+    try:
+        df = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
+        log = _fetch_real_log()
+        dates = {idx.strftime("%Y-%m-%d"): i for i, idx in enumerate(df.index)}
+        entries = [e for e in log if e.get("symbol") == symbol]
+        enriched = []
+        for e in entries:
+            i = dates.get(e.get("date"))
+            outcome = "pending"
+            c_then = c_next = None
+            if i is not None:
+                c_then = round(float(df.iloc[i]["Close"]), 6)
+                if i + 1 < len(df):
+                    c_next = round(float(df.iloc[i + 1]["Close"]), 6)
+                    if c_next != c_then:
+                        actual_up = c_next > c_then
+                        expected_up = e.get("action") == "BUY"
+                        outcome = "win" if actual_up == expected_up else "loss"
+                    else:
+                        outcome = "tie"
+            enriched.append({
+                "date": e.get("date"),
+                "action": e.get("action"),
+                "strength": e.get("strength"),
+                "score": e.get("score"),
+                "close_then": c_then,
+                "close_next": c_next,
+                "outcome": outcome,
+            })
+        enriched.sort(key=lambda x: x.get("date", ""), reverse=True)
+        return enriched[:limit]
+    except Exception as exc:  # noqa: BLE001
+        return {"error": str(exc), "entries": []}
 
 
 @app.get("/signal/{symbol}")

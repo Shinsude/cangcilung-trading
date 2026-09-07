@@ -80,6 +80,17 @@ class ApiService {
     }
     throw ApiException('Server error (${response.statusCode})');
   }
+
+  Future<List<Map<String, dynamic>>> fetchHistory(String symbol, {int limit = 30}) async {
+    final uri = Uri.parse('$baseUrl/history/$symbol').replace(queryParameters: {'limit': '$limit'});
+    final response = await http.get(uri).timeout(const Duration(seconds: 60));
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      if (body is List) return List<Map<String, dynamic>>.from(body);
+      return const [];
+    }
+    throw ApiException('Server error (${response.statusCode})');
+  }
 }
 
 class ApiException implements Exception {

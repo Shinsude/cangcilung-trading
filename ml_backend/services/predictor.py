@@ -86,7 +86,7 @@ def _train(xs, ys, hidden=16, epochs=GRU_EPOCHS, lr=0.01):
     return w1, b1, w2, b2
 
 
-def _train_and_predict(returns: np.ndarray, lookback: int, epochs: int = GRU_EPOCHS, lr: float = 0.01):
+def _train_and_predict(returns: np.ndarray, lookback: int, epochs: int = GRU_EPOCHS, lr: float = 0.01, hidden: int = 16):
     if len(returns) < lookback + 6:
         return None, 0.5
     xs, ys = _windowed(returns, lookback)
@@ -96,7 +96,7 @@ def _train_and_predict(returns: np.ndarray, lookback: int, epochs: int = GRU_EPO
     xtr, ytr = xscaled[:split], yscaled[:split]
     xva, yva = xscaled[split:], yscaled[split:]
 
-    w1, b1, w2, b2 = _train(xtr, ytr, epochs=epochs, lr=lr)
+    w1, b1, w2, b2 = _train(xtr, ytr, hidden=hidden, epochs=epochs, lr=lr)
 
     _, pr_tr = _mlp_forward(xtr, w1, b1, w2, b2)
     _, pr_va = _mlp_forward(xva, w1, b1, w2, b2)
@@ -141,6 +141,39 @@ def directional_accuracy(closes: np.ndarray, max_points: int = 72) -> dict:
     for v in out.values():
         total += v["hit_rate"] * v["samples"]
     return {"overall": round(total / n_samples, 3) if n_samples else 0.5, "lookbacks": out}
+
+
+def hp_validation(closes: np.ndarray, max_points: int = 36) -> dict:
+    """Validasi hiperparameter MLP (hidden size & learning rate) walk-forward.
+    Hanya untuk laporan kualitas di /model — prediksi live tetap memakai konfigurasi
+    standar agar konsisten dan cepat."""
+    returns = _to_returns(closes)
+    best = None
+    best_hr = -1.0
+    table = []
+    for hidden in (8, 16, 32):
+        for lr in (0.008, 0.012, 0.02):
+            hits = 0
+            cnt = 0
+            for lb in LOOKBACK_WINDOWS:
+                start = max(lb, len(returns) - max_points, lb + 1)
+                for k in range(start, len(returns)):
+                    seg = returns[max(0, k - 120) : k]
+                    if len(seg) < lb + 6:
+                        continue
+                    pred, _ = _train_and_predict(seg, lb, epochs=25, lr=lr, hidden=hidden)
+                    if pred is None:
+                        continue
+                    cnt += 1
+                    if (pred > 0) == (returns[k] > 0):
+                        hits += 1
+            hr = round(hits / cnt, 3) if cnt else 0.5
+            entry = {"hidden": hidden, "lr": lr, "hit_rate": hr, "samples": int(cnt)}
+            table.append(entry)
+            if hr > best_hr:
+                best_hr = hr
+                best = entry
+    return {"best": best, "grid": table}
 
 
 def predict(closes: np.ndarray, horizon_hours: int = 6):
