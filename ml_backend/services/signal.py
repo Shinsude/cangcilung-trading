@@ -7,6 +7,8 @@ DEFAULT_WEIGHTS = {
     "bb": 1.0,
     "prediction": 1.0,
     "sentiment": 1.0,
+    "volume": 1.0,
+    "sr": 1.0,
 }
 
 DEFAULT_THRESHOLDS = {
@@ -49,6 +51,18 @@ def build_signal(ind, prediction, sentiment, weights: dict | None = None, thresh
             score += 0.6 * w["bb"]
         elif bb["percent_b"] > 0.95:
             score -= 0.6 * w["bb"]
+
+    # Volume konfirmasi tren (+/- tergantung arah + kekuatan relatif)
+    vol_conf = ind.get("volume", 0.0)
+    score += max(-1.0, min(1.0, vol_conf)) * 0.8 * w["volume"]
+
+    # Posisi support/resistance: harga mendekati resistance (atas) = bearish/sell,
+    # mendekati support (bawah) = bullish/buy (mean-reversion)
+    sr_pos = ind.get("sr", 0.5)
+    if sr_pos > 0.8:
+        score -= 0.6 * w["sr"]
+    elif sr_pos < 0.2:
+        score += 0.6 * w["sr"]
 
     pred_dir = prediction["direction"]
     pred_conf = prediction["confidence"]

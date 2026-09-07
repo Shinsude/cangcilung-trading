@@ -155,9 +155,9 @@ def get_stats(symbol: str):
     tuning = tuner.tuned(df, symbol)
     close = df["Close"].to_numpy()
 
-    acc_now = backtest.rolling(close, weights=tuning["weights"])
-    acc_skip = backtest.rolling(close, weights=tuning["weights"], skip=0)
-    acc_hist = backtest.rolling(close, weights=tuning["weights"], skip=30)
+    acc_now = backtest.rolling(close, weights=tuning["weights"], df=df)
+    acc_skip = backtest.rolling(close, weights=tuning["weights"], skip=0, df=df)
+    acc_hist = backtest.rolling(close, weights=tuning["weights"], skip=30, df=df)
 
     # Verdict: tren akurasi (membaik/memburuk) + label kualitas
     w30 = acc_hist.get("14d", {}).get("win_rate")
@@ -190,8 +190,8 @@ def model_info():
                 out[symbol] = {"error": str(exc)}
                 continue
         try:
-            closes = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)["Close"].to_numpy()
-            acc = backtest.rolling(closes, weights=cached["weights"])
+            mdf = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
+            acc = backtest.rolling(mdf["Close"].to_numpy(), weights=cached["weights"], df=mdf)
         except Exception:  # noqa: BLE001
             acc = {}
         out[symbol] = {

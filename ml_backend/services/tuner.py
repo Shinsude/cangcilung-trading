@@ -26,6 +26,8 @@ def _group_map() -> dict:
         "macd_cross": "oscillator",
         "macd_hist": "oscillator",
         "bb": "oscillator",
+        "volume": "oscillator",
+        "sr": "oscillator",
         "ema_trend": "trend",
         "ema_alignment": "trend",
         "prediction": "prediction",
@@ -36,6 +38,12 @@ def _group_map() -> dict:
 def _best_weights(df) -> dict:
     import itertools
 
+    # Out-of-sample split: latih/milih bobot pada 70% pertama, validasi pada 30% akhir
+    n = len(df)
+    split = max(30, int(n * 0.7))
+    train_df = df.iloc[:split]
+    os_df = df.iloc[split:]
+
     best = None
     best_q = -1.0
     best_mult = None
@@ -43,11 +51,15 @@ def _best_weights(df) -> dict:
 
     for combo in combos:
         multipliers = dict(zip(_GROUP, combo))
-        metrics = backtest.run(df, weights=_weights_from(multipliers))
-        q = metrics["quality"]
+        weights = _weights_from(multipliers)
+        m_train = backtest.run(train_df, weights=weights)
+        m_os = backtest.run(os_df, weights=weights)
+        # Bobot dipilih berdasarkan performa train + in-sample, tapi ditolak/penalti
+        # jika sangat buruk di out-of-sample (anti-overfit).
+        q = 0.7 * m_train["quality"] + 0.3 * m_os["quality"]
         if q > best_q:
             best_q = q
-            best = metrics
+            best = m_os
             best_mult = multipliers
 
     weights = _weights_from(best_mult)

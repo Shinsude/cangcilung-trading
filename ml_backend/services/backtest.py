@@ -10,13 +10,17 @@ import pandas as pd
 from services.indicators import rsi, macd, bollinger, ema
 from config import EMA_FAST, EMA_MEDIUM, EMA_SLOW, MACD_FAST, MACD_SIGNAL, MACD_SLOW, MIDDLE_BAND
 
-COMPONENT_NAMES = ("rsi", "macd_cross", "macd_hist", "ema_trend", "ema_alignment", "bb", "prediction", "sentiment")
+COMPONENT_NAMES = ("rsi", "macd_cross", "macd_hist", "ema_trend", "ema_alignment", "bb", "prediction", "sentiment", "volume", "sr")
 
 
-def _components(close: np.ndarray) -> dict:
+def _components(close: np.ndarray, df=None) -> dict:
     n = len(close)
     s = pd.Series(close)
     out = {k: np.zeros(n) for k in COMPONENT_NAMES}
+
+    high = np.asarray(df["High"], dtype=float) if df is not None else close
+    low = np.asarray(df["Low"], dtype=float) if df is not None else close
+    vol = np.asarray(df["Volume"], dtype=float) if df is not None and "Volume" in df else np.ones(n)
 
     r = np.asarray(rsi(s), dtype=float)
     macd_line, macd_signal, macd_hist = macd(s)
@@ -74,6 +78,26 @@ def _components(close: np.ndarray) -> dict:
             mom20 = close[i] / close[i - 20] - 1.0
             if not np.isnan(mom20):
                 out["sentiment"][i] = max(-1.0, min(1.0, mom20 * 12.0)) * 1.5
+    # Sentimen proksi momentum 20-bar
+        if i >= 20:
+            mom20 = close[i] / close[i - 20] - 1.0
+            if not np.isnan(mom20):
+                out["sentiment"][i] = max(-1.0, min(1.0, mom20 * 12.0)) * 1.5
+        # Komponen volume:kekuatan konfirmasi tren (naik dgn volume tinggi = bullish)
+        if i >= 20:
+            v20 = vol[i - 20 : i + 1]
+            vmean = float(np.mean(v20))
+            atr = float(np.mean(high[i - 14 : i + 1] - low[i - 14 : i + 1])) if i >= 14 else 0.0
+            direction = 1.0 if close[i] > close[i - 1] else -1.0
+            vol_conf = (vol[i] / vmean - 1.0) if vmean > 0 else 0.0
+            out["volume"][i] = direction * 0.8 * (1.0 + vol_conf) if np.isfinite(vol_conf) and vol[i] > 0 else 0.0
+        # S/R momentum: posisi harga terhadap range 20-bar terakhir
+        if i >= 20:
+            hi20 = float(np.max(high[i - 20 : i + 1]))
+            lo20 = float(np.min(low[i - 20 : i + 1]))
+            if hi20 != lo20:
+                pos = (close[i] - lo20) / (hi20 - lo20)
+                out["sr"][i] = 1.0 if pos > 0.8 else (-1.0 if pos < 0.2 else 0.0)
     return {k: v for k, v in out.items()}, fwd
 
 
@@ -83,11 +107,12 @@ def _tolist(a):
     return a.tolist()
 
 
-def compute_scores(close: np.ndarray, weights: dict | None = None) -> tuple[np.ndarray, np.ndarray]:
-    comps, fwd = _components(close)
+def compute_scores(close: np.ndarray, weights: dict | None = None, df=None) -> tuple[np.ndarray, np.ndarray]:
+    comps, fwd = _components(close, df)
     w = {
         "rsi": 1.0, "macd_cross": 1.0, "macd_hist": 1.0, "ema_trend": 1.0,
         "ema_alignment": 1.0, "bb": 1.0, "prediction": 1.0, "sentiment": 1.0,
+        "volume": 1.0, "sr": 1.0,
     }
     if weights:
         for k in w:
@@ -137,8 +162,8 @@ def _evaluate(score: np.ndarray, fwd: np.ndarray, buy_th: float, idx: list) -> d
     }
 
 
-def rolling(close: np.ndarray, weights: dict | None = None, windows=(7, 14, 30), buy_th: float = 1.5, skip: int = 0) -> dict:
-    score, fwd = compute_scores(close, weights)
+def rolling(close: np.ndarray, weights: dict | None = None, windows=(7, 14, 30), buy_th: float = 1.5, skip: int = 0, df=None) -> dict:
+    score, fwd = compute_scores(close, weights, df)
     valid = np.where(np.isfinite(score) & np.isfinite(fwd))[0]
     out = {}
     for wnd in windows:
@@ -151,7 +176,7 @@ def rolling(close: np.ndarray, weights: dict | None = None, windows=(7, 14, 30),
 
 def run(df: pd.DataFrame, weights: dict | None = None, buy_th: float = 1.5, strong_th: float = 3.0, hold_pct: float = 0.0) -> dict:
     close = np.asarray(df["Close"], dtype=float)
-    score, fwd = compute_scores(close, weights)
+    score, fwd = compute_scores(close, weights, df)
     valid = np.where(np.isfinite(score) & np.isfinite(fwd))[0]
     idx = valid.tolist()
 

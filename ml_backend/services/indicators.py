@@ -80,6 +80,23 @@ def compute_all(df: pd.DataFrame) -> dict:
     if np.isfinite(bb_range) and bb_range != 0:
         percent_b = float((price - bb_lower.iloc[last]) / bb_range)
 
+    # Konfirmasi volume: arah & kekuatan hari ini relatif rata-rata 20 hari
+    vol_conf = 0.0
+    if len(df) >= 20 and "Volume" in df:
+        vol_tail = df["Volume"].tail(20).astype(float)
+        vmean = float(vol_tail[:-1].mean())
+        vnow = float(vol_tail.iloc[-1])
+        direction = 1.0 if (len(close) > 1 and price > float(close.iloc[-2])) else -1.0
+        vol_conf = (vnow / vmean - 1.0) if vmean > 0 else 0.0
+
+    # Posisi harga terhadap range 20 hari (support/resistance)
+    sr_pos = 0.5
+    if len(close) >= 20:
+        hi20 = float(np.nanmax(df["High"].tail(20).to_numpy()))
+        lo20 = float(np.nanmin(df["Low"].tail(20).to_numpy()))
+        if hi20 != lo20:
+            sr_pos = (price - lo20) / (hi20 - lo20)
+
     return {
         "price": price,
         "rsi": {"value": round(rsi_now, 2), "region": "oversold" if rsi_now < 30 else ("overbought" if rsi_now > 70 else "neutral")},
@@ -103,4 +120,6 @@ def compute_all(df: pd.DataFrame) -> dict:
         },
         "sma20": round(float(sma_20.iloc[last]), 5),
         "volatility_20": round(float(close.tail(20).pct_change().std() or 0.0), 5),
+        "volume": round(vol_conf, 3),
+        "sr": round(sr_pos, 3),
     }
