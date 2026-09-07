@@ -80,14 +80,18 @@ def compute_all(df: pd.DataFrame) -> dict:
     if np.isfinite(bb_range) and bb_range != 0:
         percent_b = float((price - bb_lower.iloc[last]) / bb_range)
 
-    # Konfirmasi volume: arah & kekuatan hari ini relatif rata-rata 20 hari
+    # Konfirmasi volume: arah & kekuatan hari ini relatif rata-rata 20 hari (z-score bounded)
     vol_conf = 0.0
     if len(df) >= 20 and "Volume" in df:
         vol_tail = df["Volume"].tail(20).astype(float)
         vmean = float(vol_tail[:-1].mean())
+        vstd = float(vol_tail[:-1].std())
         vnow = float(vol_tail.iloc[-1])
         direction = 1.0 if (len(close) > 1 and price > float(close.iloc[-2])) else -1.0
-        vol_conf = (vnow / vmean - 1.0) if vmean > 0 else 0.0
+        if vmean > 0 and vstd > 0:
+            z = (vnow - vmean) / vstd
+            z_clamped = max(-1.0, min(1.0, z / 2.0))
+            vol_conf = 0.5 * direction + 0.5 * z_clamped
 
     # Posisi harga terhadap range 20 hari (support/resistance)
     sr_pos = 0.5

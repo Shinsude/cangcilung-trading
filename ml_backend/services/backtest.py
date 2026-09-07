@@ -83,14 +83,18 @@ def _components(close: np.ndarray, df=None) -> dict:
             mom20 = close[i] / close[i - 20] - 1.0
             if not np.isnan(mom20):
                 out["sentiment"][i] = max(-1.0, min(1.0, mom20 * 12.0)) * 1.5
-        # Komponen volume:kekuatan konfirmasi tren (naik dgn volume tinggi = bullish)
+        # Komponen volume:kekuatan konfirmasi tren (z-score volume bounded, arah tren)
         if i >= 20:
             v20 = vol[i - 20 : i + 1]
-            vmean = float(np.mean(v20))
-            atr = float(np.mean(high[i - 14 : i + 1] - low[i - 14 : i + 1])) if i >= 14 else 0.0
+            vmean = float(np.mean(v20[:-1])) if len(v20) > 1 else 0.0
+            vstd = float(np.std(v20[:-1])) if len(v20) > 1 else 0.0
             direction = 1.0 if close[i] > close[i - 1] else -1.0
-            vol_conf = (vol[i] / vmean - 1.0) if vmean > 0 else 0.0
-            out["volume"][i] = direction * 0.8 * (1.0 + vol_conf) if np.isfinite(vol_conf) and vol[i] > 0 else 0.0
+            if vmean > 0 and vstd > 0:
+                z = (vol[i] - vmean) / vstd
+                zc = max(-1.0, min(1.0, z / 2.0))
+                out["volume"][i] = 0.5 * direction + 0.5 * zc
+            else:
+                out["volume"][i] = 0.5 * direction
         # S/R momentum: posisi harga terhadap range 20-bar terakhir
         if i >= 20:
             hi20 = float(np.max(high[i - 20 : i + 1]))
