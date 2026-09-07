@@ -1,0 +1,32 @@
+name: Signal log (riwayat sinyal nyata)
+
+on:
+  schedule:
+    # Setelah cron retrain (21:00) & fallback (22:00) selesai, catat sinyal harian
+    - cron: '0 23 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  log:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Append sinyal harian ke logs
+        run: python3 .github/scripts/append_signal_log.py
+
+      - name: Commit jika ada perubahan
+        run: |
+          git config --local user.name "cangcilung-bot"
+          git config --local user.email "cangcilung-bot@users.noreply.github.com"
+          git add flutter_app/web/signals_log.json
+          if git diff --cached --quiet; then
+            echo "Tidak ada perubahan log"
+            exit 0
+          fi
+          git commit -m "log: sinyal harian $(date -u +%Y-%m-%d)"
+          git push origin HEAD:main

@@ -1388,6 +1388,24 @@ class _ModelCard extends StatelessWidget {
               Expanded(child: _Metric(label: 'Trades', value: '${stats.backtest.trades}', color: AppColors.blue)),
             ],
           ),
+          if (stats.realSamples > 0) ...[
+            const SizedBox(height: 12),
+            const Text('AKURASI NYATA (RIWAYAT SINYAL TERLOG)', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: _AccChip(
+                    label: 'Win rate:',
+                    value: '${((stats.realWinRate ?? 0) * 100).toStringAsFixed(0)}%',
+                    color: (stats.realWinRate ?? 0) > 0.55 ? AppColors.green : (stats.realWinRate ?? 0) > 0.45 ? AppColors.amber : AppColors.red,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(child: _Metric(label: 'Sampel', value: '${stats.realSamples}', color: AppColors.blue)),
+              ],
+            ),
+          ],
           if (stats.weights.isNotEmpty) ...[
             const SizedBox(height: 12),
             const Text('BOBOT TER-TUNE', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),

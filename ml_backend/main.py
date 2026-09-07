@@ -1,4 +1,5 @@
 import datetime as dt
+import json
 import logging
 import os
 import time
@@ -18,6 +19,9 @@ PORT = int(os.getenv("PORT", "8000"))
 
 RESPONSE_CACHE_TTL_SECONDS = int(os.getenv("RESPONSE_CACHE_TTL_SECONDS", "180"))
 _response_cache: dict[str, dict] = {}
+
+LOG_URL = os.getenv("SIGNALS_LOG_URL", "https://shinsude.github.io/cangcilung-trading/signals_log.json")
+_real_log_cache: dict = {}
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api")
@@ -47,6 +51,50 @@ def serialize_datetime(index):
 @app.get("/health")
 def health():
     return {"status": "ok", "time": dt.datetime.utcnow().isoformat() + "Z"}
+
+
+def _fetch_real_log(ttl: int = 300) -> list:
+    now = time.time()
+    hit = _real_log_cache.get("log")
+    if hit and now - hit["at"] < ttl:
+        return hit["data"]
+    import urllib.request
+
+    try:
+        with urllib.request.urlopen(LOG_URL, timeout=20) as r:
+            data = json.loads(r.read().decode("utf-8"))
+        _real_log_cache["log"] = {"at": now, "data": data}
+        return data
+    except Exception:  # noqa: BLE001
+        return hit["data"] if hit else []
+
+
+def _real_accuracy(log_entries: list, symbol: str, df) -> dict:
+    try:
+        dates = {idx.strftime("%Y-%m-%d"): i for i, idx in enumerate(df.index)}
+        wins = 0
+        cnt = 0
+        for e in log_entries:
+            if e.get("symbol") != symbol:
+                continue
+            i = dates.get(e.get("date"))
+            if i is None or i + 1 >= len(df):
+                continue
+            c0 = float(df.iloc[i]["Close"])
+            c1 = float(df.iloc[i + 1]["Close"])
+            if c1 == c0:
+                continue
+            actual_up = c1 > c0
+            expected_up = e.get("action") == "BUY"
+            cnt += 1
+            if actual_up == expected_up:
+                wins += 1
+        return {
+            "samples": cnt,
+            "win_rate": round(wins / cnt, 3) if cnt else None,
+        }
+    except Exception:  # noqa: BLE001
+        return {"samples": 0, "win_rate": None}
 
 
 @app.get("/")
@@ -162,6 +210,8 @@ def get_stats(symbol: str):
     acc_skip = backtest.rolling(close, weights=tuning["weights"], skip=0, df=df)
     acc_hist = backtest.rolling(close, weights=tuning["weights"], skip=30, df=df)
 
+    real = _real_accuracy(_fetch_real_log(), symbol, df)
+
     # Verdict: tren akurasi (membaik/memburuk) + label kualitas
     w30 = acc_hist.get("14d", {}).get("win_rate")
     w7 = acc_now.get("7d", {}).get("win_rate")
@@ -174,6 +224,7 @@ def get_stats(symbol: str):
         "weights": tuning["weights"],
         "accuracy": acc_now,
         "accuracy_30d_ago": acc_hist,
+        "real_accuracy": real,
         "trend": trend,
         "quality": quality,
         "trained_at": dt.datetime.fromtimestamp(tuning["at"]).isoformat() + "Z",
@@ -201,6 +252,7 @@ def model_info():
             mlp_acc = directional_accuracy(mdf["Close"].to_numpy())
         except Exception as exc:  # noqa: BLE001
             mlp_acc = {"error": f"{type(exc).__name__}: {exc}"}
+        real = _real_accuracy(_fetch_real_log(), symbol, mdf)
         out[symbol] = {
             "trained_at": dt.datetime.fromtimestamp(cached["at"]).isoformat() + "Z",
             "weights": cached["weights"],
@@ -208,6 +260,7 @@ def model_info():
             "backtest": cached["metrics"],
             "rolling_accuracy": acc,
             "mlp_validation": mlp_acc,
+            "real_accuracy": real,
         }
     return {
         "strategy": "grid-search auto-tune per symbol (walk-forward backtest)",

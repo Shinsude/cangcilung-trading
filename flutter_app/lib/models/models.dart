@@ -247,18 +247,23 @@ class ModelStats {
   final Map<String, double> weights;
   final BacktestSummary backtest;
   final Map<String, AccWindow> accuracy;
+  final int realSamples;
+  final double? realWinRate;
 
-  ModelStats({required this.trainedAt, required this.weights, required this.backtest, required this.accuracy});
+  ModelStats({required this.trainedAt, required this.weights, required this.backtest, required this.accuracy, this.realSamples = 0, this.realWinRate});
 
   factory ModelStats.fromJson(Map<String, dynamic> json) {
     final bt = json['backtest'] as Map<String, dynamic>? ?? {};
     final acc = (json['rolling_accuracy'] as Map<String, dynamic>?) ?? const {};
+    final real = (json['real_accuracy'] as Map<String, dynamic>?) ?? const {};
     return ModelStats(
       trainedAt: json['trained_at'] as String? ?? '',
       weights: ((json['weights'] as Map<String, dynamic>?) ?? const {})
           .map((k, v) => MapEntry(k, (v as num).toDouble())),
       backtest: BacktestSummary.fromJson(bt),
       accuracy: acc.map((k, v) => MapEntry(k, AccWindow.fromJson(v as Map<String, dynamic>? ?? {}))),
+      realSamples: (real['samples'] as num?)?.toInt() ?? 0,
+      realWinRate: (real['win_rate'] as num?)?.toDouble(),
     );
   }
 }
