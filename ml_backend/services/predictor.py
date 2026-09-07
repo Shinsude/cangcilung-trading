@@ -114,6 +114,35 @@ def _train_and_predict(returns: np.ndarray, lookback: int, epochs: int = GRU_EPO
     return pred_return, confidence
 
 
+def directional_accuracy(closes: np.ndarray, max_points: int = 72) -> dict:
+    """Walk-forward hit rate MLP nyata: train pada setiap titik berjalan, ukur arah prediksi
+    vs return aktual berikutnya. Dipakai untuk memvalidasi kekuatan MLP dibanding proxy
+    momentum (komponen prediction di backtest memakai momentum, bukan MLP nyata)."""
+    returns = _to_returns(closes)
+    out = {}
+    for lb in LOOKBACK_WINDOWS:
+        hits = 0
+        cnt = 0
+        start = max(lb, len(returns) - max_points, lb + 1)
+        for k in range(start, len(returns)):
+            seg = returns[max(0, k - 120) : k]
+            if len(seg) < lb + 6:
+                continue
+            pred, _ = _train_and_predict(seg, lb, epochs=30, lr=0.012)
+            if pred is None:
+                continue
+            cnt += 1
+            if (pred > 0) == (returns[k] > 0):
+                hits += 1
+        out[lb] = {"samples": int(cnt), "hit_rate": round(hits / cnt, 3) if cnt else 0.5}
+
+    n_samples = sum(v["samples"] for v in out.values())
+    total = 0.0
+    for v in out.values():
+        total += v["hit_rate"] * v["samples"]
+    return {"overall": round(total / n_samples, 3) if n_samples else 0.5, "lookbacks": out}
+
+
 def predict(closes: np.ndarray, horizon_hours: int = 6):
     if len(closes) < 40:
         raise ValueError("Not enough price history to build a prediction")

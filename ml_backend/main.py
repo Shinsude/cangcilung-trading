@@ -10,7 +10,7 @@ from config import CACHE_TTL_SECONDS, SYMBOLS
 from services import backtest, tuner
 from services.data_service import data_service
 from services.indicators import compute_all
-from services.predictor import predict
+from services.predictor import predict, directional_accuracy
 from services.sentiment import analyze as analyze_sentiment
 from services.signal import build_signal
 
@@ -119,13 +119,16 @@ def _build_payload(symbol: str) -> dict:
 
 
 @app.get("/backtest/{symbol}")
-def get_backtest(symbol: str):
+def get_backtest(symbol: str, days: int | None = None):
     symbol = symbol.upper()
     if symbol not in SYMBOLS:
         raise HTTPException(status_code=404, detail=f"Symbol tidak didukung. Gunakan: {', '.join(SYMBOLS)}")
 
     df = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
     tuning = tuner.tuned(df, symbol)
+
+    if days and days > 0:
+        df = df.tail(days)
 
     tuned_metrics = backtest.run(df, weights=tuning["weights"])
     default_metrics = backtest.run(df)
@@ -194,12 +197,17 @@ def model_info():
             acc = backtest.rolling(mdf["Close"].to_numpy(), weights=cached["weights"], df=mdf)
         except Exception:  # noqa: BLE001
             acc = {}
+        try:
+            mlp_acc = predictor.directional_accuracy(mdf["Close"].to_numpy())
+        except Exception:  # noqa: BLE001
+            mlp_acc = {"error": "validation failed"}
         out[symbol] = {
             "trained_at": dt.datetime.fromtimestamp(cached["at"]).isoformat() + "Z",
             "weights": cached["weights"],
             "multipliers": cached["multipliers"],
             "backtest": cached["metrics"],
             "rolling_accuracy": acc,
+            "mlp_validation": mlp_acc,
         }
     return {
         "strategy": "grid-search auto-tune per symbol (walk-forward backtest)",
