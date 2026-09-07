@@ -44,8 +44,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _loading = true;
       _error = null;
     });
+
+    final cached = await _api.readCachedSignal(_selected);
+    if (cached != null) {
+      if (!mounted) return;
+      setState(() {
+        _data = cached;
+        _loading = false;
+      });
+    }
+
     try {
-      final data = await _api.fetchSignal(_selected);
+      final data = await _api.fetchSignal(_selected, useCache: false);
       if (!mounted) return;
       setState(() {
         _data = data;
@@ -57,10 +67,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       });
     } on Exception catch (e) {
       if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-        _loading = false;
-      });
+      if (_data == null) {
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
+      }
     }
   }
 

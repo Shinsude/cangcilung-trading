@@ -1,6 +1,7 @@
 import datetime as dt
 import logging
 import os
+import time
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +14,9 @@ from services.sentiment import analyze as analyze_sentiment
 from services.signal import build_signal
 
 PORT = int(os.getenv("PORT", "8000"))
+
+RESPONSE_CACHE_TTL_SECONDS = int(os.getenv("RESPONSE_CACHE_TTL_SECONDS", "180"))
+_response_cache: dict[str, dict] = {}
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api")
@@ -59,6 +63,11 @@ def get_signal(symbol: str):
     if symbol not in SYMBOLS:
         raise HTTPException(status_code=404, detail=f"Symbol tidak didukung. Gunakan: {', '.join(SYMBOLS)}")
 
+    now = time.time()
+    cached = _response_cache.get(symbol)
+    if cached and cached["expires"] > now:
+        return cached["payload"]
+
     df = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
 
     ind = compute_all(df)
@@ -91,7 +100,7 @@ def get_signal(symbol: str):
         )
 
     meta = SYMBOLS[symbol]
-    return {
+    payload = {
         "symbol": symbol,
         "name": meta["name"],
         "category": meta["category"],
@@ -114,3 +123,6 @@ def get_signal(symbol: str):
         "candles": candles,
         "data_points": len(df),
     }
+
+    _response_cache[symbol] = {"expires": time.time() + RESPONSE_CACHE_TTL_SECONDS, "payload": payload}
+    return payload

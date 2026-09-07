@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/models.dart';
 
@@ -14,14 +15,44 @@ class ApiService {
     defaultValue: 'https://cangcilung-trading-api.vercel.app',
   );
 
-  Future<TradingData> fetchSignal(String symbol) async {
-    final uri = Uri.parse('$baseUrl/signal/$symbol');
+  static String _cacheKey(String symbol) => 'cached_signal_${symbol.toUpperCase()}';
+
+  Future<TradingData> fetchSignal(String symbol, {bool useCache = true}) async {
+    final upper = symbol.toUpperCase();
+
+    if (useCache) {
+      final cached = await readCachedSignal(upper);
+      if (cached != null) return cached;
+    }
+
+    final uri = Uri.parse('$baseUrl/signal/$upper');
     final response = await http.get(uri).timeout(const Duration(seconds: 90));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return TradingData.fromJson(json);
+      final data = TradingData.fromJson(json);
+      await _writeCache(upper, response.body);
+      return data;
     }
     throw ApiException('Server error (${response.statusCode})');
+  }
+
+  Future<TradingData?> readCachedSignal(String symbol) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_cacheKey(symbol.toUpperCase()));
+      if (raw == null || raw.isEmpty) return null;
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      return TradingData.fromJson(json);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _writeCache(String symbol, String rawBody) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_cacheKey(symbol), rawBody);
+    } catch (_) {}
   }
 }
 

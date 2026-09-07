@@ -136,6 +136,33 @@ jobs:
         working-directory: flutter_app
         run: flutter analyze
 
+      - name: Patch index.html with splash screen
+        working-directory: flutter_app
+        run: python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("web/index.html")
+          html = p.read_text()
+
+          if 'id="splash"' not in html:
+              splash = '''<div id="splash" style="position:fixed;inset:0;background:#0A0E17;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;color:#F8FAFC;font-family:Arial,sans-serif">
+              <div style="width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#00E68A,#3B82F6);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:#fff">C</div>
+              <div style="margin-top:16px;font-size:20px;font-weight:800;letter-spacing:-0.3px">Cangcilung</div>
+              <div style="font-size:9px;font-weight:700;letter-spacing:2.5px;color:#64748B;margin-top:2px">TRADING AI</div>
+              <div style="margin-top:24px;width:24px;height:24px;border-radius:50%;border:3px solid #1E293B;border-top-color:#00E68A;animation:splashspin .9s linear infinite"></div>
+              <div style="margin-top:14px;font-size:12px;color:#64748B">Memuat data pasar\u2026</div>
+              </div>
+              <style>@keyframes splashspin{to{transform:rotate(360deg)}}</style>'''
+              html = html.replace("<body>", "<body>\n" + splash, 1)
+              hide_script = '''<script>
+              window.addEventListener('flutter-first-frame',function(){var s=document.getElementById('splash');if(s){s.style.transition='opacity .4s ease';s.style.opacity='0';setTimeout(function(){s.remove()},500);}});
+              setTimeout(function(){var s=document.getElementById('splash');if(s){s.style.transition='opacity .4s ease';s.style.opacity='0';setTimeout(function(){s.remove()},500);}},20000);
+              </script>'''
+              html = html.replace("</body>", hide_script + "\n</body>", 1)
+              p.write_text(html)
+          print("splash patched")
+          PY
+
       - name: Build Web
         working-directory: flutter_app
         run: flutter build web --release --base-href /cangcilung-trading/

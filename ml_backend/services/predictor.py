@@ -123,7 +123,7 @@ def predict(closes: np.ndarray, horizon_hours: int = 6):
     preds = []
     confs = []
     for lookback in LOOKBACK_WINDOWS:
-        pred_return, conf = _train_and_predict(window_returns, lookback, epochs=90, lr=0.012)
+        pred_return, conf = _train_and_predict(window_returns, lookback, epochs=50, lr=0.012)
         if pred_return is not None:
             preds.append(pred_return)
             confs.append(conf)
