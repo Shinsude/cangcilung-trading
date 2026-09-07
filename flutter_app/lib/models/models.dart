@@ -135,14 +135,16 @@ class Sentiment {
   final double score;
   final String label;
   final String source;
+  final double? confidence;
   final List<String> headlines;
 
-  Sentiment({required this.score, required this.label, required this.source, required this.headlines});
+  Sentiment({required this.score, required this.label, required this.source, this.confidence, required this.headlines});
 
   factory Sentiment.fromJson(Map<String, dynamic> json) => Sentiment(
         score: (json['score'] as num?)?.toDouble() ?? 0,
         label: json['label'] as String? ?? 'NEUTRAL',
         source: json['source'] as String? ?? '',
+        confidence: (json['confidence'] as num?)?.toDouble(),
         headlines: ((json['headlines'] as List?) ?? const [])
             .whereType<Map<String, dynamic>>()
             .map((h) => (h['headline'] as String?) ?? '')
@@ -163,6 +165,7 @@ class TradingData {
   final Indicators indicators;
   final Sentiment sentiment;
   final List<Candle> candles;
+  final Map<String, double> weights;
 
   TradingData({
     required this.symbol,
@@ -177,6 +180,7 @@ class TradingData {
     required this.indicators,
     required this.sentiment,
     required this.candles,
+    this.weights = const {},
   });
 
   factory TradingData.fromJson(Map<String, dynamic> json) => TradingData(
@@ -195,5 +199,7 @@ class TradingData {
             .whereType<Map<String, dynamic>>()
             .map(Candle.fromJson)
             .toList(),
+        weights: ((json['weights'] as Map<String, dynamic>?) ?? const {})
+            .map((k, v) => MapEntry(k, (v as num).toDouble())),
       );
 }

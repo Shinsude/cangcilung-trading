@@ -150,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       child: [
         _SignalPage(data: d, onRefresh: _load, pulse: _pulseCtrl),
         _ChartPage(data: d),
-        _IndicatorsPage(ind: d.indicators, price: d.currentPrice),
+        _IndicatorsPage(ind: d.indicators, price: d.currentPrice, weights: d.weights),
         _SentimentPage(sentiment: d.sentiment),
       ][_tab],
     );
@@ -765,10 +765,11 @@ class _ChartPage extends StatelessWidget {
 }
 
 class _IndicatorsPage extends StatelessWidget {
-  const _IndicatorsPage({required this.ind, required this.price});
+  const _IndicatorsPage({required this.ind, required this.price, this.weights = const {}});
 
   final Indicators ind;
   final double price;
+  final Map<String, double> weights;
 
   @override
   Widget build(BuildContext context) {
@@ -803,7 +804,57 @@ class _IndicatorsPage extends StatelessWidget {
             _IndicatorTile(icon: Icons.speed_rounded, label: 'SMA 20', value: ind.sma20.toStringAsFixed(2), sub: 'Harga: ${price.toStringAsFixed(2)}', color: AppColors.blue),
           ],
         ),
+        const SizedBox(height: 20),
+        const Text('BOBOT MODEL (AUTO-TUNE)', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1)),
+        const SizedBox(height: 4),
+        const Text(
+          'Bobot hasil walk-forward backtest per simbol: indikator yang paling akurat diperkuat (hijau), yang paling lemah diredam (biru).',
+          style: TextStyle(color: AppColors.textTertiary, fontSize: 10, height: 1.4),
+        ),
+        const SizedBox(height: 10),
+        if (weights.isNotEmpty)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: weights.entries.map((e) => _WeightChip(label: e.key, weight: e.value)).toList(),
+          )
+        else
+          const Text('Belum tersedia', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
       ],
+    );
+  }
+}
+
+class _WeightChip extends StatelessWidget {
+  const _WeightChip({required this.label, required this.weight});
+  final String label;
+  final double weight;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color;
+    if (weight > 1.05) {
+      color = AppColors.green;
+    } else if (weight < 0.95) {
+      color = AppColors.blue;
+    } else {
+      color = AppColors.textSecondary;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w600)),
+          const SizedBox(width: 6),
+          Text(weight.toStringAsFixed(1), style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w900)),
+        ],
+      ),
     );
   }
 }
@@ -897,7 +948,26 @@ class _SentimentPage extends StatelessWidget {
                 ],
               ],
               const SizedBox(height: 10),
-              Text(sentiment.source, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10, fontStyle: FontStyle.italic)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (sentiment.confidence != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        'Keyakinan ${(sentiment.confidence! * 100).toStringAsFixed(0)}%',
+                        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(sentiment.source, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10, fontStyle: FontStyle.italic)),
+                ],
+              ),
             ],
           ),
         ),
