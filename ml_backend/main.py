@@ -199,8 +199,8 @@ def model_info():
             acc = {}
         try:
             mlp_acc = predictor.directional_accuracy(mdf["Close"].to_numpy())
-        except Exception:  # noqa: BLE001
-            mlp_acc = {"error": "validation failed"}
+        except Exception as exc:  # noqa: BLE001
+            mlp_acc = {"error": f"{type(exc).__name__}: {exc}"}
         out[symbol] = {
             "trained_at": dt.datetime.fromtimestamp(cached["at"]).isoformat() + "Z",
             "weights": cached["weights"],
