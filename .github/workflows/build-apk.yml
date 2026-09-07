@@ -72,14 +72,9 @@ jobs:
                       1,
                   )
               changed = True
-          # 2) Tambah dependency desugar_jdk_libs ke blok dependencies pertama (isi non-kosong)
+          # 2) Tambah dependency desugar_jdk_libs (append blok dependencies di akhir file)
           if "desugar_jdk_libs" not in s:
-              m = re.search(r"dependencies\s*\{([^}]*)\}", s, re.S)
-              if m:
-                  block = m.group(0)
-                  dep = 'coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")'
-                  # sisipkan setelah 'dependencies {' di dalam blok tsb
-                  s = s[:m.start()] + block[:block.index("{") + 1] + "\n    " + dep + block[block.index("{") + 1:] + s[m.end():]
+              s = s.rstrip() + "\n\ndependencies {\n    coreLibraryDesugaring(\"com.android.tools:desugar_jdk_libs:2.1.4\")\n}\n"
               changed = True
           with open(py, "w") as f:
               f.write(s)
