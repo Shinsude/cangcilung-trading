@@ -69,6 +69,17 @@ class ApiService {
     }
     throw ApiException('Server error (${response.statusCode})');
   }
+
+  Future<BacktestResponse> fetchBacktest(String symbol, {int? days}) async {
+    final uri = Uri.parse('$baseUrl/backtest/$symbol').replace(
+      queryParameters: days != null ? {'days': '$days'} : null,
+    );
+    final response = await http.get(uri).timeout(const Duration(seconds: 90));
+    if (response.statusCode == 200) {
+      return BacktestResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    }
+    throw ApiException('Server error (${response.statusCode})');
+  }
 }
 
 class ApiException implements Exception {

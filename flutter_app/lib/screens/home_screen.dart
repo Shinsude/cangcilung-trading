@@ -247,6 +247,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           onRetry: _loadModel,
           notifyOn: _notifOn,
           onToggleNotify: _toggleNotif,
+          api: _api,
         ),
       ][_tab],
     );
@@ -1034,8 +1035,8 @@ class _IndicatorTile extends StatelessWidget {
   }
 }
 
-class _ModelPage extends StatelessWidget {
-  const _ModelPage({required this.model, required this.loading, required this.error, required this.onRetry, required this.notifyOn, required this.onToggleNotify});
+class _ModelPage extends StatefulWidget {
+  const _ModelPage({required this.model, required this.loading, required this.error, required this.onRetry, required this.notifyOn, required this.onToggleNotify, required this.api});
 
   final ModelInfo? model;
   final bool loading;
@@ -1043,10 +1044,40 @@ class _ModelPage extends StatelessWidget {
   final VoidCallback onRetry;
   final bool notifyOn;
   final ValueChanged<bool> onToggleNotify;
+  final ApiService api;
+
+  @override
+  State<_ModelPage> createState() => _ModelPageState();
+}
+
+class _ModelPageState extends State<_ModelPage> {
+  final List<String> _btSymbols = ['XAUUSD', 'NASDAQ', 'AUDUSD'];
+  String _btSymbol = 'XAUUSD';
+  int? _btDays; // null = semua data
+  bool _btLoading = false;
+  String? _btError;
+  BacktestResponse? _btResult;
+
+  Future<void> _runBacktest() async {
+    setState(() {
+      _btLoading = true;
+      _btError = null;
+    });
+    try {
+      final result = await widget.api.fetchBacktest(_btSymbol, days: _btDays);
+      if (!mounted) return;
+      setState(() => _btResult = result);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _btError = 'Gagal menjalankan backtest: $e');
+    } finally {
+      if (mounted) setState(() => _btLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (loading && model == null) {
+    if (widget.loading && widget.model == null) {
       return const Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1058,7 +1089,7 @@ class _ModelPage extends StatelessWidget {
         ),
       );
     }
-    final m = model;
+    final m = widget.model;
     if (m == null) {
       return Center(
         child: Column(
@@ -1066,7 +1097,7 @@ class _ModelPage extends StatelessWidget {
           children: [
             const Text('Gagal memuat model', style: TextStyle(color: AppColors.red, fontSize: 13, fontWeight: FontWeight.w700)),
             const SizedBox(height: 10),
-            _ActionPill(label: 'Coba lagi', icon: Icons.refresh, onTap: onRetry),
+            _ActionPill(label: 'Coba lagi', icon: Icons.refresh, onTap: widget.onRetry),
           ],
         ),
       );
@@ -1080,13 +1111,167 @@ class _ModelPage extends StatelessWidget {
         const SizedBox(height: 4),
         Text(m.strategy, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10, height: 1.4)),
         const SizedBox(height: 8),
-        _NotifSetting(on: notifyOn, onToggle: onToggleNotify),
+        _NotifSetting(on: widget.notifyOn, onToggle: widget.onToggleNotify),
+        const SizedBox(height: 14),
+        _BacktestExplorer(
+          symbols: _btSymbols,
+          symbol: _btSymbol,
+          days: _btDays,
+          loading: _btLoading,
+          result: _btResult,
+          error: _btError,
+          onSymbol: (s) => setState(() => _btSymbol = s),
+          onDays: (d) => setState(() => _btDays = d),
+          onRun: _runBacktest,
+        ),
         const SizedBox(height: 14),
         for (final e in entries) ...[
           _ModelCard(symbol: e.key, stats: e.value),
           const SizedBox(height: 12),
         ],
       ],
+    );
+  }
+}
+
+class _BacktestExplorer extends StatelessWidget {
+  const _BacktestExplorer({required this.symbols, required this.symbol, required this.days, required this.loading, required this.result, required this.error, required this.onSymbol, required this.onDays, required this.onRun});
+
+  final List<String> symbols;
+  final String symbol;
+  final int? days;
+  final bool loading;
+  final BacktestResponse? result;
+  final String? error;
+  final ValueChanged<String> onSymbol;
+  final ValueChanged<int?> onDays;
+  final VoidCallback onRun;
+
+  @override
+  Widget build(BuildContext context) {
+    final ranges = <int?>[null, 30, 60, 90];
+    final labels = <int?, String>{null: 'SEMUA', 30: '30h', 60: '60h', 90: '90h'};
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.blue.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('UJI BACKTEST', style: TextStyle(color: AppColors.blue, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          const SizedBox(height: 12),
+          const Text('SINYAL', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              for (final s in symbols) ...[
+                _ChoiceChip(label: s, selected: symbol == s, onTap: () => onSymbol(s)),
+                const SizedBox(width: 8),
+              ],
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text('RENTANG', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              for (final r in ranges) ...[
+                _ChoiceChip(label: labels[r]!, selected: days == r, onTap: () => onDays(r)),
+                const SizedBox(width: 8),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _ActionPill(label: loading ? 'Menjalankan\u2026' : 'Jalankan Backtest', icon: loading ? null : Icons.play_arrow, onTap: loading ? null : onRun),
+            ],
+          ),
+          if (error != null) ...[
+            const SizedBox(height: 10),
+            Text(error!, style: const TextStyle(color: AppColors.red, fontSize: 11)),
+          ],
+          if (result != null) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                const Expanded(child: _Metric(label: 'Versi', value: 'AUTO-TUNE', color: AppColors.blue)),
+                const SizedBox(width: 8),
+                Expanded(child: _Metric(label: 'Versi', value: 'DASAR', color: AppColors.textSecondary)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _MetricRow(tuned: result!.tuned, baseline: result!.baseline),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricRow extends StatelessWidget {
+  const _MetricRow({required this.tuned, required this.baseline});
+  final BacktestSummary tuned;
+  final BacktestSummary baseline;
+
+  @override
+  Widget build(BuildContext context) {
+    Color colorOf(double v, {bool invert = false}) {
+      if (invert) v = -v;
+      return v > 0 ? AppColors.green : (v < 0 ? AppColors.red : AppColors.textSecondary);
+    }
+
+    Widget rows(String label, String Function(BacktestSummary) pick, Color Function(BacktestSummary) col) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5))),
+        child: Row(
+          children: [
+            SizedBox(width: 110, child: Text(label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11))),
+            Expanded(child: Text(pick(tuned), textAlign: TextAlign.right, style: TextStyle(color: col(tuned), fontSize: 12, fontWeight: FontWeight.w800))),
+            const SizedBox(width: 8),
+            Expanded(child: Text(pick(baseline), textAlign: TextAlign.right, style: TextStyle(color: col(baseline), fontSize: 12, fontWeight: FontWeight.w800))),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        rows('Win Rate', (s) => '${(s.winRate * 100).toStringAsFixed(1)}%', (s) => colorOf(s.winRate - 0.5)),
+        rows('Profit Factor', (s) => s.profitFactor.toStringAsFixed(2), (s) => s.profitFactor >= 1 ? AppColors.green : AppColors.red),
+        rows('Total Return', (s) => '${(s.totalReturn * 100).toStringAsFixed(1)}%', (s) => colorOf(s.totalReturn)),
+        rows('Max Drawdown', (s) => '${(s.maxDrawdown * 100).toStringAsFixed(1)}%', (s) => AppColors.red),
+        rows('Trades', (s) => '${s.trades}', (s) => AppColors.blue),
+      ],
+    );
+  }
+}
+
+class _ChoiceChip extends StatelessWidget {
+  const _ChoiceChip({required this.label, required this.selected, required this.onTap});
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = selected ? AppColors.blue : AppColors.textSecondary;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: selected ? c.withValues(alpha: 0.15) : AppColors.surfaceAlt,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: c.withValues(alpha: selected ? 0.6 : 0.15)),
+        ),
+        child: Text(label, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w800)),
+      ),
     );
   }
 }
@@ -1273,10 +1458,10 @@ class _Metric extends StatelessWidget {
 }
 
 class _ActionPill extends StatelessWidget {
-  const _ActionPill({required this.label, required this.icon, required this.onTap});
+  const _ActionPill({required this.label, this.icon, this.onTap});
   final String label;
-  final IconData icon;
-  final VoidCallback onTap;
+  final IconData? icon;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1292,8 +1477,10 @@ class _ActionPill extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 15, color: AppColors.blue),
-            const SizedBox(width: 6),
+            if (icon != null) ...[
+              Icon(icon, size: 15, color: AppColors.blue),
+              const SizedBox(width: 6),
+            ],
             Text(label, style: const TextStyle(color: AppColors.blue, fontSize: 12, fontWeight: FontWeight.w800)),
           ],
         ),

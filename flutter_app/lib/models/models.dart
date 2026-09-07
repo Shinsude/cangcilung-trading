@@ -277,3 +277,21 @@ class ModelInfo {
     );
   }
 }
+
+class BacktestResponse {
+  final String symbol;
+  final BacktestSummary tuned;
+  final BacktestSummary baseline;
+
+  BacktestResponse({required this.symbol, required this.tuned, required this.baseline});
+
+  factory BacktestResponse.fromJson(Map<String, dynamic> json) {
+    final tuned = json['tuned'] as Map<String, dynamic>? ?? {};
+    final baseline = json['default'] as Map<String, dynamic>? ?? {};
+    return BacktestResponse(
+      symbol: json['symbol'] as String? ?? '',
+      tuned: BacktestSummary.fromJson(tuned),
+      baseline: BacktestSummary.fromJson(baseline),
+    );
+  }
+}

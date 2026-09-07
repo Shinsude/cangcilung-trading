@@ -1,0 +1,24 @@
+name: Retrain (scheduler fallback)
+
+on:
+  schedule:
+    # Fallback bila cron Vercel gagal; jadwal berbeda (UTC 22:00) vs vercel.json (21:00)
+    - cron: '0 22 * * *'
+  workflow_dispatch:
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Warm & retrain backend
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/warm.json -w '%{http_code}' -m 840 https://cangcilung-trading-api.vercel.app/warm)
+            echo "attempt $i: HTTP $code"
+            if [ "$code" = "200" ]; then
+              cat /tmp/warm.json
+              break
+            fi
+            sleep 60
+          done
