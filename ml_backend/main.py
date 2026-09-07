@@ -20,7 +20,7 @@ PORT = int(os.getenv("PORT", "8000"))
 RESPONSE_CACHE_TTL_SECONDS = int(os.getenv("RESPONSE_CACHE_TTL_SECONDS", "180"))
 _response_cache: dict[str, dict] = {}
 
-LOG_URL = os.getenv("SIGNALS_LOG_URL", "https://shinsude.github.io/cangcilung-trading/signals_log.json")
+LOG_URL = os.getenv("SIGNALS_LOG_URL", "https://raw.githubusercontent.com/Shinsude/cangcilung-trading/main/flutter_app/web/signals_log.json")
 _real_log_cache: dict = {}
 
 logging.basicConfig(level=logging.INFO)
