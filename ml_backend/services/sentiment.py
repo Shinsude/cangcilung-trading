@@ -27,6 +27,15 @@ BEARISH = {
     "slump", "slip", "slips", "tumble", "plunge", "caution",
 }
 
+# Kata dengan dampak kuat terhadap harga (bobot ganda)
+STRONG_BULL = {"rally", "surge", "surges", "soar", "soars", "breakout", "record"}
+STRONG_BEAR = {"plunge", "plunges", "crash", "selloff", "recession", "tumble", "fear"} | {
+    "decline", "declines", "turmoil", "slump", "slumps", "collapse"
+}
+
+# Kata pembalik sentimen bila mendahului istilah positif/negatif
+NEGATORS = {"not", "no", "slows", "fails to beat", "loses momentum left", "downs", "lack of", "below expectations", "misses"}
+
 KEYWORDS = {
     "XAUUSD": ["gold", "xau", "precious metal", "bullion", "fed", "dollar", "usd"],
     "NASDAQ": ["nasdaq", "tech", "technology", "nvidia", "apple", "microsoft",
@@ -43,17 +52,42 @@ SEARCH_QUERIES = {
 }
 
 
-def _score_text(text: str) -> float:
+def _score_text(text: str, with_confidence: bool = False):
     low = text.lower()
-    for kw in KEYWORDS.get("__ALL__", []):
-        if kw not in low:
-            return 0.0
-    pos = sum(1 for w in BULLISH if w in low)
-    neg = sum(1 for w in BEARISH if w in low)
+    pos = 0.0
+    neg = 0.0
+    hits = 0
+    for w in BULLISH:
+        if w in low:
+            pos += 2.0 if w in STRONG_BULL else 1.0
+            hits += 1
+    for w in BEARISH:
+        if w in low:
+            neg += 2.0 if w in STRONG_BEAR else 1.0
+            hits += 1
+
+    # Negasi sederhana: cek sebelum istilah pertama yang cocok
+    for w in NEGATORS:
+        j = low.find(w)
+        if j != -1:
+            snippet = low[max(0, j): min(len(low), j + len(w) + 60)]
+            over = sum(1 for bw in BULLISH if bw in snippet)
+            under = sum(1 for bw in BEARISH if bw in snippet)
+            if under and not over:
+                neg = min(neg * 0.5, 0.5)  # "no crash" -> sentimen membaik
+                pos += 0.5
+            elif over and not under:
+                pos = min(pos * 0.5, 0.5)
+                neg += 0.5
+
     total = pos + neg
     if total == 0:
-        return 0.0
-    return (pos - neg) / total
+        return (0.0, 0.0) if with_confidence else 0.0
+    raw = (pos - neg) / total
+    if not with_confidence:
+        return raw
+    confidence = min(1.0, 0.35 + hits * 0.13 + abs(raw) * 0.4)
+    return round(raw, 3), round(confidence, 3)
 
 
 def _finnhub_news(symbol: str) -> list:
@@ -117,11 +151,16 @@ def analyze(symbol, price_momentum: float) -> dict:
     # Prioritas: ActuallyFreeAPI (gratis) -> Finnhub (jika key) -> momentum
     headlines = _actually_free_news(symbol) or _finnhub_news(symbol)
     if headlines:
-        scores = [math.tanh(_score_text(h["headline"]) * 3) for h in headlines]
-        score = float(sum(scores) / len(scores))
-        label = "BULLISH" if score > 0.15 else ("BEARISH" if score < -0.15 else "NEUTRAL")
+        scored = []
+        for h in headlines:
+            raw, conf = _score_text(h["headline"], with_confidence=True)
+            scored.append({"raw": raw, "conf": conf})
+        score = float(sum(math.tanh(s["raw"] * 3.0) * s["conf"] for s in scored) / len(scored))
+        avg_conf = float(sum(s["conf"] for s in scored) / len(scored))
+        label = "BULLISH" if score > 0.12 else ("BEARISH" if score < -0.12 else "NEUTRAL")
         return {
             "score": round(score, 3),
+            "confidence": round(avg_conf, 3),
             "label": label,
             "source": headlines[0]["source"],
             "headlines": headlines,
@@ -131,6 +170,7 @@ def analyze(symbol, price_momentum: float) -> dict:
     momentum_score = max(-1.0, min(1.0, price_momentum * 12))
     return {
         "score": round(momentum_score, 3),
+        "confidence": 0.4,
         "label": momentum_label,
         "source": "price-momentum-estimate",
         "headlines": [],

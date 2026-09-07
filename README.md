@@ -27,8 +27,10 @@ Flutter App (HP) ⇄ FastAPI API (cloud) ⇄ Yahoo Finance
 │   │   ├── data_service.py   # Yahoo Finance + cache + fallback
 │   │   ├── indicators.py     # RSI, MACD, EMA, Bollinger
 │   │   ├── predictor.py      # model neural network (3 ensemble)
-│   │   ├── sentiment.py      # sentiment berita (Finnhub opsional)
-│   │   └── signal.py         # generator sinyal BUY/SELL/HOLD
+│   │   ├── sentiment.py      # sentiment berita berbobot + negasi
+│   │   ├── signal.py         # generator sinyal BUY/SELL/HOLD (bobot dapat di-tune)
+│   │   ├── backtest.py       # engine walk-forward backtest
+│   │   └── tuner.py          # auto-tune bobot sinyal per simbol (grid search)
 │   └── Dockerfile
 ├── .github/workflows/build-apk.yml   # Build APK otomatis di cloud
 └── vercel.json                       # Konfigurasi deploy backend ke Vercel
@@ -79,7 +81,17 @@ flutter build apk --release --dart-define=API_URL=https://URL-ANDA.vercel.app
 | `GET /signal/XAUUSD` | Data lengkap (prediksi, indikator, sentiment, sinyal, chart) |
 | `GET /signal/NASDAQ` | Sama, untuk NASDAQ |
 | `GET /signal/AUDUSD` | Sama, untuk AUD/USD |
+| `GET /warm` | Pramuat & cache semua simbol sekaligus |
+| `GET /backtest/{symbol}` | Hasil backtest default vs bobot ter-tune |
+| `GET /model` | Status model: bobot ter-tune per simbol + metrik backtest |
 | `GET /docs` | Dokumentasi interaktif (Swagger UI) |
+
+## AI / Training
+
+- **Prediksi harga**: 3× MLP ensemble (lookback 12/24/36).
+- **Auto-tune bobot sinyal**: grid search walk-forward per simbol (oscillator/trend/prediksi/sentimen) — hasil terbaik otomatis dipakai untuk sinyal live dan di-cache 6 jam.
+- **Backtest**: engine walk-forward menghitung win rate, profit factor, total return, dan max drawdown dari bobot default vs bobot ter-tune.
+- **Sentiment**: leksikon berbobot (kata kuat 2×) + penanganan negasi + tingkat keyakinan, dari berita gratis.
 
 ## iOS
 

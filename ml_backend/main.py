@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import CACHE_TTL_SECONDS, SYMBOLS
+from services import backtest, tuner
 from services.data_service import data_service
 from services.indicators import compute_all
 from services.predictor import predict
@@ -73,7 +74,8 @@ def _build_payload(symbol: str) -> dict:
         price_momentum = float(closes[-1] / closes[-20] - 1.0)
     sentiment = analyze_sentiment(symbol, price_momentum)
 
-    signal = build_signal(ind, prediction, sentiment)
+    tuning = tuner.tuned(df, symbol)
+    signal = build_signal(ind, prediction, sentiment, weights=tuning["weights"])
 
     candles = []
     last_rows = df.tail(40)
@@ -112,6 +114,59 @@ def _build_payload(symbol: str) -> dict:
         "sentiment": sentiment,
         "candles": candles,
         "data_points": len(df),
+        "weights": tuning["weights"],
+    }
+
+
+@app.get("/backtest/{symbol}")
+def get_backtest(symbol: str):
+    symbol = symbol.upper()
+    if symbol not in SYMBOLS:
+        raise HTTPException(status_code=404, detail=f"Symbol tidak didukung. Gunakan: {', '.join(SYMBOLS)}")
+
+    df = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
+    tuning = tuner.tuned(df, symbol)
+
+    tuned_metrics = backtest.run(df, weights=tuning["weights"])
+    default_metrics = backtest.run(df)
+
+    return {
+        "symbol": symbol,
+        "trained_at": dt.datetime.fromtimestamp(tuning["at"]).isoformat() + "Z",
+        "weights": tuning["weights"],
+        "multipliers": tuning["multipliers"],
+        "default": default_metrics,
+        "tuned": tuned_metrics,
+        "difference": {
+            "win_rate": round(tuned_metrics["win_rate"] - default_metrics["win_rate"], 4),
+            "profit_factor_delta": tuned_metrics["profit_factor"] - default_metrics.get("profit_factor") if default_metrics.get("profit_factor") and tuned_metrics.get("profit_factor") else None,
+            "total_return": round(tuned_metrics["total_return"] - default_metrics["total_return"], 4),
+        },
+    }
+
+
+@app.get("/model")
+def model_info():
+    out = {}
+    for symbol in SYMBOLS:
+        cached = tuner.get_cached(symbol)
+        if not cached:
+            try:
+                df = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
+                cached = tuner.tuned(df, symbol)
+            except Exception as exc:  # noqa: BLE001
+                out[symbol] = {"error": str(exc)}
+                continue
+        out[symbol] = {
+            "trained_at": dt.datetime.fromtimestamp(cached["at"]).isoformat() + "Z",
+            "weights": cached["weights"],
+            "multipliers": cached["multipliers"],
+            "backtest": cached["metrics"],
+        }
+    return {
+        "strategy": "grid-search auto-tune per symbol (walk-forward backtest)",
+        "lookbacks": [12, 24, 36],
+        "symbols": out,
     }
 
 
