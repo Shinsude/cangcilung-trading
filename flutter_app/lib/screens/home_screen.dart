@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/models.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 import '../theme.dart';
 import '../widgets/candle_chart.dart';
 
@@ -24,6 +27,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool _fetching = false;
   bool _live = false;
   int _tab = 0;
+  ModelInfo? _model;
+  bool _modelLoading = false;
+  String? _modelError;
+  bool _notifOn = false;
+  Timer? _signalWatcher;
 
   late AnimationController _pulseCtrl;
 
@@ -33,12 +41,92 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
     _load();
     _warmAndSeed();
+    _loadModel();
+    _initNotifPref();
   }
 
   @override
   void dispose() {
+    _signalWatcher?.cancel();
     _pulseCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _initNotifPref() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final on = prefs.getBool('notif_on') ?? false;
+      if (!mounted) return;
+      setState(() => _notifOn = on);
+      if (on) _startSignalWatcher();
+    } catch (_) {}
+  }
+
+  void _toggleNotif(bool on) async {
+    setState(() => _notifOn = on);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('notif_on', on);
+    } catch (_) {}
+    if (on) {
+      await NotificationService.instance.enabledOnDevice();
+      _startSignalWatcher();
+      unawaited(_checkStrongSignals());
+    } else {
+      _signalWatcher?.cancel();
+      _signalWatcher = null;
+    }
+  }
+
+  void _startSignalWatcher() {
+    _signalWatcher?.cancel();
+    _signalWatcher = Timer.periodic(const Duration(minutes: 5), (_) => unawaited(_checkStrongSignals()));
+  }
+
+  Future<void> _checkStrongSignals() async {
+    if (kIsWeb) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (final s in _symbols) {
+        final TradingData data;
+        try {
+          data = await _api.fetchSignal(s, useCache: false);
+        } catch (_) {
+          continue;
+        }
+        final action = data.signal.action;
+        final strength = data.signal.strength;
+        if (action != 'HOLD') {
+          final sig = '$action|$strength';
+          final last = prefs.getString('last_sig_$s') ?? '';
+          if (sig != last) {
+            await prefs.setString('last_sig_$s', sig);
+            await NotificationService.instance.showStrongSignal(s, action, strength);
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _loadModel() async {
+    setState(() {
+      _modelLoading = true;
+      _modelError = null;
+    });
+    try {
+      final model = await _api.fetchModel();
+      if (!mounted) return;
+      setState(() {
+        _model = model;
+        _modelLoading = false;
+      });
+    } on Exception catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _modelError = e.toString();
+        _modelLoading = false;
+      });
+    }
   }
 
   Future<void> _warmAndSeed() async {
@@ -107,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         bottom: false,
         child: Column(
           children: [
-            _TopBar(symbols: _symbols, selected: _selected, onSelect: _selectSymbol, live: _live || _fetching),
+            _TopBar(symbols: _symbols, selected: _selected, onSelect: _selectSymbol, live: _live || _fetching, notifyOn: _notifOn, onToggleNotify: _toggleNotif),
             AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               height: _fetching ? 3 : 0,
@@ -152,18 +240,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _ChartPage(data: d),
         _IndicatorsPage(ind: d.indicators, price: d.currentPrice, weights: d.weights),
         _SentimentPage(sentiment: d.sentiment),
+        _ModelPage(
+          model: _model,
+          loading: _modelLoading,
+          error: _modelError,
+          onRetry: _loadModel,
+          notifyOn: _notifOn,
+          onToggleNotify: _toggleNotif,
+        ),
       ][_tab],
     );
   }
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.symbols, required this.selected, required this.onSelect, required this.live});
+  const _TopBar({required this.symbols, required this.selected, required this.onSelect, required this.live, required this.notifyOn, required this.onToggleNotify});
 
   final List<String> symbols;
   final String selected;
   final ValueChanged<String> onSelect;
   final bool live;
+  final bool notifyOn;
+  final ValueChanged<bool> onToggleNotify;
 
   @override
   Widget build(BuildContext context) {
@@ -195,12 +293,38 @@ class _TopBar extends StatelessWidget {
                 ],
               ),
               const Spacer(),
+              _NotifButton(on: notifyOn, onToggle: onToggleNotify),
+              const SizedBox(width: 10),
               _LiveIndicator(live: live),
             ],
           ),
           const SizedBox(height: 12),
           _SymbolBar(symbols: symbols, selected: selected, onSelect: onSelect),
         ],
+      ),
+    );
+  }
+}
+
+class _NotifButton extends StatelessWidget {
+  const _NotifButton({required this.on, required this.onToggle});
+  final bool on;
+  final ValueChanged<bool> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = on ? AppColors.blue : AppColors.textTertiary;
+    return GestureDetector(
+      onTap: () => onToggle(!on),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+        decoration: BoxDecoration(
+          color: c.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: c.withValues(alpha: 0.25)),
+        ),
+        child: Icon(on ? Icons.notifications_active_rounded : Icons.notifications_none_rounded, size: 18, color: c),
       ),
     );
   }
@@ -308,13 +432,13 @@ class _BottomNav extends StatelessWidget {
   final int tab;
   final ValueChanged<int> onChanged;
 
-  static const _icons = [Icons.auto_graph, Icons.candlestick_chart, Icons.insights, Icons.newspaper];
-  static const _labels = ['Signal', 'Chart', 'Indikator', 'Sentimen'];
+  static const _icons = [Icons.auto_graph, Icons.candlestick_chart, Icons.insights, Icons.newspaper, Icons.psychology_rounded];
+  static const _labels = ['Signal', 'Chart', 'Indikator', 'Sentimen', 'Model'];
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: List.generate(4, (i) {
+      children: List.generate(5, (i) {
         final active = i == tab;
         return Expanded(
           child: GestureDetector(
@@ -905,6 +1029,274 @@ class _IndicatorTile extends StatelessWidget {
           ),
           Text(sub, style: const TextStyle(fontSize: 10, color: AppColors.textTertiary), overflow: TextOverflow.ellipsis),
         ],
+      ),
+    );
+  }
+}
+
+class _ModelPage extends StatelessWidget {
+  const _ModelPage({required this.model, required this.loading, required this.error, required this.onRetry, required this.notifyOn, required this.onToggleNotify});
+
+  final ModelInfo? model;
+  final bool loading;
+  final String? error;
+  final VoidCallback onRetry;
+  final bool notifyOn;
+  final ValueChanged<bool> onToggleNotify;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading && model == null) {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(width: 26, height: 26, child: CircularProgressIndicator(strokeWidth: 3, color: AppColors.blue)),
+            SizedBox(height: 14),
+            Text('Melatih & memuat model\u2026', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+          ],
+        ),
+      );
+    }
+    final m = model;
+    if (m == null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Gagal memuat model', style: TextStyle(color: AppColors.red, fontSize: 13, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 10),
+            _ActionPill(label: 'Coba lagi', icon: Icons.refresh, onTap: onRetry),
+          ],
+        ),
+      );
+    }
+
+    final entries = m.symbols.entries.toList();
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      children: [
+        const Text('MODEL AI', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1)),
+        const SizedBox(height: 4),
+        Text(m.strategy, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10, height: 1.4)),
+        const SizedBox(height: 8),
+        _NotifSetting(on: notifyOn, onToggle: onToggleNotify),
+        const SizedBox(height: 14),
+        for (final e in entries) ...[
+          _ModelCard(symbol: e.key, stats: e.value),
+          const SizedBox(height: 12),
+        ],
+      ],
+    );
+  }
+}
+
+class _NotifSetting extends StatelessWidget {
+  const _NotifSetting({required this.on, required this.onToggle});
+  final bool on;
+  final ValueChanged<bool> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = on ? AppColors.green : AppColors.textSecondary;
+    return GestureDetector(
+      onTap: () => onToggle(!on),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: c.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(on ? Icons.notifications_active_rounded : Icons.notifications_none_rounded, size: 20, color: c),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Notifikasi Sinyal', style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700)),
+                  SizedBox(height: 2),
+                  Text('Cek berkala saat aplikasi terbuka: muncul saat sinyal BUY/SELL baru. Push sejati butuh Firebase.', style: TextStyle(color: AppColors.textTertiary, fontSize: 9.5, height: 1.35)),
+                ],
+              ),
+            ),
+            Switch(value: on, onChanged: onToggle, activeTrackColor: AppColors.greenSoft, activeColor: AppColors.green),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ModelCard extends StatelessWidget {
+  const _ModelCard({required this.symbol, required this.stats});
+  final String symbol;
+  final ModelStats stats;
+
+  @override
+  Widget build(BuildContext context) {
+    final wr30 = stats.accuracy['30d']?.winRate ?? stats.backtest.winRate;
+    final quality = wr30 > 0.55 ? AppColors.green : (wr30 > 0.45 ? AppColors.amber : AppColors.red);
+    final pf = stats.backtest.profitFactor;
+
+    Color numColor(double v, {bool invert = false}) {
+      if (invert) v = -v;
+      return v > 0 ? AppColors.green : (v < 0 ? AppColors.red : AppColors.textSecondary);
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: quality.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(symbol, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(color: quality.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
+                child: Text(wr30 > 0.55 ? 'AKURAT' : (wr30 > 0.45 ? 'RATA-RATA' : 'LEMAH'), style: TextStyle(color: quality, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.6)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text('AKURASI ROLLING (SINYAL BARU-BARU INI)', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              for (final w in ['7d', '14d', '30d']) ...[
+                Expanded(
+                  child: _AccChip(
+                    label: '$w:',
+                    value: '${((stats.accuracy[w]?.winRate ?? 0) * 100).toStringAsFixed(0)}%',
+                    color: (stats.accuracy[w]?.winRate ?? 0) > 0.55 ? AppColors.green : (stats.accuracy[w]?.winRate ?? 0) > 0.45 ? AppColors.amber : AppColors.red,
+                  ),
+                ),
+                if (w != '30d') const SizedBox(width: 8),
+              ],
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Text('BACKTEST WALK-FORWARD', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(child: _Metric(label: 'Profit Factor', value: pf?.toStringAsFixed(2) ?? '-', color: (pf ?? 1) >= 1 ? AppColors.green : AppColors.red)),
+              const SizedBox(width: 8),
+              Expanded(child: _Metric(label: 'Total Return', value: '${(stats.backtest.totalReturn * 100).toStringAsFixed(1)}%', color: numColor(stats.backtest.totalReturn))),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(child: _Metric(label: 'Max Drawdown', value: '${(stats.backtest.maxDrawdown * 100).toStringAsFixed(1)}%', color: AppColors.red)),
+              const SizedBox(width: 8),
+              Expanded(child: _Metric(label: 'Trades', value: '${stats.backtest.trades}', color: AppColors.blue)),
+            ],
+          ),
+          if (stats.weights.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Text('BOBOT TER-TUNE', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: stats.weights.entries.map((e) => _WeightChip(label: e.key, weight: e.value)).toList(),
+            ),
+          ],
+          const SizedBox(height: 10),
+          Text('Dilatih: ${stats.trainedAt.replaceFirst('T', ' ').replaceFirst('Z', '')}', style: const TextStyle(color: AppColors.textTertiary, fontSize: 9, fontStyle: FontStyle.italic)),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccChip extends StatelessWidget {
+  const _AccChip({required this.label, required this.value, required this.color});
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Text.rich(
+        TextSpan(children: [
+          TextSpan(text: label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10)),
+          TextSpan(text: value, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w900)),
+        ]),
+      ),
+    );
+  }
+}
+
+class _Metric extends StatelessWidget {
+  const _Metric({required this.label, required this.value, required this.color});
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 9)),
+          const SizedBox(height: 2),
+          Text(value, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w900, fontFeatures: const [FontFeature.tabularFigures()])),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionPill extends StatelessWidget {
+  const _ActionPill({required this.label, required this.icon, required this.onTap});
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+        decoration: BoxDecoration(
+          color: AppColors.blue.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.blue.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: AppColors.blue),
+            const SizedBox(width: 6),
+            Text(label, style: const TextStyle(color: AppColors.blue, fontSize: 12, fontWeight: FontWeight.w800)),
+          ],
+        ),
       ),
     );
   }

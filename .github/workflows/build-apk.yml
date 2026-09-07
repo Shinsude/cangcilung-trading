@@ -24,26 +24,26 @@ jobs:
           flutter create --platforms=android,ios --org com.cangcilung --project-name cangcilung_trading .
           flutter config --no-analytics
 
-      - name: Add INTERNET permission for release
+      - name: Add permissions for release (INTERNET + notifications)
         working-directory: flutter_app
         run: |
-          MANIFEST=android/app/src/main/AndroidManifest.xml
           python3 - <<'PY'
-          import re
           path = "android/app/src/main/AndroidManifest.xml"
           with open(path) as f:
               content = f.read()
-          if "android.permission.INTERNET" not in content:
-              content = content.replace(
-                  "<application",
-                  '<uses-permission android:name="android.permission.INTERNET"/>\n    <application',
-                  1,
-              )
-              with open(path, "w") as f:
-                  f.write(content)
+          perms = ["android.permission.INTERNET", "android.permission.POST_NOTIFICATIONS"]
+          for p in perms:
+              if p not in content:
+                  content = content.replace(
+                      "<application",
+                      f'<uses-permission android:name="{p}"/>\n    <application',
+                      1,
+                  )
+          with open(path, "w") as f:
+              f.write(content)
           print("manifest patched")
           PY
-          cat android/app/src/main/AndroidManifest.xml | head -8
+          cat android/app/src/main/AndroidManifest.xml | head -10
 
       - name: Install dependencies
         working-directory: flutter_app

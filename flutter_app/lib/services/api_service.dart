@@ -60,6 +60,15 @@ class ApiService {
       await prefs.setString(_cacheKey(symbol), rawBody);
     } catch (_) {}
   }
+
+  Future<ModelInfo> fetchModel() async {
+    final uri = Uri.parse('$baseUrl/model');
+    final response = await http.get(uri).timeout(const Duration(seconds: 90));
+    if (response.statusCode == 200) {
+      return ModelInfo.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    }
+    throw ApiException('Server error (${response.statusCode})');
+  }
 }
 
 class ApiException implements Exception {

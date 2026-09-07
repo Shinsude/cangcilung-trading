@@ -83,26 +83,77 @@ def _tolist(a):
     return a.tolist()
 
 
-def run(df: pd.DataFrame, weights: dict | None = None, buy_th: float = 1.5, strong_th: float = 3.0, hold_pct: float = 0.0) -> dict:
-    close = np.asarray(df["Close"], dtype=float)
+def compute_scores(close: np.ndarray, weights: dict | None = None) -> tuple[np.ndarray, np.ndarray]:
     comps, fwd = _components(close)
-    wl = 1.0
-
     w = {
         "rsi": 1.0, "macd_cross": 1.0, "macd_hist": 1.0, "ema_trend": 1.0,
         "ema_alignment": 1.0, "bb": 1.0, "prediction": 1.0, "sentiment": 1.0,
     }
     if weights:
         for k in w:
-            if k in weights and weights[k] is not None:
-                w[k] = float(weights.get(k, 1.0))
-
+            if weights.get(k) is not None:
+                w[k] = float(weights[k])
     score = np.zeros(len(close))
     for k, mul in w.items():
         score += np.asarray(comps[k], dtype=float) * mul
+    return score, fwd
 
-    valid = np.isfinite(score) & np.isfinite(fwd)
-    idx = np.where(valid)[0]
+
+def _evaluate(score: np.ndarray, fwd: np.ndarray, buy_th: float, idx: list) -> dict:
+    eq = 1.0
+    trades = 0
+    wins = 0
+    gross_win = 0.0
+    gross_loss = 0.0
+    peak = 1.0
+    max_dd = 0.0
+    rets = []
+    for i in idx:
+        sc = score[i]
+        ret = fwd[i]
+        pos_ret = ret if sc >= buy_th else (-ret if sc <= -buy_th else 0.0)
+        if pos_ret > 0:
+            wins += 1
+            gross_win += pos_ret
+        elif pos_ret < 0:
+            gross_loss += -pos_ret
+        if abs(pos_ret) > 0:
+            trades += 1
+        eq *= 1.0 + pos_ret
+        rets.append(pos_ret)
+        peak = max(peak, eq)
+        max_dd = max(max_dd, (peak - eq) / peak if peak else 0.0)
+    n = len(rets)
+    return {
+        "win_rate": float(round(wins / trades, 4)) if trades else 0.0,
+        "trades": int(trades),
+        "bars": int(n),
+        "total_return": float(round(eq - 1.0, 4)),
+        "profit_factor": float(gross_win / gross_loss) if gross_loss > 0 else (None if gross_win > 0 else None),
+        "avg_win": float(round(gross_win / wins, 6)) if wins else 0.0,
+        "avg_loss": float(round(gross_loss / (trades - wins), 6)) if trades > wins else 0.0,
+        "max_drawdown": float(round(max_dd, 4)),
+        "std_return": float(round(float(np.std(rets)), 6)) if rets else 0.0,
+    }
+
+
+def rolling(close: np.ndarray, weights: dict | None = None, windows=(7, 14, 30), buy_th: float = 1.5, skip: int = 0) -> dict:
+    score, fwd = compute_scores(close, weights)
+    valid = np.where(np.isfinite(score) & np.isfinite(fwd))[0]
+    out = {}
+    for wnd in windows:
+        tail = [i for i in valid if i >= len(close) - wnd - skip and i < len(close) - skip]
+        m = _evaluate(score, fwd, buy_th, tail)
+        m["window"] = int(wnd)
+        out[f"{wnd}d"] = m
+    return out
+
+
+def run(df: pd.DataFrame, weights: dict | None = None, buy_th: float = 1.5, strong_th: float = 3.0, hold_pct: float = 0.0) -> dict:
+    close = np.asarray(df["Close"], dtype=float)
+    score, fwd = compute_scores(close, weights)
+    valid = np.where(np.isfinite(score) & np.isfinite(fwd))[0]
+    idx = valid.tolist()
 
     eq = 1.0
     equity_curve = []

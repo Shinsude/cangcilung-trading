@@ -1,5 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/warm",
+      "schedule": "0 21 * * *"
+    }
+  ],
   "functions": {
     "main.py": {
       "maxDuration": 60,

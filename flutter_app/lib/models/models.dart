@@ -203,3 +203,77 @@ class TradingData {
             .map((k, v) => MapEntry(k, (v as num).toDouble())),
       );
 }
+
+class AccWindow {
+  final int window;
+  final double winRate;
+  final int trades;
+  final double totalReturn;
+  final double maxDrawdown;
+
+  AccWindow({required this.window, required this.winRate, required this.trades, required this.totalReturn, required this.maxDrawdown});
+
+  factory AccWindow.fromJson(Map<String, dynamic> json) => AccWindow(
+        window: (json['window'] as num?)?.toInt() ?? 0,
+        winRate: (json['win_rate'] as num?)?.toDouble() ?? 0,
+        trades: (json['trades'] as num?)?.toInt() ?? 0,
+        totalReturn: (json['total_return'] as num?)?.toDouble() ?? 0,
+        maxDrawdown: (json['max_drawdown'] as num?)?.toDouble() ?? 0,
+      );
+}
+
+class BacktestSummary {
+  final double winRate;
+  final double profitFactor;
+  final double totalReturn;
+  final double maxDrawdown;
+  final int trades;
+  final double quality;
+
+  BacktestSummary({required this.winRate, required this.profitFactor, required this.totalReturn, required this.maxDrawdown, required this.trades, required this.quality});
+
+  factory BacktestSummary.fromJson(Map<String, dynamic> json) => BacktestSummary(
+        winRate: (json['win_rate'] as num?)?.toDouble() ?? 0,
+        profitFactor: (json['profit_factor'] as num?)?.toDouble() ?? 0,
+        totalReturn: (json['total_return'] as num?)?.toDouble() ?? 0,
+        maxDrawdown: (json['max_drawdown'] as num?)?.toDouble() ?? 0,
+        trades: (json['trades'] as num?)?.toInt() ?? 0,
+        quality: (json['quality'] as num?)?.toDouble() ?? 0,
+      );
+}
+
+class ModelStats {
+  final String trainedAt;
+  final Map<String, double> weights;
+  final BacktestSummary backtest;
+  final Map<String, AccWindow> accuracy;
+
+  ModelStats({required this.trainedAt, required this.weights, required this.backtest, required this.accuracy});
+
+  factory ModelStats.fromJson(Map<String, dynamic> json) {
+    final bt = json['backtest'] as Map<String, dynamic>? ?? {};
+    final acc = (json['rolling_accuracy'] as Map<String, dynamic>?) ?? const {};
+    return ModelStats(
+      trainedAt: json['trained_at'] as String? ?? '',
+      weights: ((json['weights'] as Map<String, dynamic>?) ?? const {})
+          .map((k, v) => MapEntry(k, (v as num).toDouble())),
+      backtest: BacktestSummary.fromJson(bt),
+      accuracy: acc.map((k, v) => MapEntry(k, AccWindow.fromJson(v as Map<String, dynamic>? ?? {}))),
+    );
+  }
+}
+
+class ModelInfo {
+  final String strategy;
+  final Map<String, ModelStats> symbols;
+
+  ModelInfo({required this.strategy, required this.symbols});
+
+  factory ModelInfo.fromJson(Map<String, dynamic> json) {
+    final sym = (json['symbols'] as Map<String, dynamic>?) ?? const {};
+    return ModelInfo(
+      strategy: json['strategy'] as String? ?? '',
+      symbols: sym.map((k, v) => MapEntry(k, ModelStats.fromJson(v as Map<String, dynamic>? ?? {}))),
+    );
+  }
+}

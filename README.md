@@ -81,9 +81,10 @@ flutter build apk --release --dart-define=API_URL=https://URL-ANDA.vercel.app
 | `GET /signal/XAUUSD` | Data lengkap (prediksi, indikator, sentiment, sinyal, chart) |
 | `GET /signal/NASDAQ` | Sama, untuk NASDAQ |
 | `GET /signal/AUDUSD` | Sama, untuk AUD/USD |
-| `GET /warm` | Pramuat & cache semua simbol sekaligus |
+| `GET /warm` | Pramuat & cache semua simbol sekaligus (dijadwal otomatis via cron harian) |
 | `GET /backtest/{symbol}` | Hasil backtest default vs bobot ter-tune |
-| `GET /model` | Status model: bobot ter-tune per simbol + metrik backtest |
+| `GET /stats/{symbol}` | Akurasi rolling sinyal 7/14/30 hari + tren kualitas |
+| `GET /model` | Status model: bobot ter-tune per simbol + metrik backtest + akurasi rolling |
 | `GET /docs` | Dokumentasi interaktif (Swagger UI) |
 
 ## AI / Training
@@ -92,6 +93,9 @@ flutter build apk --release --dart-define=API_URL=https://URL-ANDA.vercel.app
 - **Auto-tune bobot sinyal**: grid search walk-forward per simbol (oscillator/trend/prediksi/sentimen) — hasil terbaik otomatis dipakai untuk sinyal live dan di-cache 6 jam.
 - **Backtest**: engine walk-forward menghitung win rate, profit factor, total return, dan max drawdown dari bobot default vs bobot ter-tune.
 - **Sentiment**: leksikon berbobot (kata kuat 2×) + penanganan negasi + tingkat keyakinan, dari berita gratis.
+- **Pelacak akurasi sinyal**: `/stats/{symbol}` menghitung win rate rolling 7/14/30 hari dengan bobot ter-tune (tanpa penyimpanan — direkonstruksi deterministik dari data historis) + tren (membaik/memburuk).
+- **Retraining terjadwal**: cron harian Vercel (21:00 UTC) memanggil `/warm` untuk refresh data, prediksi, dan auto-tune.
+- **Aplikasi**: Tab **Model** menampilkan akurasi, profit factor, dan bobot per simbol; **notifikasi sinyal** lokal (cek berkala saat aplikasi terbuka, tanpa Firebase).
 
 ## iOS
 

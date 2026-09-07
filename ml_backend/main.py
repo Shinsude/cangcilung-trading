@@ -145,6 +145,38 @@ def get_backtest(symbol: str):
     }
 
 
+@app.get("/stats/{symbol}")
+def get_stats(symbol: str):
+    symbol = symbol.upper()
+    if symbol not in SYMBOLS:
+        raise HTTPException(status_code=404, detail=f"Symbol tidak didukung. Gunakan: {', '.join(SYMBOLS)}")
+
+    df = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
+    tuning = tuner.tuned(df, symbol)
+    close = df["Close"].to_numpy()
+
+    acc_now = backtest.rolling(close, weights=tuning["weights"])
+    acc_skip = backtest.rolling(close, weights=tuning["weights"], skip=0)
+    acc_hist = backtest.rolling(close, weights=tuning["weights"], skip=30)
+
+    # Verdict: tren akurasi (membaik/memburuk) + label kualitas
+    w30 = acc_hist.get("14d", {}).get("win_rate")
+    w7 = acc_now.get("7d", {}).get("win_rate")
+    trend = "improving" if w7 and w30 and w7 > w30 else ("declining" if w7 is not None and w30 is not None and w7 < w30 else "stable")
+    latest = max(acc_now.get("7d", {}).get("win_rate", 0.0), acc_now.get("14d", {}).get("win_rate", 0.0), acc_now.get("30d", {}).get("win_rate", 0.0))
+    quality = "good" if latest >= 0.55 else ("average" if latest >= 0.45 else "weak")
+
+    return {
+        "symbol": symbol,
+        "weights": tuning["weights"],
+        "accuracy": acc_now,
+        "accuracy_30d_ago": acc_hist,
+        "trend": trend,
+        "quality": quality,
+        "trained_at": dt.datetime.fromtimestamp(tuning["at"]).isoformat() + "Z",
+    }
+
+
 @app.get("/model")
 def model_info():
     out = {}
@@ -157,11 +189,17 @@ def model_info():
             except Exception as exc:  # noqa: BLE001
                 out[symbol] = {"error": str(exc)}
                 continue
+        try:
+            closes = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)["Close"].to_numpy()
+            acc = backtest.rolling(closes, weights=cached["weights"])
+        except Exception:  # noqa: BLE001
+            acc = {}
         out[symbol] = {
             "trained_at": dt.datetime.fromtimestamp(cached["at"]).isoformat() + "Z",
             "weights": cached["weights"],
             "multipliers": cached["multipliers"],
             "backtest": cached["metrics"],
+            "rolling_accuracy": acc,
         }
     return {
         "strategy": "grid-search auto-tune per symbol (walk-forward backtest)",
