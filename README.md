@@ -82,20 +82,22 @@ flutter build apk --release --dart-define=API_URL=https://URL-ANDA.vercel.app
 | `GET /signal/NASDAQ` | Sama, untuk NASDAQ |
 | `GET /signal/AUDUSD` | Sama, untuk AUD/USD |
 | `GET /warm` | Pramuat & cache semua simbol sekaligus (dijadwal otomatis via cron harian) |
-| `GET /backtest/{symbol}` | Hasil backtest default vs bobot ter-tune |
-| `GET /stats/{symbol}` | Akurasi rolling sinyal 7/14/30 hari + tren kualitas |
-| `GET /model` | Status model: bobot ter-tune per simbol + metrik backtest + akurasi rolling |
+| `GET /backtest/{symbol}` | Hasil backtest default vs bobot ter-tune (opsional `?days=30/60/90` untuk range bebas) |
+| `GET /stats/{symbol}` | Akurasi rolling sinyal 7/14/30 hari + tren kualitas + akurasi nyata dari riwayat log |
+| `GET /model` | Status model: bobot ter-tune per simbol + metrik backtest + akurasi rolling + validasi MLP walk-forward + akurasi nyata |
 | `GET /docs` | Dokumentasi interaktif (Swagger UI) |
 
 ## AI / Training
 
-- **Prediksi harga**: 3× MLP ensemble (lookback 12/24/36).
-- **Auto-tune bobot sinyal**: grid search walk-forward per simbol (oscillator/trend/prediksi/sentimen) — hasil terbaik otomatis dipakai untuk sinyal live dan di-cache 6 jam.
-- **Backtest**: engine walk-forward menghitung win rate, profit factor, total return, dan max drawdown dari bobot default vs bobot ter-tune.
+- **Prediksi harga**: 3× MLP ensemble (lookback 12/24/36) + validasi walk-forward di `/model` (hit rate MLP nyata vs proxy momentum).
+- **Auto-tune bobot sinyal**: grid search walk-forward per simbol (oscillator/trend/prediksi/sentimen) dengan pemisahan out-of-sample 70/30 anti-overfit — hasil terbaik otomatis dipakai untuk sinyal live dan di-cache 6 jam.
+- **Feature engineering**: indikator klasik (RSI, MACD, EMA, Bollinger) + **volume konfirmasi tren** (z-score robust) + **posisi support/resistance** dimasukkan ke sinyal, backtest, dan tuning.
+- **Backtest**: engine walk-forward menghitung win rate, profit factor, total return, dan max drawdown dari bobot default vs bobot ter-tune; mendukung `?days=` interaktif dari aplikasi.
 - **Sentiment**: leksikon berbobot (kata kuat 2×) + penanganan negasi + tingkat keyakinan, dari berita gratis.
 - **Pelacak akurasi sinyal**: `/stats/{symbol}` menghitung win rate rolling 7/14/30 hari dengan bobot ter-tune (tanpa penyimpanan — direkonstruksi deterministik dari data historis) + tren (membaik/memburuk).
-- **Retraining terjadwal**: cron harian Vercel (21:00 UTC) memanggil `/warm` untuk refresh data, prediksi, dan auto-tune.
-- **Aplikasi**: Tab **Model** menampilkan akurasi, profit factor, dan bobot per simbol; **notifikasi sinyal** lokal (cek berkala saat aplikasi terbuka, tanpa Firebase).
+- **Akurasi nyata (B1/B6)**: GitHub Actions mencatat sinyal harian ke `signals_log.json` (artefak repo), backend membacanya dan mengevaluasi sinyal TERHADAP CLOSE AKTUAL hari berikutnya di `/stats` & `/model`.
+- **Retraining terjadwal**: cron harian Vercel (21:00 UTC) memanggil `/warm` + fallback GitHub Actions (22:00 UTC).
+- **Aplikasi**: Tab **Model** menampilkan akurasi rolling + akurasi nyata, profit factor, dan bobot per simbol; **backtest interaktif** (pilih simbol + rentang); **notifikasi sinyal** dan **alert harga** lokal (cek berkala saat aplikasi terbuka, tanpa Firebase).
 
 ## iOS
 
