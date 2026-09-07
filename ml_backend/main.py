@@ -198,7 +198,7 @@ def model_info():
         except Exception:  # noqa: BLE001
             acc = {}
         try:
-            mlp_acc = predictor.directional_accuracy(mdf["Close"].to_numpy())
+            mlp_acc = directional_accuracy(mdf["Close"].to_numpy())
         except Exception as exc:  # noqa: BLE001
             mlp_acc = {"error": f"{type(exc).__name__}: {exc}"}
         out[symbol] = {
