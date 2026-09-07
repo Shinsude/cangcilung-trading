@@ -21,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   TradingData? _data;
   String? _error;
   bool _loading = true;
+  bool _fetching = false;
   bool _live = false;
   int _tab = 0;
 
@@ -31,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.initState();
     _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
     _load();
+    _warmAndSeed();
   }
 
   @override
@@ -39,11 +41,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  Future<void> _warmAndSeed() async {
+    await _api.warmup();
+    if (!mounted) return;
+    await Future.wait(_symbols.map((s) async {
+      try {
+        await _api.fetchSignal(s, useCache: false);
+      } catch (_) {}
+    }));
+  }
+
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (_data == null) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
+    setState(() => _fetching = true);
 
     final cached = await _api.readCachedSignal(_selected);
     if (cached != null) {
@@ -60,6 +75,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       setState(() {
         _data = data;
         _loading = false;
+        _fetching = false;
         _live = true;
       });
       Timer(const Duration(seconds: 4), () {
@@ -67,6 +83,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       });
     } on Exception catch (e) {
       if (!mounted) return;
+      setState(() => _fetching = false);
       if (_data == null) {
         setState(() {
           _error = e.toString();
@@ -90,7 +107,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         bottom: false,
         child: Column(
           children: [
-            _TopBar(symbols: _symbols, selected: _selected, onSelect: _selectSymbol, live: _live),
+            _TopBar(symbols: _symbols, selected: _selected, onSelect: _selectSymbol, live: _live || _fetching),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              height: _fetching ? 3 : 0,
+              child: _fetching
+                  ? const LinearProgressIndicator(
+                      color: AppColors.blue,
+                      backgroundColor: Colors.transparent,
+                      minHeight: 3,
+                    )
+                  : null,
+            ),
             Expanded(
               child: _loading
                   ? const _LoadingView()

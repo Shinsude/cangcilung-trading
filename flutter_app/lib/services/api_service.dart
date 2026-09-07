@@ -17,6 +17,12 @@ class ApiService {
 
   static String _cacheKey(String symbol) => 'cached_signal_${symbol.toUpperCase()}';
 
+  Future<void> warmup() async {
+    try {
+      await http.get(Uri.parse('$baseUrl/warm')).timeout(const Duration(seconds: 30));
+    } catch (_) {}
+  }
+
   Future<TradingData> fetchSignal(String symbol, {bool useCache = true}) async {
     final upper = symbol.toUpperCase();
 

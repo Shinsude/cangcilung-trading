@@ -57,17 +57,7 @@ def root():
     }
 
 
-@app.get("/signal/{symbol}")
-def get_signal(symbol: str):
-    symbol = symbol.upper()
-    if symbol not in SYMBOLS:
-        raise HTTPException(status_code=404, detail=f"Symbol tidak didukung. Gunakan: {', '.join(SYMBOLS)}")
-
-    now = time.time()
-    cached = _response_cache.get(symbol)
-    if cached and cached["expires"] > now:
-        return cached["payload"]
-
+def _build_payload(symbol: str) -> dict:
     df = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
 
     ind = compute_all(df)
@@ -100,7 +90,7 @@ def get_signal(symbol: str):
         )
 
     meta = SYMBOLS[symbol]
-    payload = {
+    return {
         "symbol": symbol,
         "name": meta["name"],
         "category": meta["category"],
@@ -124,5 +114,37 @@ def get_signal(symbol: str):
         "data_points": len(df),
     }
 
+
+@app.get("/signal/{symbol}")
+def get_signal(symbol: str):
+    symbol = symbol.upper()
+    if symbol not in SYMBOLS:
+        raise HTTPException(status_code=404, detail=f"Symbol tidak didukung. Gunakan: {', '.join(SYMBOLS)}")
+
+    now = time.time()
+    cached = _response_cache.get(symbol)
+    if cached and cached["expires"] > now:
+        return cached["payload"]
+
+    payload = _build_payload(symbol)
     _response_cache[symbol] = {"expires": time.time() + RESPONSE_CACHE_TTL_SECONDS, "payload": payload}
     return payload
+
+
+@app.get("/warm")
+def warmup():
+    results = {}
+    for symbol in SYMBOLS:
+        now = time.time()
+        cached = _response_cache.get(symbol)
+        if cached and cached["expires"] > now:
+            results[symbol] = "cached"
+            continue
+        try:
+            payload = _build_payload(symbol)
+            _response_cache[symbol] = {"expires": time.time() + RESPONSE_CACHE_TTL_SECONDS, "payload": payload}
+            results[symbol] = "ok"
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("warmup %s failed: %s", symbol, exc)
+            results[symbol] = f"error: {exc}"
+    return {"status": "ok", "symbols": results}
