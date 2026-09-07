@@ -45,6 +45,47 @@ jobs:
           PY
           cat android/app/src/main/AndroidManifest.xml | head -10
 
+      - name: Enable core library desugaring for flutter_local_notifications
+        working-directory: flutter_app
+        run: |
+          python3 - <<'PY'
+          import os, re
+          py = "android/app/build.gradle.kts"
+          if not os.path.exists(py):
+              py = "android/app/build.gradle"
+          with open(py) as f:
+              s = f.read()
+          changed = False
+          # 1) Aktifkan isCoreLibraryDesugaringEnabled di compileOptions
+          if "isCoreLibraryDesugaringEnabled" not in s:
+              if "compileOptions {" in s:
+                  s = s.replace(
+                      "compileOptions {",
+                      "compileOptions {\n        isCoreLibraryDesugaringEnabled = true",
+                      1,
+                  )
+              else:
+                  # template default Flutter punya compileSdk{}, defaultConfig{}, dst; sisipkan blok android.
+                  s = s.replace(
+                      "android {",
+                      "android {\n    compileOptions {\n        isCoreLibraryDesugaringEnabled = true\n    }",
+                      1,
+                  )
+              changed = True
+          # 2) Tambah dependency desugar_jdk_libs
+          if "desugar_jdk_libs" not in s:
+              s = s.replace(
+                  "dependencies {",
+                  'dependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")',
+                  1,
+              )
+              changed = True
+          with open(py, "w") as f:
+              f.write(s)
+          print("gradle patched" if changed else "gradle already ok")
+          PY
+          cat android/app/build.gradle.kts 2>/dev/null | sed -n '1,60p' || cat android/app/build.gradle | sed -n '1,60p'
+
       - name: Install dependencies
         working-directory: flutter_app
         run: flutter pub get
