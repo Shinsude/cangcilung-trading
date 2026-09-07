@@ -32,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String? _modelError;
   bool _notifOn = false;
   Timer? _signalWatcher;
+  final Map<String, double> _alerts = {};
 
   late AnimationController _pulseCtrl;
 
@@ -43,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _warmAndSeed();
     _loadModel();
     _initNotifPref();
+    _loadAlerts();
   }
 
   @override
@@ -83,6 +85,85 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _signalWatcher = Timer.periodic(const Duration(minutes: 5), (_) => unawaited(_checkStrongSignals()));
   }
 
+  Future<void> _loadAlerts() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final map = <String, double>{};
+      for (final s in _symbols) {
+        final v = prefs.getDouble('alert_$s');
+        if (v != null && v > 0) map[s] = v;
+      }
+      if (!mounted) return;
+      setState(() {
+        _alerts
+          ..clear()
+          ..addAll(map);
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _setAlert(String symbol) async {
+    final controller = TextEditingController();
+    final target = await showDialog<double>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: AppColors.borderLight)),
+        title: const Text('Alert Harga', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w800)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Notifikasi saat harga menembus level ini.', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
+              decoration: const InputDecoration(
+                hintText: 'contoh: 4600',
+                hintStyle: TextStyle(color: AppColors.textTertiary),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary))),
+          TextButton(
+            onPressed: () {
+              final v = double.tryParse(controller.text.replaceAll(',', '.'));
+              Navigator.pop(ctx, v);
+            },
+            child: const Text('Simpan', style: TextStyle(color: AppColors.blue, fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
+    );
+    if (target == null || !target.isFinite || target <= 0 || !mounted) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('alert_$symbol', target);
+    setState(() => _alerts[symbol] = target);
+  }
+
+  Future<void> _clearAlert(String symbol) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('alert_$symbol');
+    if (!mounted) return;
+    setState(() => _alerts.remove(symbol));
+  }
+
+  Future<void> _checkPriceAlert(String symbol, double price) async {
+    if (kIsWeb) return;
+    final target = _alerts[symbol];
+    if (target == null || target <= 0) return;
+    if (price >= target) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('alert_$symbol');
+      if (!mounted) return;
+      setState(() => _alerts.remove(symbol));
+      await NotificationService.instance.showPriceAlert(symbol, target, price);
+    }
+  }
+
   Future<void> _checkStrongSignals() async {
     if (kIsWeb) return;
     try {
@@ -96,6 +177,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         }
         final action = data.signal.action;
         final strength = data.signal.strength;
+        unawaited(_checkPriceAlert(s, data.currentPrice));
         if (action != 'HOLD') {
           final sig = '$action|$strength';
           final last = prefs.getString('last_sig_$s') ?? '';
@@ -166,6 +248,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _fetching = false;
         _live = true;
       });
+      unawaited(_checkPriceAlert(_selected, data.currentPrice));
       Timer(const Duration(seconds: 4), () {
         if (mounted) setState(() => _live = false);
       });
@@ -236,7 +319,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
       child: [
-        _SignalPage(data: d, onRefresh: _load, pulse: _pulseCtrl),
+        _SignalPage(
+          data: d,
+          onRefresh: _load,
+          pulse: _pulseCtrl,
+          alertTarget: _alerts[d.symbol],
+          onSetAlert: () => _setAlert(d.symbol),
+          onClearAlert: () => _clearAlert(d.symbol),
+        ),
         _ChartPage(data: d),
         _IndicatorsPage(ind: d.indicators, price: d.currentPrice, weights: d.weights),
         _SentimentPage(sentiment: d.sentiment),
@@ -547,11 +637,14 @@ class _ErrorView extends StatelessWidget {
 }
 
 class _SignalPage extends StatelessWidget {
-  const _SignalPage({required this.data, required this.onRefresh, required this.pulse});
+  const _SignalPage({required this.data, required this.onRefresh, required this.pulse, required this.alertTarget, required this.onSetAlert, required this.onClearAlert});
 
   final TradingData data;
   final Future<void> Function() onRefresh;
   final AnimationController pulse;
+  final double? alertTarget;
+  final VoidCallback onSetAlert;
+  final VoidCallback onClearAlert;
 
   @override
   Widget build(BuildContext context) {
@@ -566,7 +659,62 @@ class _SignalPage extends StatelessWidget {
           const SizedBox(height: 14),
           _SignalHero(signal: data.signal, prediction: data.prediction, price: data.currentPrice, decimals: data.decimals, pulse: pulse),
           const SizedBox(height: 14),
+          _AlertBar(target: alertTarget, price: data.currentPrice, decimals: data.decimals, onSet: onSetAlert, onClear: onClearAlert),
+          const SizedBox(height: 14),
           _QuickIndicators(ind: data.indicators),
+        ],
+      ),
+    );
+  }
+}
+
+class _AlertBar extends StatelessWidget {
+  const _AlertBar({required this.target, required this.price, required this.decimals, required this.onSet, required this.onClear});
+
+  final double? target;
+  final double price;
+  final int decimals;
+  final VoidCallback onSet;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = target != null;
+    final c = active ? AppColors.amber : AppColors.textSecondary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: c.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(active ? Icons.notifications_active_rounded : Icons.low_priority, size: 18, color: c),
+          const SizedBox(width: 10),
+          Expanded(
+            child: active
+                ? Text('Target ${target!.toStringAsFixed(decimals)} \u2022 Harga saat ini ${price.toStringAsFixed(decimals)}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w700))
+                : const Text('Setel alert harga (notifikasi saat tembus level)', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+          ),
+          if (active)
+            GestureDetector(
+              onTap: onClear,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(color: AppColors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                child: const Text('HAPUS', style: TextStyle(color: AppColors.red, fontSize: 10, fontWeight: FontWeight.w800)),
+              ),
+            )
+          else
+            GestureDetector(
+              onTap: onSet,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(color: AppColors.amber.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
+                child: const Text('SETEL', style: TextStyle(color: AppColors.amber, fontSize: 10, fontWeight: FontWeight.w800)),
+              ),
+            ),
         ],
       ),
     );

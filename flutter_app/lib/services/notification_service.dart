@@ -49,4 +49,26 @@ class NotificationService {
       );
     } catch (_) {}
   }
+
+  Future<void> showPriceAlert(String symbol, double target, double price) async {
+    if (kIsWeb) return;
+    await _init();
+    try {
+      await _plugin.show(
+        'alert_$symbol'.hashCode,
+        '$symbol: alert harga tembus',
+        'Harga $symbol mencapai $price (target $target). Signal diaktifkan.',
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'signals',
+            'Sinyal Trading',
+            channelDescription: 'Notifikasi saat sinyal BUY/SELL baru muncul',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(),
+        ),
+      );
+    } catch (_) {}
+  }
 }
