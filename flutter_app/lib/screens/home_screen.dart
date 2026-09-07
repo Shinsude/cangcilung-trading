@@ -1123,7 +1123,7 @@ class _NotifSetting extends StatelessWidget {
                 ],
               ),
             ),
-            Switch(value: on, onChanged: onToggle, activeTrackColor: AppColors.greenSoft, activeColor: AppColors.green),
+            Switch(value: on, onChanged: onToggle, activeTrackColor: AppColors.greenSoft, activeThumbColor: AppColors.green),
           ],
         ),
       ),
@@ -1140,7 +1140,7 @@ class _ModelCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final wr30 = stats.accuracy['30d']?.winRate ?? stats.backtest.winRate;
     final quality = wr30 > 0.55 ? AppColors.green : (wr30 > 0.45 ? AppColors.amber : AppColors.red);
-    final pf = stats.backtest.profitFactor;
+    final pf = stats.backtest.profitFactor > 0 ? stats.backtest.profitFactor : 0.0;
 
     Color numColor(double v, {bool invert = false}) {
       if (invert) v = -v;
@@ -1190,7 +1190,7 @@ class _ModelCard extends StatelessWidget {
           const SizedBox(height: 6),
           Row(
             children: [
-              Expanded(child: _Metric(label: 'Profit Factor', value: pf?.toStringAsFixed(2) ?? '-', color: (pf ?? 1) >= 1 ? AppColors.green : AppColors.red)),
+              Expanded(child: _Metric(label: 'Profit Factor', value: pf.toStringAsFixed(2), color: pf >= 1 ? AppColors.green : AppColors.red)),
               const SizedBox(width: 8),
               Expanded(child: _Metric(label: 'Total Return', value: '${(stats.backtest.totalReturn * 100).toStringAsFixed(1)}%', color: numColor(stats.backtest.totalReturn))),
             ],
