@@ -1197,10 +1197,10 @@ class _BacktestExplorer extends StatelessWidget {
           ],
           if (result != null) ...[
             const SizedBox(height: 14),
-            Row(
+            const Row(
               children: [
-                const Expanded(child: _Metric(label: 'Versi', value: 'AUTO-TUNE', color: AppColors.blue)),
-                const SizedBox(width: 8),
+                Expanded(child: _Metric(label: 'Versi', value: 'AUTO-TUNE', color: AppColors.blue)),
+                SizedBox(width: 8),
                 Expanded(child: _Metric(label: 'Versi', value: 'DASAR', color: AppColors.textSecondary)),
               ],
             ),
