@@ -42,7 +42,7 @@ class PushService {
     }
   }
 
-  Future<void> _setupListeners(FirebaseMessaging messaging) {
+  void _setupListeners(FirebaseMessaging messaging) {
     // Pesan saat aplikasi terbuka (foreground) -> tampilkan via local notifications
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       _showLocal(message);
