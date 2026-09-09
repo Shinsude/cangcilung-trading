@@ -10,7 +10,7 @@ import 'package:flutter/foundation.dart';
 /// ke notifikasi lokal).
 FirebaseOptions? defaultFirebaseOptions() {
   if (kIsWeb) {
-    return FirebaseOptions(
+    return const FirebaseOptions(
       apiKey: const String.fromEnvironment('FIREBASE_API_KEY'),
       appId: const String.fromEnvironment('FIREBASE_APP_ID'),
       messagingSenderId: const String.fromEnvironment('FIREBASE_SENDER_ID'),
