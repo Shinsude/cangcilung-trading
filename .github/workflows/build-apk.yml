@@ -45,6 +45,75 @@ jobs:
           PY
           cat android/app/src/main/AndroidManifest.xml | head -10
 
+      - name: Configure Firebase (google-services.json + plugin)
+        working-directory: flutter_app
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          python3 - <<'PY'
+          import os, pathlib
+
+          raw = os.environ.get("GOOGLE_SERVICES_JSON", "")
+          has_secret = bool(raw and raw.strip())
+          app_dir = pathlib.Path("android/app")
+
+          if not has_secret:
+              print("No GOOGLE_SERVICES_JSON secret; Firebase push OFF")
+              raise SystemExit(0)
+
+          # Sudah punya secret -> tulis json + tambahkan plugin google-services
+          app_dir.mkdir(parents=True, exist_ok=True)
+          (app_dir / "google-services.json").write_text(raw)
+          print("googleservices: json written")
+
+          # settings.gradle(.kts): daftarkan plugin
+          for fname in ("android/settings.gradle.kts", "android/settings.gradle"):
+              p = pathlib.Path(fname)
+              if not p.exists():
+                  continue
+              s = p.read_text()
+              if "com.google.gms.google-services" not in s:
+                  if "plugins {" in s:
+                      s = s.replace("plugins {", 'plugins {\n    id("com.google.gms.google-services") version "4.4.2" apply false', 1)
+                  elif "pluginManagement {" in s:
+                      s += '\npluginManagement { plugins { id("com.google.gms.google-services") version "4.4.2" } }\n'
+                  else:
+                      s += "\nbuildscript { dependencies { classpath 'com.google.gms:google-services:4.4.2' } }\n"
+                  p.write_text(s)
+                  print("settings: plugin added ->", fname)
+
+          # build.gradle(.kts) project level: classpath untuk groovy style
+          proj = pathlib.Path("android/build.gradle")
+          if proj.exists():
+              s = proj.read_text()
+              if "com.google.gms:google-services" not in s and "com.google.gms.google-services" not in s:
+                  s = s.replace("dependencies {", "dependencies {\n        classpath 'com.google.gms:google-services:4.4.2'", 1)
+                  proj.write_text(s)
+                  print("project build.gradle: classpath added")
+
+          # app build.gradle(.kts): apply plugin
+          app_kt = pathlib.Path("android/app/build.gradle.kts")
+          if app_kt.exists():
+              s = app_kt.read_text()
+              if 'id("com.google.gms.google-services")' not in s:
+                  if "plugins {" in s:
+                      s = s.replace("plugins {", 'plugins {\n    id("com.google.gms.google-services")', 1)
+                  else:
+                      s += '\napply(plugin = "com.google.gms.google-services")\n'
+              app_kt.write_text(s)
+              print("app build.gradle.kts: plugin applied")
+          else:
+              app = pathlib.Path("android/app/build.gradle")
+              if app.exists():
+                  s = app.read_text()
+                  if "com.google.gms.google-services" not in s:
+                      s = s.replace("apply plugin: 'kotlin-android'", "apply plugin: 'kotlin-android'\napply plugin: 'com.google.gms.google-services'")
+                      s = s.replace('apply plugin: "kotlin-android"', 'apply plugin: "kotlin-android"\napply plugin: "com.google.gms.google-services"')
+                  app.write_text(s)
+                  print("app build.gradle: applied")
+          PY
+          ls -la android/app/google-services.json 2>/dev/null || echo "(no google-services.json secret set)"
+
       - name: Enable core library desugaring for flutter_local_notifications
         working-directory: flutter_app
         run: |
@@ -56,23 +125,12 @@ jobs:
           with open(py) as f:
               s = f.read()
           changed = False
-          # 1) Aktifkan isCoreLibraryDesugaringEnabled di compileOptions
           if "isCoreLibraryDesugaringEnabled" not in s:
               if "compileOptions {" in s:
-                  s = s.replace(
-                      "compileOptions {",
-                      "compileOptions {\n        isCoreLibraryDesugaringEnabled = true",
-                      1,
-                  )
+                  s = s.replace("compileOptions {", "compileOptions {\n        isCoreLibraryDesugaringEnabled = true", 1)
               else:
-                  # template default Flutter punya compileSdk{}, defaultConfig{}, dst; sisipkan blok android.
-                  s = s.replace(
-                      "android {",
-                      "android {\n    compileOptions {\n        isCoreLibraryDesugaringEnabled = true\n    }",
-                      1,
-                  )
+                  s = s.replace("android {", "android {\n    compileOptions {\n        isCoreLibraryDesugaringEnabled = true\n    }", 1)
               changed = True
-          # 2) Tambah dependency desugar_jdk_libs (append blok dependencies di akhir file)
           if "desugar_jdk_libs" not in s:
               s = s.rstrip() + "\n\ndependencies {\n    coreLibraryDesugaring(\"com.android.tools:desugar_jdk_libs:2.1.4\")\n}\n"
               changed = True
@@ -80,7 +138,7 @@ jobs:
               f.write(s)
           print("gradle patched" if changed else "gradle already ok")
           PY
-          cat android/app/build.gradle.kts 2>/dev/null | sed -n '1,60p' || cat android/app/build.gradle | sed -n '1,60p'
+          cat android/app/build.gradle.kts 2>/dev/null | sed -n '1,8p'
 
       - name: Install dependencies
         working-directory: flutter_app
