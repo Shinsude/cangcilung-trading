@@ -11,10 +11,10 @@ import 'package:flutter/foundation.dart';
 FirebaseOptions? defaultFirebaseOptions() {
   if (kIsWeb) {
     return const FirebaseOptions(
-      apiKey: const String.fromEnvironment('FIREBASE_API_KEY'),
-      appId: const String.fromEnvironment('FIREBASE_APP_ID'),
-      messagingSenderId: const String.fromEnvironment('FIREBASE_SENDER_ID'),
-      projectId: const String.fromEnvironment('FIREBASE_PROJECT_ID'),
+      apiKey: String.fromEnvironment('FIREBASE_API_KEY'),
+      appId: String.fromEnvironment('FIREBASE_APP_ID'),
+      messagingSenderId: String.fromEnvironment('FIREBASE_SENDER_ID'),
+      projectId: String.fromEnvironment('FIREBASE_PROJECT_ID'),
     );
   }
   return null;
