@@ -1843,6 +1843,7 @@ class _CalendarPageState extends State<_CalendarPage> {
   List<EconomicEvent>? _events;
   String? _error;
   Timer? _timer;
+  bool _hideMedium = false;
 
   @override
   void initState() {
@@ -1857,6 +1858,12 @@ class _CalendarPageState extends State<_CalendarPage> {
   void dispose() {
     _timer?.cancel();
     super.dispose();
+  }
+
+  List<EconomicEvent> get _filteredEvents {
+    if (_events == null) return const [];
+    if (!_hideMedium) return _events!;
+    return _events!.where((e) => e.impact.toLowerCase() == 'high').toList();
   }
 
   Future<void> _load() async {
@@ -1909,20 +1916,55 @@ class _CalendarPageState extends State<_CalendarPage> {
             style: TextStyle(color: AppColors.textTertiary, fontSize: 10, height: 1.4),
           ),
           const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Text('Sembunyikan impact Medium', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                ),
+                SizedBox(
+                  height: 20,
+                  width: 36,
+                  child: Switch(
+                    value: _hideMedium,
+                    onChanged: (v) => setState(() => _hideMedium = v),
+                    activeColor: AppColors.blue,
+                    activeTrackColor: AppColors.blue.withValues(alpha: 0.3),
+                    inactiveThumbColor: AppColors.textTertiary,
+                    inactiveTrackColor: AppColors.surfaceAlt,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           if (_events == null && _error == null)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 32),
               child: Center(child: CircularProgressIndicator(color: AppColors.blue, strokeWidth: 3)),
             )
-          else if (_events == null)
+else if (_events == null)
             _CalendarError(message: _error ?? 'Gagal memuat data', onRetry: _load)
-          else if (_events!.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 32),
-              child: Center(child: Text('Belum ada event high impact mendatang', style: TextStyle(color: AppColors.textSecondary, fontSize: 12))),
+          else if (_filteredEvents.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Center(
+                child: Text(
+                  _hideMedium
+                      ? 'Tidak ada event HIGH impact mendatang'
+                      : 'Belum ada event high/medium impact mendatang',
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                ),
+              ),
             )
           else ...[
-            ..._events!.map((e) => _EventTile(event: e, now: now)),
+            ..._filteredEvents.map((e) => _EventTile(event: e, now: now)),
           ],
         ],
       ),
