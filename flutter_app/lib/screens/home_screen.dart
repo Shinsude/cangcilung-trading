@@ -32,8 +32,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool _modelLoading = false;
   String? _modelError;
   bool _notifOn = false;
+  bool _minimal = false;
   Timer? _signalWatcher;
   final Map<String, double> _alerts = {};
+  final Map<String, List<double>> _confHistory = {};
 
   late AnimationController _pulseCtrl;
 
@@ -45,6 +47,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _warmAndSeed();
     _loadModel();
     _initNotifPref();
+    _initMinimalPref();
     _loadAlerts();
   }
 
@@ -84,6 +87,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _startSignalWatcher() {
     _signalWatcher?.cancel();
     _signalWatcher = Timer.periodic(const Duration(minutes: 5), (_) => unawaited(_checkStrongSignals()));
+  }
+
+  Future<void> _initMinimalPref() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final m = prefs.getBool('minimal_mode') ?? false;
+      if (!mounted) return;
+      setState(() => _minimal = m);
+    } catch (_) {}
+  }
+
+  Future<void> _toggleMinimal(bool on) async {
+    setState(() => _minimal = on);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('minimal_mode', on);
+    } catch (_) {}
   }
 
   Future<void> _loadAlerts() async {
@@ -243,6 +263,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     try {
       final data = await _api.fetchSignal(_selected, useCache: false);
       if (!mounted) return;
+      final hist = _confHistory.putIfAbsent(_selected, () => []);
+      hist.add(data.signal.confidence);
+      if (hist.length > 15) hist.removeAt(0);
       setState(() {
         _data = data;
         _loading = false;
@@ -279,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         bottom: false,
         child: Column(
           children: [
-            _TopBar(symbols: _symbols, selected: _selected, onSelect: _selectSymbol, live: _live || _fetching, notifyOn: _notifOn, onToggleNotify: _toggleNotif),
+            _TopBar(symbols: _symbols, selected: _selected, onSelect: _selectSymbol, live: _live || _fetching, notifyOn: _notifOn, onToggleNotify: _toggleNotif, minimal: _minimal, onToggleMinimal: _toggleMinimal),
             AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               height: _fetching ? 3 : 0,
@@ -302,9 +325,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.surface,
-          border: Border(top: BorderSide(color: AppColors.border)),
+          border: const Border(top: BorderSide(color: AppColors.border)),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withValues(alpha: 0.18), blurRadius: 16, offset: const Offset(0, -4)),
+          ],
         ),
         padding: EdgeInsets.only(bottom: bottomPad),
         child: _BottomNav(
@@ -327,6 +353,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           alertTarget: _alerts[d.symbol],
           onSetAlert: () => _setAlert(d.symbol),
           onClearAlert: () => _clearAlert(d.symbol),
+          minimal: _minimal,
+          confHistory: _confHistory[d.symbol] ?? const [],
         ),
         _ChartPage(data: d),
         _IndicatorsPage(ind: d.indicators, price: d.currentPrice, weights: d.weights),
@@ -347,7 +375,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.symbols, required this.selected, required this.onSelect, required this.live, required this.notifyOn, required this.onToggleNotify});
+  const _TopBar({required this.symbols, required this.selected, required this.onSelect, required this.live, required this.notifyOn, required this.onToggleNotify, required this.minimal, required this.onToggleMinimal});
 
   final List<String> symbols;
   final String selected;
@@ -355,6 +383,8 @@ class _TopBar extends StatelessWidget {
   final bool live;
   final bool notifyOn;
   final ValueChanged<bool> onToggleNotify;
+  final bool minimal;
+  final ValueChanged<bool> onToggleMinimal;
 
   @override
   Widget build(BuildContext context) {
@@ -397,6 +427,7 @@ class _TopBar extends StatelessWidget {
                 tooltip: 'Cara Pakai',
               ),
               _NotifButton(on: notifyOn, onToggle: onToggleNotify),
+              _MinimalButton(minimal: minimal, onToggle: onToggleMinimal),
               const SizedBox(width: 10),
               _LiveIndicator(live: live),
             ],
@@ -428,6 +459,30 @@ class _NotifButton extends StatelessWidget {
           border: Border.all(color: c.withValues(alpha: 0.25)),
         ),
         child: Icon(on ? Icons.notifications_active_rounded : Icons.notifications_none_rounded, size: 18, color: c),
+      ),
+    );
+  }
+}
+
+class _MinimalButton extends StatelessWidget {
+  const _MinimalButton({required this.minimal, required this.onToggle});
+  final bool minimal;
+  final ValueChanged<bool> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = minimal ? AppColors.amber : AppColors.textTertiary;
+    return GestureDetector(
+      onTap: () => onToggle(!minimal),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+        decoration: BoxDecoration(
+          color: c.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: c.withValues(alpha: 0.25)),
+        ),
+        child: Icon(minimal ? Icons.visibility_rounded : Icons.visibility_off_rounded, size: 18, color: c),
       ),
     );
   }
@@ -576,26 +631,84 @@ class _BottomNav extends StatelessWidget {
   }
 }
 
-class _LoadingView extends StatelessWidget {
+class _LoadingView extends StatefulWidget {
   const _LoadingView();
+  @override
+  State<_LoadingView> createState() => _LoadingViewState();
+}
+
+class _LoadingViewState extends State<_LoadingView> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 36,
-            height: 36,
-            child: CircularProgressIndicator(color: AppColors.blue, strokeWidth: 3),
-          ),
-          SizedBox(height: 16),
-          Text('Memuat data pasar...', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+    return FadeTransition(
+      opacity: Tween(begin: 0.55, end: 1.0).animate(_ctrl),
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        children: const [
+          _SkeletonCard(height: 120, radius: 22),
+          SizedBox(height: 14),
+          _SkeletonCard(height: 210, radius: 22),
+          SizedBox(height: 14),
+          _SkeletonCard(height: 150, radius: 16),
+          SizedBox(height: 14),
+          _SkeletonCard(height: 60, radius: 16),
+          SizedBox(height: 14),
+          _SkeletonCard(height: 90, radius: 16),
         ],
       ),
     );
   }
+}
+
+class _SkeletonCard extends StatelessWidget {
+  const _SkeletonCard({required this.height, required this.radius});
+  final double height;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: AppColors.border),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(width: 90, height: 10, decoration: _line(8)),
+          const SizedBox(height: 16),
+          Container(width: double.infinity, height: 12, decoration: _line(8)),
+          const SizedBox(height: 10),
+          Container(width: 160, height: 12, decoration: _line(8)),
+          const Spacer(),
+          Container(width: double.infinity, height: 8, decoration: _line(4)),
+        ],
+      ),
+    );
+  }
+
+  BoxDecoration _line(double r) => BoxDecoration(
+        color: AppColors.surfaceAlt.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(r),
+      );
 }
 
 class _ErrorView extends StatelessWidget {
@@ -709,7 +822,7 @@ class _CandleTimerState extends State<_CandleTimer> {
 }
 
 class _SignalPage extends StatelessWidget {
-  const _SignalPage({required this.data, required this.onRefresh, required this.pulse, required this.alertTarget, required this.onSetAlert, required this.onClearAlert});
+  const _SignalPage({required this.data, required this.onRefresh, required this.pulse, required this.alertTarget, required this.onSetAlert, required this.onClearAlert, this.minimal = false, this.confHistory = const []});
 
   final TradingData data;
   final Future<void> Function() onRefresh;
@@ -717,6 +830,8 @@ class _SignalPage extends StatelessWidget {
   final double? alertTarget;
   final VoidCallback onSetAlert;
   final VoidCallback onClearAlert;
+  final bool minimal;
+  final List<double> confHistory;
 
   @override
   Widget build(BuildContext context) {
@@ -728,18 +843,27 @@ class _SignalPage extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
           _PriceHero(data: data),
-          const SizedBox(height: 10),
-          const _CandleTimer(),
+          if (!minimal) ...[
+            const SizedBox(height: 10),
+            const _CandleTimer(),
+          ],
           const SizedBox(height: 14),
-          _SignalHero(signal: data.signal, prediction: data.prediction, price: data.currentPrice, decimals: data.decimals, pulse: pulse, advanced: data.advanced),
-          const SizedBox(height: 14),
-          _RiskPlanCard(risk: data.risk, decimals: data.decimals),
+          _Tilt3D(
+            maxTilt: 6,
+            child: _SignalHero(signal: data.signal, prediction: data.prediction, price: data.currentPrice, decimals: data.decimals, pulse: pulse, advanced: data.advanced, confHistory: confHistory),
+          ),
+          if (!minimal) ...[
+            const SizedBox(height: 14),
+            _RiskPlanCard(risk: data.risk, decimals: data.decimals),
+          ],
           const SizedBox(height: 14),
           _AlertBar(target: alertTarget, price: data.currentPrice, decimals: data.decimals, onSet: onSetAlert, onClear: onClearAlert),
-          const SizedBox(height: 14),
-          _QuickIndicators(ind: data.indicators),
-          const SizedBox(height: 14),
-          _AdvancedScores(adv: data.advanced),
+          if (!minimal) ...[
+            const SizedBox(height: 14),
+            _QuickIndicators(ind: data.indicators),
+            const SizedBox(height: 14),
+            _AdvancedScores(adv: data.advanced),
+          ],
         ],
       ),
     );
@@ -848,16 +972,44 @@ class _PriceHero extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          Text(
-            priceStr,
-            style: TextStyle(
-              fontSize: 44,
-              fontWeight: FontWeight.w900,
-              color: accent,
-              fontFeatures: const [FontFeature.tabularFigures()],
-              letterSpacing: -1,
-              height: 1,
-              shadows: [Shadow(color: accent.withValues(alpha: 0.35), blurRadius: 20)],
+          TweenAnimationBuilder<double>(
+            key: ValueKey(priceStr),
+            tween: Tween(begin: 1.04, end: 1.0),
+            duration: const Duration(milliseconds: 700),
+            curve: Curves.easeOutBack,
+            builder: (_, v, child) => Stack(
+              alignment: Alignment.centerLeft,
+              children: [
+                Transform.scale(scale: v, alignment: Alignment.centerLeft, child: child),
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: AnimatedOpacity(
+                    opacity: v > 1.0 ? 0.25 : 0.0,
+                    duration: const Duration(milliseconds: 300),
+                    child: Container(
+                      width: 3,
+                      decoration: BoxDecoration(
+                        color: accent,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            child: Text(
+              priceStr,
+              style: TextStyle(
+                fontSize: 44,
+                fontWeight: FontWeight.w900,
+                color: accent,
+                fontFeatures: const [FontFeature.tabularFigures()],
+                letterSpacing: -1,
+                height: 1,
+                shadows: [Shadow(color: accent.withValues(alpha: 0.35), blurRadius: 20)],
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -895,8 +1047,120 @@ String _relativeTime(DateTime t) {
   return '${diff.inDays} hari lalu';
 }
 
+class _ConfidenceSparkline extends StatelessWidget {
+  const _ConfidenceSparkline({required this.values, required this.color});
+  final List<double> values;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final min = values.reduce((a, b) => a < b ? a : b);
+    final max = values.reduce((a, b) => a > b ? a : b);
+    final range = (max - min).abs() < 0.001 ? 1.0 : max - min;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text('KEYAKINAN TERAKHIR', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+            const Spacer(),
+            Text(values.last.toStringAsFixed(3), style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w700)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(3),
+          child: SizedBox(
+            height: 18,
+            width: double.infinity,
+            child: CustomPaint(
+              painter: _SparkPainter(values: values, min: min, range: range, color: color),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SparkPainter extends CustomPainter {
+  const _SparkPainter({required this.values, required this.min, required this.range, required this.color});
+  final List<double> values;
+  final double min;
+  final double range;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.length < 2 || size.width <= 0 || size.height <= 0) return;
+    final dx = size.width / (values.length - 1);
+    final path = Path();
+    for (var i = 0; i < values.length; i++) {
+      final y = size.height - ((values[i] - min) / range) * size.height;
+      final x = i * dx;
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SparkPainter old) =>
+      old.values != values || old.color != color;
+}
+
+class _Tilt3D extends StatefulWidget {
+  const _Tilt3D({required this.child, this.maxTilt = 6});
+  final Widget child;
+  final double maxTilt;
+
+  @override
+  State<_Tilt3D> createState() => _Tilt3DState();
+}
+
+class _Tilt3DState extends State<_Tilt3D> {
+  double _dx = 0;
+  double _dy = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onHover: (e) {
+        final box = context.findRenderObject() as RenderBox?;
+        if (box == null) return;
+        final rel = (e.localPosition - box.size.center(Offset.zero));
+        setState(() {
+          _dx = (rel.dx / box.size.width).clamp(-1.0, 1.0) * widget.maxTilt;
+          _dy = (-rel.dy / box.size.height).clamp(-1.0, 1.0) * widget.maxTilt;
+        });
+      },
+      onExit: (_) => setState(() {
+        _dx = 0;
+        _dy = 0;
+      }),
+      child: Transform(
+        transform: Matrix4.identity()
+          ..setEntry(3, 2, 0.0008)
+          ..rotateY(_dx * 0.0174533)
+          ..rotateX(_dy * 0.0174533),
+        alignment: Alignment.center,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
 class _SignalHero extends StatelessWidget {
-  const _SignalHero({required this.signal, required this.prediction, required this.price, required this.decimals, required this.pulse, this.advanced});
+  const _SignalHero({required this.signal, required this.prediction, required this.price, required this.decimals, required this.pulse, this.advanced, this.confHistory = const []});
 
   final Signal signal;
   final Prediction prediction;
@@ -904,6 +1168,7 @@ class _SignalHero extends StatelessWidget {
   final int decimals;
   final AnimationController pulse;
   final Advanced? advanced;
+  final List<double> confHistory;
 
   @override
   Widget build(BuildContext context) {
@@ -931,6 +1196,18 @@ class _SignalHero extends StatelessWidget {
               offset: const Offset(0, 6),
             ),
           ],
+        ),
+        foregroundDecoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          gradient: LinearGradient(
+            colors: [
+              Colors.white.withValues(alpha: 0.06),
+              Colors.white.withValues(alpha: 0.02),
+              Colors.transparent,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.center,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1024,6 +1301,10 @@ class _SignalHero extends StatelessWidget {
                 ),
               ),
             ),
+            if (confHistory.length >= 2) ...[
+              const SizedBox(height: 12),
+              _ConfidenceSparkline(values: confHistory, color: sigColor),
+            ],
             if (advanced != null) ...[
               const SizedBox(height: 12),
               _AdvancedBadges(adv: advanced!),
