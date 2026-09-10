@@ -812,10 +812,23 @@ class _PriceHero extends StatelessWidget {
               ],
             ),
           ),
+          if (data.updatedAt != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text('Diperbarui ${_relativeTime(data.updatedAt!)}', style: const TextStyle(color: AppColors.textTertiary, fontSize: 10, letterSpacing: 0.3)),
+            ),
         ],
       ),
     );
   }
+}
+
+String _relativeTime(DateTime t) {
+  final diff = DateTime.now().difference(t);
+  if (diff.inMinutes < 1) return 'baru saja';
+  if (diff.inMinutes < 60) return '${diff.inMinutes} menit lalu';
+  if (diff.inHours < 24) return '${diff.inHours} jam lalu';
+  return '${diff.inDays} hari lalu';
 }
 
 class _SignalHero extends StatelessWidget {
