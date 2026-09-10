@@ -881,8 +881,8 @@ class _SignalHero extends StatelessWidget {
                 GestureDetector(
                   onTap: () => _copySignal(context),
                   behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                     child: Icon(Icons.copy_rounded, color: AppColors.textSecondary, size: 15),
                   ),
                 ),
@@ -973,7 +973,7 @@ class _SignalHero extends StatelessWidget {
       'Sinyal: ${signal.action} (${signal.strength}) · ${(signal.confidence * 100).toStringAsFixed(0)}% keyakinan',
       'Harga: ${price.toStringAsFixed(decimals)}',
       'Prediksi ${prediction.horizon}: ${prediction.direction == 'UP' ? 'naik' : prediction.direction == 'DOWN' ? 'turun' : 'netral'} → ${prediction.nextPrice.toStringAsFixed(decimals)} (${pct >= 0 ? '+' : ''}${pct.toStringAsFixed(2)}%)',
-      '${signal.summary}',
+      signal.summary,
     ].join('\n');
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(

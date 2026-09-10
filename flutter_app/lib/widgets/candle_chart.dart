@@ -157,7 +157,7 @@ class _CandlePainter extends CustomPainter {
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    final tagLeft = 4.0;
+    const tagLeft = 4.0;
     final tagTop = (y - tag.height / 2).clamp(chartTop, (chartBottom - tag.height).toDouble()).toDouble();
     canvas.drawRRect(
       RRect.fromRectAndRadius(Rect.fromLTWH(tagLeft, tagTop, tag.width + 6, tag.height), const Radius.circular(4)),
