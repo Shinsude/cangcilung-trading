@@ -21,6 +21,9 @@ class PushService {
   Future<void> init() async {
     if (kIsWeb) return;
     try {
+      // Handler untuk pesan saat aplikasi TERMINATED/background.
+      FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
+
       await Firebase.initializeApp(options: defaultFirebaseOptions());
       final opts = defaultFirebaseOptions();
       if (opts != null && opts.apiKey.isEmpty) {
@@ -40,6 +43,12 @@ class PushService {
     } catch (_) {
       _ready = false;
     }
+  }
+
+  @pragma('vm:entry-point')
+  static Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
+    // Saat app tertutup, sistem Android/iOS menampilkan notifikasi sendiri.
+    // Handler ini hanya memastikan Firebase tetap termuat; tampilan ditangani OS.
   }
 
   void _setupListeners(FirebaseMessaging messaging) {
