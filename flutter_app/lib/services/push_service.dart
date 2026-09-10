@@ -29,7 +29,6 @@ class PushService {
         'checkSignals',
         frequency: const Duration(hours: 1),
         constraints: Constraints(networkType: NetworkType.connected),
-        existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
       );
       _ready = true;
     } catch (_) {
