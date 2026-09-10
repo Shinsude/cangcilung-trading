@@ -118,8 +118,9 @@ class Indicators {
   final Bollinger bollinger;
   final double sma20;
   final double volatility20;
+  final double? atr;
 
-  Indicators({required this.rsi, required this.macd, required this.ema, required this.bollinger, required this.sma20, required this.volatility20});
+  Indicators({required this.rsi, required this.macd, required this.ema, required this.bollinger, required this.sma20, required this.volatility20, this.atr});
 
   factory Indicators.fromJson(Map<String, dynamic> json) => Indicators(
         rsi: Rsi.fromJson(json['rsi'] as Map<String, dynamic>? ?? {}),
@@ -128,6 +129,7 @@ class Indicators {
         bollinger: Bollinger.fromJson(json['bollinger'] as Map<String, dynamic>? ?? {}),
         sma20: (json['sma20'] as num?)?.toDouble() ?? 0,
         volatility20: (json['volatility_20'] as num?)?.toDouble() ?? 0,
+        atr: (json['atr'] as num?)?.toDouble(),
       );
 }
 

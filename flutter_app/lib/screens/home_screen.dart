@@ -2,6 +2,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/models.dart';
@@ -877,6 +878,14 @@ class _SignalHero extends StatelessWidget {
                   decoration: BoxDecoration(color: sigColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
                   child: Text(signal.strength.toUpperCase(), style: TextStyle(color: sigColor, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1)),
                 ),
+                GestureDetector(
+                  onTap: () => _copySignal(context),
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                    child: Icon(Icons.copy_rounded, color: AppColors.textSecondary, size: 15),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -956,6 +965,24 @@ class _SignalHero extends StatelessWidget {
   }
 
   IconData _score2icon(double c) => c >= 0.75 ? Icons.local_fire_department_rounded : Icons.bolt_rounded;
+
+  void _copySignal(BuildContext context) {
+    final pct = price == 0 ? 0.0 : (prediction.nextPrice - price) / price * 100;
+    final text = [
+      'Cangcilung Trading AI',
+      'Sinyal: ${signal.action} (${signal.strength}) · ${(signal.confidence * 100).toStringAsFixed(0)}% keyakinan',
+      'Harga: ${price.toStringAsFixed(decimals)}',
+      'Prediksi ${prediction.horizon}: ${prediction.direction == 'UP' ? 'naik' : prediction.direction == 'DOWN' ? 'turun' : 'netral'} → ${prediction.nextPrice.toStringAsFixed(decimals)} (${pct >= 0 ? '+' : ''}${pct.toStringAsFixed(2)}%)',
+      '${signal.summary}',
+    ].join('\n');
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Ringkasan sinyal disalin ke clipboard'),
+      duration: Duration(seconds: 2),
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: AppColors.surfaceAlt,
+    ));
+  }
 }
 
 class _RiskPlanCard extends StatelessWidget {
@@ -1142,7 +1169,7 @@ class _ChartPage extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              CandleChart(candles: data.candles, decimals: data.decimals),
+              CandleChart(candles: data.candles, decimals: data.decimals, risk: data.risk),
             ],
           ),
         ),
@@ -1188,6 +1215,7 @@ class _IndicatorsPage extends StatelessWidget {
             _IndicatorTile(icon: Icons.trending_up_rounded, label: 'EMA Trend', value: ind.ema.trend, sub: '9/21/50', color: emaColor),
             _IndicatorTile(icon: Icons.bolt_rounded, label: 'Bollinger %B', value: bbPos.toStringAsFixed(2), sub: 'Upper ${ind.bollinger.upper.toStringAsFixed(2)}', color: bbPosColor),
             _IndicatorTile(icon: Icons.waves_rounded, label: 'Volatilitas', value: '${(ind.volatility20 * 100).toStringAsFixed(2)}%', sub: 'SMA20 ${ind.sma20.toStringAsFixed(2)}', color: AppColors.purple),
+            _IndicatorTile(icon: Icons.straighten_rounded, label: 'ATR (14)', value: ind.atr != null ? ind.atr!.toStringAsFixed(ind.atr! < 1 ? 5 : 2) : '—', sub: 'Dasar SL/TP', color: AppColors.amber),
             _IndicatorTile(icon: Icons.speed_rounded, label: 'SMA 20', value: ind.sma20.toStringAsFixed(2), sub: 'Harga: ${price.toStringAsFixed(2)}', color: AppColors.blue),
           ],
         ),

@@ -6,10 +6,11 @@ import '../models/models.dart';
 import '../theme.dart';
 
 class CandleChart extends StatelessWidget {
-  const CandleChart({super.key, required this.candles, required this.decimals});
+  const CandleChart({super.key, required this.candles, required this.decimals, this.risk});
 
   final List<Candle> candles;
   final int decimals;
+  final Risk? risk;
 
   @override
   Widget build(BuildContext context) {
@@ -22,16 +23,17 @@ class CandleChart extends StatelessWidget {
     return SizedBox(
       height: 240,
       width: double.infinity,
-      child: CustomPaint(painter: _CandlePainter(candles, decimals)),
+      child: CustomPaint(painter: _CandlePainter(candles, decimals, risk)),
     );
   }
 }
 
 class _CandlePainter extends CustomPainter {
-  _CandlePainter(this.candles, this.decimals);
+  _CandlePainter(this.candles, this.decimals, [this.risk]);
 
   final List<Candle> candles;
   final int decimals;
+  final Risk? risk;
 
   static const double _topPad = 20;
   static const double _bottomPad = 28;
@@ -130,12 +132,44 @@ class _CandlePainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     )..layout();
     maxLabel.paint(canvas, const Offset(4, 4));
+
+    if (risk != null && risk!.available) {
+      _drawLevel(canvas, size, yFor, 'Entry', risk!.entry, AppColors.amber);
+      _drawLevel(canvas, size, yFor, 'TP', risk!.takeProfit, AppColors.green);
+      _drawLevel(canvas, size, yFor, 'SL', risk!.stopLoss, AppColors.red);
+    }
+  }
+
+  void _drawLevel(Canvas canvas, Size size, double Function(double) yFor, String label, double price, Color color) {
+    final chartTop = _topPad.toDouble();
+    final chartBottom = size.height - _bottomPad;
+    final y = yFor(price).clamp(chartTop, chartBottom).toDouble();
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.65)
+      ..strokeWidth = 1.1
+      ..style = PaintingStyle.stroke;
+    canvas.drawDashedLine(Offset(0, y), Offset(size.width, y), paint, dashLen: 6, gapLen: 4);
+
+    final tag = TextPainter(
+      text: TextSpan(
+        text: ' $label ${_fmt(price)} ',
+        style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800, backgroundColor: color),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final tagLeft = 4.0;
+    final tagTop = (y - tag.height / 2).clamp(chartTop, (chartBottom - tag.height).toDouble()).toDouble();
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(tagLeft, tagTop, tag.width + 6, tag.height), const Radius.circular(4)),
+      Paint()..color = color,
+    );
+    tag.paint(canvas, Offset(tagLeft + 3, tagTop));
   }
 
   String _fmt(double v) => v.toStringAsFixed(decimals);
 
   @override
-  bool shouldRepaint(covariant _CandlePainter old) => old.candles != candles;
+  bool shouldRepaint(covariant _CandlePainter old) => old.candles != candles || old.risk != risk;
 }
 
 extension on Canvas {
