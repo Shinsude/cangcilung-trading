@@ -669,13 +669,15 @@ class _SignalPage extends StatelessWidget {
         children: [
           _PriceHero(data: data),
           const SizedBox(height: 14),
-          _SignalHero(signal: data.signal, prediction: data.prediction, price: data.currentPrice, decimals: data.decimals, pulse: pulse),
+          _SignalHero(signal: data.signal, prediction: data.prediction, price: data.currentPrice, decimals: data.decimals, pulse: pulse, advanced: data.advanced),
           const SizedBox(height: 14),
           _RiskPlanCard(risk: data.risk, decimals: data.decimals),
           const SizedBox(height: 14),
           _AlertBar(target: alertTarget, price: data.currentPrice, decimals: data.decimals, onSet: onSetAlert, onClear: onClearAlert),
           const SizedBox(height: 14),
           _QuickIndicators(ind: data.indicators),
+          const SizedBox(height: 14),
+          _AdvancedScores(adv: data.advanced),
         ],
       ),
     );
@@ -832,13 +834,14 @@ String _relativeTime(DateTime t) {
 }
 
 class _SignalHero extends StatelessWidget {
-  const _SignalHero({required this.signal, required this.prediction, required this.price, required this.decimals, required this.pulse});
+  const _SignalHero({required this.signal, required this.prediction, required this.price, required this.decimals, required this.pulse, this.advanced});
 
   final Signal signal;
   final Prediction prediction;
   final double price;
   final int decimals;
   final AnimationController pulse;
+  final Advanced? advanced;
 
   @override
   Widget build(BuildContext context) {
@@ -959,6 +962,10 @@ class _SignalHero extends StatelessWidget {
                 ),
               ),
             ),
+            if (advanced != null) ...[
+              const SizedBox(height: 12),
+              _AdvancedBadges(adv: advanced!),
+            ],
           ],
         ),
       ),
@@ -983,6 +990,90 @@ class _SignalHero extends StatelessWidget {
       behavior: SnackBarBehavior.floating,
       backgroundColor: AppColors.surfaceAlt,
     ));
+  }
+}
+
+class _AdvancedBadges extends StatelessWidget {
+  const _AdvancedBadges({required this.adv});
+  final Advanced adv;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            _mtfBadge('D1', adv.mtfD1Dir),
+            _mtfBadge('H4', adv.mtfH4Dir),
+            _mtfBadge('H1', adv.mtfH1Dir),
+            const SizedBox(width: 8),
+            _pill('ALIGN', '${(adv.mtfAlignment * 100).toInt()}%', adv.mtfAlignment > 0.3 ? Colors.green : adv.mtfAlignment < -0.3 ? Colors.red : Colors.grey),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            _sessionBadge(adv.session),
+            const SizedBox(width: 8),
+            _pill('GRADE', adv.grade, _gradeColor(adv.grade)),
+            const SizedBox(width: 8),
+            _pill('STAB', adv.stability, adv.stability == 'HIGH' ? Colors.green : adv.stability == 'MEDIUM' ? Colors.amber : Colors.red),
+            const Spacer(),
+            if (adv.smcWarning)
+              const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 16),
+          ],
+        ),
+        if (adv.weaknesses.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: adv.weaknesses.take(3).map((w) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
+              child: Text(w, style: const TextStyle(color: Colors.red, fontSize: 9, fontWeight: FontWeight.w700)),
+            )).toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _mtfBadge(String tf, String dir) {
+    final c = dir == 'BULLISH' ? Colors.green : dir == 'BEARISH' ? Colors.red : Colors.grey;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(color: c.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
+      child: Text('$tf $dir', style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w700)),
+    );
+  }
+
+  Widget _sessionBadge(String session) {
+    final c = session.contains('LONDON') ? Colors.green : session.contains('ASIA') ? Colors.cyan : session.contains('NEW') ? Colors.amber : Colors.grey;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(color: c.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
+      child: Text(session, style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w700)),
+    );
+  }
+
+  Widget _pill(String label, String value, Color c) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(4)),
+      child: Text('$label $value', style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w700)),
+    );
+  }
+
+  Color _gradeColor(String g) {
+    switch (g) {
+      case 'ULTIMATE': return Colors.amber;
+      case 'APLUS': return Colors.green;
+      case 'A': return Colors.lightGreen;
+      case 'BPLUS': return Colors.blue;
+      case 'B': return Colors.cyan;
+      default: return Colors.grey;
+    }
   }
 }
 
@@ -1133,6 +1224,97 @@ class _MiniIndicator extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _AdvancedScores extends StatelessWidget {
+  const _AdvancedScores({required this.adv});
+  final Advanced adv;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('ANALISIS LANJUTAN', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+          const SizedBox(height: 12),
+          _scoreRow('CONF', 'Confluence', adv.confScore),
+          _scoreRow('CMP', 'Composite', adv.cmpScore),
+          _scoreRow('CHR', 'Coherence', adv.chrScore),
+          _scoreRow('CAL', 'Calibrated', adv.calScore),
+          _scoreRow('TECH', 'Technical', adv.techScore),
+          _scoreRow('UNI', 'Unified', adv.uniScore),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              _scoreBadge('CVD', '${(adv.cvdEfficiency * 100).toInt()}%', adv.cvdEfficiency > 0.5 ? Colors.green : Colors.red),
+              const SizedBox(width: 8),
+              _scoreBadge('TREND', '${adv.trendConsistencyPct.toInt()}%', adv.trendConsistencyPct > 60 ? Colors.green : Colors.amber),
+              const SizedBox(width: 8),
+              _scoreBadge('BAR', adv.barLevel, adv.barLevel == 'STRONG' ? Colors.green : adv.barLevel == 'DEAD' ? Colors.red : Colors.amber),
+              if (adv.divergence != 'NONE') ...[
+                const SizedBox(width: 8),
+                _scoreBadge('DIV', adv.divergence, Colors.red),
+              ],
+            ],
+          ),
+          if (adv.isDeadZone || adv.mlRejected) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                if (adv.isDeadZone) _scoreBadge('DEAD ZONE', 'SKIP', Colors.red),
+                if (adv.mlRejected) ...[
+                  const SizedBox(width: 8),
+                  _scoreBadge('ML LOW', 'REJECT', Colors.red),
+                ],
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _scoreRow(String label, String sub, double score) {
+    final c = score >= 70 ? Colors.green : score >= 45 ? Colors.amber : Colors.red;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          SizedBox(width: 36, child: Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700))),
+          Expanded(child: Text(sub, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10))),
+          SizedBox(
+            width: 60,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                value: score / 100,
+                minHeight: 6,
+                backgroundColor: AppColors.surfaceAlt,
+                color: c,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(width: 32, child: Text('${score.toStringAsFixed(0)}', textAlign: TextAlign.right, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w700))),
+        ],
+      ),
+    );
+  }
+
+  Widget _scoreBadge(String label, String value, Color c) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(4)),
+      child: Text('$label $value', style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w700)),
     );
   }
 }

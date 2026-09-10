@@ -14,6 +14,7 @@ from services.indicators import compute_all
 from services.predictor import predict, directional_accuracy, hp_validation
 from services.sentiment import analyze as analyze_sentiment
 from services.signal import build_signal
+from services.advanced import analyze as advanced_analyze
 
 PORT = int(os.getenv("PORT", "8000"))
 
@@ -22,6 +23,7 @@ _response_cache: dict[str, dict] = {}
 
 LOG_URL = os.getenv("SIGNALS_LOG_URL", "https://raw.githubusercontent.com/Shinsude/cangcilung-trading/main/flutter_app/web/signals_log.json")
 _real_log_cache: dict = {}
+_signal_history: dict[str, list[str]] = {}  # symbol -> list of recent action strings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api")
@@ -228,6 +230,21 @@ def _build_payload(symbol: str) -> dict:
 
     signal = build_signal(ind, prediction, sentiment, weights=tuning["weights"], extra=tf_value * timeframe.TF_WEIGHT)
 
+    hist = _signal_history.setdefault(symbol, [])
+    hist.append(signal["action"])
+    if len(hist) > 20:
+        hist[:] = hist[-20:]
+
+    advanced = advanced_analyze(
+        df_1d=df,
+        ind=ind,
+        signal=signal,
+        prediction=prediction,
+        df_1h=df_1h,
+        df_4h=df_4h,
+        signal_history=hist,
+    )
+
     candles = []
     last_rows = df.tail(40)
     for idx, row in last_rows.iterrows():
@@ -268,6 +285,7 @@ def _build_payload(symbol: str) -> dict:
         "data_points": len(df),
         "weights": tuning["weights"],
         "timeframe": {"value": tf_value, "parts": tf_parts},
+        "advanced": advanced,
     }
 
 

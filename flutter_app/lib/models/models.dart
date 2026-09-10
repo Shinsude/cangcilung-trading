@@ -172,6 +172,99 @@ class Sentiment {
       );
 }
 
+class Advanced {
+  final String session;
+  final String mtfD1Dir;
+  final int mtfD1Score;
+  final String mtfH4Dir;
+  final int mtfH4Score;
+  final String mtfH1Dir;
+  final int mtfH1Score;
+  final double mtfAlignment;
+  final String mtfPrimary;
+  final String grade;
+  final String stability;
+  final String divergence;
+  final String barLevel;
+  final double trendConsistencyPct;
+  final double cvdEfficiency;
+  final bool smcWarning;
+  final String riskLevel;
+  final double weightedAlignment;
+  final String rollUnderReco;
+  final List<String> weaknesses;
+  final bool isDeadZone;
+  final bool mlRejected;
+  final double confScore;
+  final double cmpScore;
+  final double chrScore;
+  final double calScore;
+  final double techScore;
+  final double uniScore;
+
+  const Advanced({
+    this.session = 'UNKNOWN',
+    this.mtfD1Dir = 'NEUTRAL',
+    this.mtfD1Score = 0,
+    this.mtfH4Dir = 'NEUTRAL',
+    this.mtfH4Score = 0,
+    this.mtfH1Dir = 'NEUTRAL',
+    this.mtfH1Score = 0,
+    this.mtfAlignment = 0,
+    this.mtfPrimary = 'NEUTRAL',
+    this.grade = 'C',
+    this.stability = 'UNKNOWN',
+    this.divergence = 'NONE',
+    this.barLevel = 'UNKNOWN',
+    this.trendConsistencyPct = 50,
+    this.cvdEfficiency = 0.5,
+    this.smcWarning = false,
+    this.riskLevel = 'LOW',
+    this.weightedAlignment = 0,
+    this.rollUnderReco = 'HOLD',
+    this.weaknesses = const [],
+    this.isDeadZone = false,
+    this.mlRejected = false,
+    this.confScore = 0,
+    this.cmpScore = 0,
+    this.chrScore = 0,
+    this.calScore = 0,
+    this.techScore = 0,
+    this.uniScore = 0,
+  });
+
+  factory Advanced.fromJson(Map<String, dynamic> json) => Advanced(
+        session: json['session'] as String? ?? 'UNKNOWN',
+        mtfD1Dir: (json['mtf_d1_dir'] as String? ?? 'NEUTRAL').toUpperCase(),
+        mtfD1Score: (json['mtf_d1_score'] as num?)?.toInt() ?? 0,
+        mtfH4Dir: (json['mtf_h4_dir'] as String? ?? 'NEUTRAL').toUpperCase(),
+        mtfH4Score: (json['mtf_h4_score'] as num?)?.toInt() ?? 0,
+        mtfH1Dir: (json['mtf_h1_dir'] as String? ?? 'NEUTRAL').toUpperCase(),
+        mtfH1Score: (json['mtf_h1_score'] as num?)?.toInt() ?? 0,
+        mtfAlignment: (json['mtf_alignment'] as num?)?.toDouble() ?? 0,
+        mtfPrimary: (json['mtf_primary'] as String? ?? 'NEUTRAL').toUpperCase(),
+        grade: (json['grade'] as String? ?? 'C').toUpperCase(),
+        stability: (json['stability'] as String? ?? 'UNKNOWN').toUpperCase(),
+        divergence: (json['divergence'] as String? ?? 'NONE').toUpperCase(),
+        barLevel: (json['bar_level'] as String? ?? 'UNKNOWN').toUpperCase(),
+        trendConsistencyPct: (json['trend_consistency_pct'] as num?)?.toDouble() ?? 50,
+        cvdEfficiency: (json['cvd_efficiency'] as num?)?.toDouble() ?? 0.5,
+        smcWarning: json['smc_warning'] as bool? ?? false,
+        riskLevel: (json['risk_level'] as String? ?? 'LOW').toUpperCase(),
+        weightedAlignment: (json['weighted_alignment'] as num?)?.toDouble() ?? 0,
+        rollUnderReco: (json['roll_under_reco'] as String? ?? 'HOLD').toUpperCase(),
+        weaknesses: ((json['weaknesses'] as List?) ?? const []).whereType<String>().toList(),
+        isDeadZone: json['is_dead_zone'] as bool? ?? false,
+        mlRejected: json['ml_rejected'] as bool? ?? false,
+        confScore: (json['conf_score'] as num?)?.toDouble() ?? 0,
+        cmpScore: (json['cmp_score'] as num?)?.toDouble() ?? 0,
+        chrScore: (json['chr_score'] as num?)?.toDouble() ?? 0,
+        calScore: (json['cal_score'] as num?)?.toDouble() ?? 0,
+        techScore: (json['tech_score'] as num?)?.toDouble() ?? 0,
+        uniScore: (json['uni_score'] as num?)?.toDouble() ?? 0,
+      );
+}
+
 class TradingData {
   final String symbol;
   final String name;
@@ -187,6 +280,7 @@ class TradingData {
   final List<Candle> candles;
   final Map<String, double> weights;
   final Risk risk;
+  final Advanced advanced;
   final DateTime? updatedAt;
 
   TradingData({
@@ -204,8 +298,10 @@ class TradingData {
     required this.candles,
     this.weights = const {},
     Risk? risk,
+    Advanced? advanced,
     this.updatedAt,
-  }) : risk = risk ?? const Risk();
+  })  : risk = risk ?? const Risk(),
+        advanced = advanced ?? const Advanced();
 
   factory TradingData.fromJson(Map<String, dynamic> json) => TradingData(
         symbol: json['symbol'] as String? ?? '',
@@ -226,6 +322,7 @@ class TradingData {
         weights: ((json['weights'] as Map<String, dynamic>?) ?? const {})
             .map((k, v) => MapEntry(k, (v as num).toDouble())),
         risk: Risk.fromJson(json['risk'] as Map<String, dynamic>? ?? {}),
+        advanced: Advanced.fromJson(json['advanced'] as Map<String, dynamic>? ?? {}),
         updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? ''),
       );
 }
