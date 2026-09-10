@@ -133,6 +133,24 @@ class Indicators {
       );
 }
 
+class EconomicEvent {
+  final String title;
+  final String country;
+  final String impact;
+  final int ts;
+  final String timeWib;
+
+  const EconomicEvent({required this.title, required this.country, required this.impact, required this.ts, required this.timeWib});
+
+  factory EconomicEvent.fromJson(Map<String, dynamic> json) => EconomicEvent(
+        title: json['title'] as String? ?? '',
+        country: (json['country'] as String? ?? '').toUpperCase(),
+        impact: json['impact'] as String? ?? 'Medium',
+        ts: (json['ts'] as num?)?.toInt() ?? 0,
+        timeWib: json['time_wib'] as String? ?? '',
+      );
+}
+
 class Sentiment {
   final double score;
   final String label;

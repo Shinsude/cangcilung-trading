@@ -81,6 +81,17 @@ class ApiService {
     throw ApiException('Server error (${response.statusCode})');
   }
 
+  Future<List<EconomicEvent>> fetchCalendar({int hours = 48}) async {
+    final uri = Uri.parse('$baseUrl/calendar').replace(queryParameters: {'hours': '$hours'});
+    final response = await http.get(uri).timeout(const Duration(seconds: 60));
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final list = (body['events'] as List?) ?? const [];
+      return list.whereType<Map<String, dynamic>>().map(EconomicEvent.fromJson).toList();
+    }
+    throw ApiException('Server error (${response.statusCode})');
+  }
+
   Future<List<Map<String, dynamic>>> fetchHistory(String symbol, {int limit = 30}) async {
     final uri = Uri.parse('$baseUrl/history/$symbol').replace(queryParameters: {'limit': '$limit'});
     final response = await http.get(uri).timeout(const Duration(seconds: 60));

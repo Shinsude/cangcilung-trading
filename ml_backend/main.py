@@ -44,6 +44,61 @@ app.add_middleware(
 MODEL_CACHE_TTL = 300
 _model_cache: list = [0.0, None]  # [at, body]
 
+CAL_CACHE_TTL = 300
+_calendar_cache: list = [0.0, None]  # [at, body]
+CALENDAR_URL = os.getenv("CALENDAR_URL", "https://nfs.faireconomy.media/ff_calendar_thisweek.json")
+
+
+def _fetch_calendar(hours: int) -> dict:
+    now = time.time()
+    hit = _calendar_cache[1]
+    if hit and now - _calendar_cache[0] < CAL_CACHE_TTL:
+        return hit
+    import urllib.request
+
+    try:
+        req = urllib.request.Request(
+            CALENDAR_URL,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+                "Accept": "application/json, text/plain, */*",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=15) as r:
+            raw = json.loads(r.read().decode("utf-8"))
+        events = []
+        wib = dt.timezone(dt.timedelta(hours=7))
+        for e in raw:
+            if str(e.get("impact", "")).strip().lower() == "low":
+                continue
+            date = e.get("date")
+            try:
+                dt0 = dt.datetime.fromisoformat(date).astimezone(dt.timezone.utc)
+            except Exception:  # noqa: BLE001
+                continue
+            ts = int(dt0.timestamp() * 1000)
+            if ts < now * 1000 or ts > (now + hours * 3600) * 1000:
+                continue
+            loc = dt.datetime.fromtimestamp(ts / 1000, tz=dt.timezone.utc).astimezone(wib)
+            events.append(
+                {
+                    "title": str(e.get("title", "")),
+                    "country": str(e.get("country", "")),
+                    "impact": str(e.get("impact", "")),
+                    "ts": ts,
+                    "time_wib": loc.strftime("%H:%M"),
+                }
+            )
+        events.sort(key=lambda x: x["ts"])
+        body = {"events": events[:12]}
+        _calendar_cache[0] = now
+        _calendar_cache[1] = body
+        return body
+    except Exception as exc:  # noqa: BLE001
+        if hit:
+            return hit
+        return {"events": [], "warning": str(exc)}
+
 
 def serialize_datetime(index):
     try:
@@ -55,6 +110,12 @@ def serialize_datetime(index):
 @app.get("/health")
 def health():
     return {"status": "ok", "time": dt.datetime.utcnow().isoformat() + "Z"}
+
+
+@app.get("/calendar")
+def calendar(hours: int = 48):
+    hours_s = max(6, min(int(hours), 96))
+    return _fetch_calendar(hours_s)
 
 
 def _fetch_real_log(ttl: int = 300) -> list:
