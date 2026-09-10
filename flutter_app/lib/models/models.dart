@@ -166,6 +166,7 @@ class TradingData {
   final Sentiment sentiment;
   final List<Candle> candles;
   final Map<String, double> weights;
+  final Risk risk;
 
   TradingData({
     required this.symbol,
@@ -181,7 +182,8 @@ class TradingData {
     required this.sentiment,
     required this.candles,
     this.weights = const {},
-  });
+    Risk? risk,
+  }) : risk = risk ?? const Risk();
 
   factory TradingData.fromJson(Map<String, dynamic> json) => TradingData(
         symbol: json['symbol'] as String? ?? '',
@@ -201,6 +203,31 @@ class TradingData {
             .toList(),
         weights: ((json['weights'] as Map<String, dynamic>?) ?? const {})
             .map((k, v) => MapEntry(k, (v as num).toDouble())),
+        risk: Risk.fromJson(json['risk'] as Map<String, dynamic>? ?? {}),
+      );
+}
+
+class Risk {
+  final double entry;
+  final double stopLoss;
+  final double takeProfit;
+  final double atr;
+  final double riskReward;
+  final String? side;
+  final String? note;
+
+  const Risk({this.entry = 0, this.stopLoss = 0, this.takeProfit = 0, this.atr = 0, this.riskReward = 0, this.side, this.note});
+
+  bool get available => side != null && stopLoss > 0 && takeProfit > 0;
+
+  factory Risk.fromJson(Map<String, dynamic> json) => Risk(
+        entry: (json['entry'] as num?)?.toDouble() ?? 0,
+        stopLoss: (json['stop_loss'] as num?)?.toDouble() ?? 0,
+        takeProfit: (json['take_profit'] as num?)?.toDouble() ?? 0,
+        atr: (json['atr'] as num?)?.toDouble() ?? 0,
+        riskReward: (json['risk_reward'] as num?)?.toDouble() ?? 0,
+        side: json['side'] as String?,
+        note: json['note'] as String?,
       );
 }
 

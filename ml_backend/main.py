@@ -110,6 +110,32 @@ def root():
     }
 
 
+def _profit_plan(ind: dict, action: str, price: float, decimals: int) -> dict:
+    atr = ind.get("atr")
+    if not atr or atr <= 0:
+        return {"entry": round(price, decimals), "note": "ATR tidak tersedia"}
+    side = action if action in ("BUY", "SELL") else None
+    base = {"entry": round(price, decimals), "atr": round(atr, decimals)}
+    if side is None:
+        return {**base, "note": "Tunggu sinyal BUY/SELL untuk plan entry"}
+    sl_mult, tp_mult = 1.5, 2.5
+    if side == "BUY":
+        stop = price - sl_mult * atr
+        take = price + tp_mult * atr
+    else:
+        stop = price + sl_mult * atr
+        take = price - tp_mult * atr
+    risk_dist = abs(stop - price)
+    rr = round(abs(take - price) / risk_dist, 2) if risk_dist > 0 else 0.0
+    return {
+        **base,
+        "side": side,
+        "stop_loss": round(stop, decimals),
+        "take_profit": round(take, decimals),
+        "risk_reward": rr,
+    }
+
+
 def _build_payload(symbol: str) -> dict:
     df = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
 
@@ -174,6 +200,7 @@ def _build_payload(symbol: str) -> dict:
             "ensembles": prediction.get("ensembles", 0),
         },
         "signal": signal,
+        "risk": _profit_plan(ind, signal["action"], last_close, meta["decimals"]),
         "indicators": ind,
         "sentiment": sentiment,
         "candles": candles,

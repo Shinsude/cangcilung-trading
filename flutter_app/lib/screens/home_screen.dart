@@ -659,6 +659,8 @@ class _SignalPage extends StatelessWidget {
           const SizedBox(height: 14),
           _SignalHero(signal: data.signal, prediction: data.prediction, price: data.currentPrice, decimals: data.decimals, pulse: pulse),
           const SizedBox(height: 14),
+          _RiskPlanCard(risk: data.risk, decimals: data.decimals),
+          const SizedBox(height: 14),
           _AlertBar(target: alertTarget, price: data.currentPrice, decimals: data.decimals, onSet: onSetAlert, onClear: onClearAlert),
           const SizedBox(height: 14),
           _QuickIndicators(ind: data.indicators),
@@ -931,6 +933,95 @@ class _SignalHero extends StatelessWidget {
   }
 
   IconData _score2icon(double c) => c >= 0.75 ? Icons.local_fire_department_rounded : Icons.bolt_rounded;
+}
+
+class _RiskPlanCard extends StatelessWidget {
+  const _RiskPlanCard({required this.risk, required this.decimals});
+
+  final Risk risk;
+  final int decimals;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!risk.available) {
+      if ((risk.note ?? '').isEmpty) return const SizedBox.shrink();
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.textSecondary.withValues(alpha: 0.15)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.textSecondary),
+            const SizedBox(width: 8),
+            Expanded(child: Text(risk.note!, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12))),
+          ],
+        ),
+      );
+    }
+
+    final side = risk.side == 'SELL';
+    final col = side ? AppColors.red : AppColors.green;
+    final fmt = (double v) => v.toStringAsFixed(decimals);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: col.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(side ? Icons.south_rounded : Icons.north_rounded, size: 15, color: col),
+              const SizedBox(width: 6),
+              const Text('Plan Entry', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+              const Spacer(),
+              Text('RR ${risk.riskReward.toStringAsFixed(2)}', style: TextStyle(color: col, fontSize: 12, fontWeight: FontWeight.w800)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _PlanCell(label: 'Entry', value: fmt(risk.entry), color: AppColors.textPrimary)),
+              Expanded(child: _PlanCell(label: 'Stop Loss', value: fmt(risk.stopLoss), color: AppColors.red)),
+              Expanded(child: _PlanCell(label: 'Take Profit', value: fmt(risk.takeProfit), color: AppColors.green)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Rekomendasi: risk maksimal 1-2% saldo. SL/TP dihitung dari ATR (${risk.atr.toStringAsFixed(decimals >= 3 ? 5 : 2)}).',
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 10.5, height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlanCell extends StatelessWidget {
+  const _PlanCell({required this.label, required this.value, required this.color});
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
+        const SizedBox(height: 4),
+        Text(value, style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w800)),
+      ],
+    );
+  }
 }
 
 class _QuickIndicators extends StatelessWidget {
