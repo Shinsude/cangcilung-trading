@@ -648,6 +648,66 @@ class _ErrorView extends StatelessWidget {
   }
 }
 
+class _CandleTimer extends StatefulWidget {
+  const _CandleTimer();
+  @override
+  State<_CandleTimer> createState() => _CandleTimerState();
+}
+
+class _CandleTimerState extends State<_CandleTimer> {
+  Timer? _t;
+  Duration _remaining = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick();
+    _t = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+  }
+
+  void _tick() {
+    final now = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final mins = (now.minute ~/ 15 + 1) * 15 % 60;
+    var next = DateTime(now.year, now.month, now.day, now.hour, mins);
+    if (next.isBefore(now)) next = next.add(const Duration(hours: 1));
+    final d = next.difference(now);
+    if (mounted && d != _remaining) setState(() => _remaining = d);
+  }
+
+  @override
+  void dispose() {
+    _t?.cancel();
+    super.dispose();
+  }
+
+  String get _mmss {
+    final m = _remaining.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = _remaining.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.timer_outlined, size: 14, color: AppColors.textSecondary),
+          const SizedBox(width: 6),
+          const Text('M15 CLOSE', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+          const Spacer(),
+          Text(_mmss, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700, fontFeatures: [FontFeature.tabularFigures()])),
+        ],
+      ),
+    );
+  }
+}
+
 class _SignalPage extends StatelessWidget {
   const _SignalPage({required this.data, required this.onRefresh, required this.pulse, required this.alertTarget, required this.onSetAlert, required this.onClearAlert});
 
@@ -668,6 +728,8 @@ class _SignalPage extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
           _PriceHero(data: data),
+          const SizedBox(height: 10),
+          const _CandleTimer(),
           const SizedBox(height: 14),
           _SignalHero(signal: data.signal, prediction: data.prediction, price: data.currentPrice, decimals: data.decimals, pulse: pulse, advanced: data.advanced),
           const SizedBox(height: 14),
