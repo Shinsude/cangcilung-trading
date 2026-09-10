@@ -1342,28 +1342,35 @@ class _AdvancedBadges extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final regimeColor = adv.regime.contains('BULL') ? Colors.green : adv.regime.contains('BEAR') ? Colors.red : adv.regime == 'RANGING' ? Colors.amber : Colors.grey;
     return Column(
       children: [
-        Row(
+        Wrap(
+          spacing: 4,
+          runSpacing: 4,
           children: [
             _mtfBadge('D1', adv.mtfD1Dir),
             _mtfBadge('H4', adv.mtfH4Dir),
             _mtfBadge('H1', adv.mtfH1Dir),
-            const SizedBox(width: 8),
+            _mtfBadge('M30', adv.mtfM30Dir),
+            _mtfBadge('M15', adv.mtfM15Dir),
             _pill('ALIGN', '${(adv.mtfAlignment * 100).toInt()}%', adv.mtfAlignment > 0.3 ? Colors.green : adv.mtfAlignment < -0.3 ? Colors.red : Colors.grey),
           ],
         ),
         const SizedBox(height: 8),
-        Row(
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
+            _pill('REGIME', adv.regime, regimeColor),
+            _pill('VOL', adv.volatilityRegime, adv.volatilityRegime == 'HIGH' ? Colors.orange : adv.volatilityRegime == 'LOW' ? Colors.cyan : Colors.grey),
             _sessionBadge(adv.session),
-            const SizedBox(width: 8),
             _pill('GRADE', adv.grade, _gradeColor(adv.grade)),
-            const SizedBox(width: 8),
             _pill('STAB', adv.stability, adv.stability == 'HIGH' ? Colors.green : adv.stability == 'MEDIUM' ? Colors.amber : Colors.red),
-            const Spacer(),
-            if (adv.smcWarning)
-              const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 16),
+            if (adv.smcWarning) ...[
+              _pill('SMC', 'WARN', Colors.orange),
+            ],
           ],
         ),
         if (adv.weaknesses.isNotEmpty) ...[
@@ -1589,6 +1596,22 @@ class _AdvancedScores extends StatelessWidget {
         children: [
           const Text('ANALISIS LANJUTAN', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
           const SizedBox(height: 12),
+          Row(
+            children: [
+              const Text('MTF STACK', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+              const SizedBox(width: 8),
+              Text(adv.decompRegime, style: TextStyle(color: adv.decompRegime == 'TRENDING' ? Colors.green : Colors.amber, fontSize: 10, fontWeight: FontWeight.w800)),
+              const Spacer(),
+              Text('${adv.regimeAlignment >= 0 ? '+' : ''}${(adv.regimeAlignment * 100).toInt()}%', style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          _mtfScoreRow('M15', adv.mtfM15Score, adv.mtfM15Dir),
+          _mtfScoreRow('M30', adv.mtfM30Score, adv.mtfM30Dir),
+          _mtfScoreRow('H1', adv.mtfH1Score, adv.mtfH1Dir),
+          _mtfScoreRow('H4', adv.mtfH4Score, adv.mtfH4Dir),
+          _mtfScoreRow('D1', adv.mtfD1Score, adv.mtfD1Dir),
+          const SizedBox(height: 10),
           _scoreRow('CONF', 'Confluence', adv.confScore),
           _scoreRow('CMP', 'Composite', adv.cmpScore),
           _scoreRow('CHR', 'Coherence', adv.chrScore),
@@ -1648,6 +1671,47 @@ class _AdvancedScores extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           SizedBox(width: 32, child: Text(score.toStringAsFixed(0), textAlign: TextAlign.right, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w700))),
+        ],
+      ),
+    );
+  }
+
+  Widget _mtfScoreRow(String tf, int score, String dir) {
+    final c = dir == 'BULLISH' ? Colors.green : dir == 'BEARISH' ? Colors.red : Colors.grey;
+    final f = (score.abs() / 100.0).clamp(0.0, 1.0).toDouble();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          SizedBox(width: 30, child: Text(tf, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700))),
+          Expanded(
+            child: Container(
+              height: 6,
+              decoration: BoxDecoration(color: AppColors.surfaceAlt, borderRadius: BorderRadius.circular(3)),
+              child: Stack(
+                children: [
+                  Align(
+                    alignment: Alignment.center,
+                    child: Container(width: 1, color: AppColors.textTertiary.withValues(alpha: 0.4)),
+                  ),
+                  Align(
+                    alignment: score >= 0 ? Alignment.centerLeft : Alignment.centerRight,
+                    child: FractionallySizedBox(
+                      widthFactor: f,
+                      child: Container(
+                        decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(3)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 36,
+            child: Text(score >= 0 ? '+$score' : '$score', textAlign: TextAlign.right, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w700)),
+          ),
         ],
       ),
     );

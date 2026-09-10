@@ -180,8 +180,16 @@ class Advanced {
   final int mtfH4Score;
   final String mtfH1Dir;
   final int mtfH1Score;
+  final String mtfM30Dir;
+  final int mtfM30Score;
+  final String mtfM15Dir;
+  final int mtfM15Score;
   final double mtfAlignment;
   final String mtfPrimary;
+  final String regime;
+  final String decompRegime;
+  final String volatilityRegime;
+  final double regimeAlignment;
   final String grade;
   final String stability;
   final String divergence;
@@ -210,8 +218,16 @@ class Advanced {
     this.mtfH4Score = 0,
     this.mtfH1Dir = 'NEUTRAL',
     this.mtfH1Score = 0,
+    this.mtfM30Dir = 'NEUTRAL',
+    this.mtfM30Score = 0,
+    this.mtfM15Dir = 'NEUTRAL',
+    this.mtfM15Score = 0,
     this.mtfAlignment = 0,
     this.mtfPrimary = 'NEUTRAL',
+    this.regime = 'NEUTRAL',
+    this.decompRegime = 'RANGING',
+    this.volatilityRegime = 'NORMAL',
+    this.regimeAlignment = 0,
     this.grade = 'C',
     this.stability = 'UNKNOWN',
     this.divergence = 'NONE',
@@ -241,8 +257,16 @@ class Advanced {
         mtfH4Score: (json['mtf_h4_score'] as num?)?.toInt() ?? 0,
         mtfH1Dir: (json['mtf_h1_dir'] as String? ?? 'NEUTRAL').toUpperCase(),
         mtfH1Score: (json['mtf_h1_score'] as num?)?.toInt() ?? 0,
+        mtfM30Dir: (json['mtf_m30_dir'] as String? ?? 'NEUTRAL').toUpperCase(),
+        mtfM30Score: (json['mtf_m30_score'] as num?)?.toInt() ?? 0,
+        mtfM15Dir: (json['mtf_m15_dir'] as String? ?? 'NEUTRAL').toUpperCase(),
+        mtfM15Score: (json['mtf_m15_score'] as num?)?.toInt() ?? 0,
         mtfAlignment: (json['mtf_alignment'] as num?)?.toDouble() ?? 0,
         mtfPrimary: (json['mtf_primary'] as String? ?? 'NEUTRAL').toUpperCase(),
+        regime: (json['regime'] as String? ?? 'NEUTRAL').toUpperCase(),
+        decompRegime: (json['decomp_regime'] as String? ?? 'RANGING').toUpperCase(),
+        volatilityRegime: (json['volatility_regime'] as String? ?? 'NORMAL').toUpperCase(),
+        regimeAlignment: (json['regime_alignment'] as num?)?.toDouble() ?? 0,
         grade: (json['grade'] as String? ?? 'C').toUpperCase(),
         stability: (json['stability'] as String? ?? 'UNKNOWN').toUpperCase(),
         divergence: (json['divergence'] as String? ?? 'NONE').toUpperCase(),

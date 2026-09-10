@@ -217,13 +217,21 @@ def _build_payload(symbol: str) -> dict:
 
     tuning = tuner.tuned(df, symbol)
 
-    df_1h = df_4h = None
+    df_1h = df_4h = df_30m = df_15m = None
     try:
         df_1h = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS, interval="1h", period="1mo")
     except Exception:  # noqa: BLE001
         pass
     try:
         df_4h = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS, interval="4h", period="3mo")
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        df_30m = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS, interval="30m", period="1mo")
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        df_15m = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS, interval="15m", period="1mo")
     except Exception:  # noqa: BLE001
         pass
     tf_value, tf_parts = timeframe.alignment(df_1h, df_4h)
@@ -242,6 +250,8 @@ def _build_payload(symbol: str) -> dict:
         prediction=prediction,
         df_1h=df_1h,
         df_4h=df_4h,
+        df_30m=df_30m,
+        df_15m=df_15m,
         signal_history=hist,
     )
 

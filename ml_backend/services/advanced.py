@@ -81,11 +81,18 @@ def _compute_tf_bias(df: pd.DataFrame) -> dict:
     return {"direction": direction, "score": round(score, 3)}
 
 
-def compute_mtf(df_1d: pd.DataFrame, df_1h: pd.DataFrame | None = None, df_4h: pd.DataFrame | None = None) -> dict:
-    """Compute multi-timeframe alignment across D1/H4/H1."""
+def compute_mtf(df_1d: pd.DataFrame, df_1h: pd.DataFrame | None = None, df_4h: pd.DataFrame | None = None,
+                df_30m: pd.DataFrame | None = None, df_15m: pd.DataFrame | None = None) -> dict:
+    """Compute multi-timeframe bias stack across D1/H4/H1/M30/M15 (K-Synthesizer style).
+
+    The alignment aggregate stays anchored on the D1/H4/H1 triad so existing grade
+    and alignment thresholds remain unchanged; M30/M15 are reported as extra layers.
+    """
     d1 = _compute_tf_bias(df_1d)
     h4 = _compute_tf_bias(df_4h) if df_4h is not None else {"direction": "NEUTRAL", "score": 0}
     h1 = _compute_tf_bias(df_1h) if df_1h is not None else {"direction": "NEUTRAL", "score": 0}
+    m30 = _compute_tf_bias(df_30m) if df_30m is not None else {"direction": "NEUTRAL", "score": 0}
+    m15 = _compute_tf_bias(df_15m) if df_15m is not None else {"direction": "NEUTRAL", "score": 0}
 
     bullish_count = sum(1 for tf in [d1, h4, h1] if tf["direction"] == "BULLISH")
     bearish_count = sum(1 for tf in [d1, h4, h1] if tf["direction"] == "BEARISH")
@@ -106,10 +113,10 @@ def compute_mtf(df_1d: pd.DataFrame, df_1h: pd.DataFrame | None = None, df_4h: p
         "mtf_h4_score": round(h4["score"] * 100),
         "mtf_h1_dir": h1["direction"],
         "mtf_h1_score": round(h1["score"] * 100),
-        "mtf_m30_dir": "NEUTRAL",
-        "mtf_m30_score": 0,
-        "mtf_m15_dir": "NEUTRAL",
-        "mtf_m15_score": 0,
+        "mtf_m30_dir": m30["direction"],
+        "mtf_m30_score": round(m30["score"] * 100),
+        "mtf_m15_dir": m15["direction"],
+        "mtf_m15_score": round(m15["score"] * 100),
         "mtf_alignment": round(alignment, 3),
         "mtf_primary": primary,
     }
@@ -364,6 +371,56 @@ def compute_rollunder(action: str, stability: str, risk_level: str) -> str:
     return "EXECUTE"
 
 
+# ── Regime Classification (K-Synthesizer style) ─────────────────────────────
+
+def compute_regime(mtf: dict, ind: dict, df: pd.DataFrame, trend_consistency: float) -> dict:
+    """Classify market regime: direction+mode, decomposition, and volatility band.
+
+    Approximates TCIP's regime/decomp_regime/volatility_regime using the MTF bias
+    stack, trend consistency and normalized ATR — no external regime engine needed.
+    """
+    dirs = [mtf[k] for k in ("mtf_d1_dir", "mtf_h4_dir", "mtf_h1_dir", "mtf_m30_dir", "mtf_m15_dir")]
+    bull = sum(1 for d in dirs if d == "BULLISH")
+    bear = sum(1 for d in dirs if d == "BEARISH")
+    align5 = (bull - bear) / len(dirs)
+
+    price = 1.0
+    if df is not None and len(df):
+        price = float(df["Close"].iloc[-1]) or 1.0
+
+    volatility_regime = "NORMAL"
+    if df is not None and len(df) >= 20:
+        tr = float((df["High"] - df["Low"]).tail(20).mean())
+        pct = tr / price if price > 0 else 0.0
+        if pct >= 0.012:
+            volatility_regime = "HIGH"
+        elif pct <= 0.004:
+            volatility_regime = "LOW"
+
+    split = trend_consistency - 0.5
+    if abs(align5) >= 0.4 and abs(split) >= 0.12:
+        decomp_regime = "TRENDING"
+    else:
+        decomp_regime = "RANGING"
+
+    if decomp_regime == "RANGING" and abs(align5) < 0.2:
+        regime = "RANGING"
+    elif abs(align5) < 0.2:
+        regime = "NEUTRAL"
+    else:
+        direction_label = "BULL" if align5 > 0 else "BEAR"
+        energy = float(ind.get("macd", {}).get("histogram", 0.0)) / price if price > 0 else 0.0
+        mode = "MOMENTUM" if abs(energy) >= 0.0008 else "TREND"
+        regime = f"{direction_label} {mode}"
+
+    return {
+        "regime": regime,
+        "decomp_regime": decomp_regime,
+        "volatility_regime": volatility_regime,
+        "regime_alignment": round(align5, 3),
+    }
+
+
 # ── Weaknesses (Devil's Advocate) ──────────────────────────────────────────
 
 def compute_weaknesses(ind: dict, divergence: str, bar_level: str, stability: str,
@@ -388,6 +445,7 @@ def compute_weaknesses(ind: dict, divergence: str, bar_level: str, stability: st
 
 def analyze(df_1d: pd.DataFrame, ind: dict, signal: dict, prediction: dict,
             df_1h: pd.DataFrame | None = None, df_4h: pd.DataFrame | None = None,
+            df_30m: pd.DataFrame | None = None, df_15m: pd.DataFrame | None = None,
             signal_history: list[str] | None = None) -> dict:
     """Run all advanced analyses and return a flat dict for the API response."""
     action = signal["action"]
@@ -395,7 +453,7 @@ def analyze(df_1d: pd.DataFrame, ind: dict, signal: dict, prediction: dict,
     confidence = signal["confidence"]
 
     session_info = detect_session()
-    mtf = compute_mtf(df_1d, df_1h, df_4h)
+    mtf = compute_mtf(df_1d, df_1h, df_4h, df_30m, df_15m)
     grade = compute_grade(score, confidence, mtf["mtf_alignment"])
     stability = compute_stability(signal_history or [])
     divergence = detect_divergence(df_1d)
@@ -408,6 +466,7 @@ def analyze(df_1d: pd.DataFrame, ind: dict, signal: dict, prediction: dict,
     alignment = compute_weighted_alignment(score, mtf["mtf_alignment"], cvd_eff, bar_level)
     weaknesses = compute_weaknesses(ind, divergence, bar_level, stability, cvd_eff, alignment, trend_consistency)
     rollunder = compute_rollunder(action, stability, risk_level)
+    regime = compute_regime(mtf, ind, df_1d, trend_consistency)
 
     is_dead_zone = bar_level == "DEAD" or stability == "LOW"
     ml_rejected = confidence < 0.4
@@ -416,6 +475,7 @@ def analyze(df_1d: pd.DataFrame, ind: dict, signal: dict, prediction: dict,
         "session": session_info["session"],
         "session_active": session_info["active_sessions"],
         **mtf,
+        **regime,
         "grade": grade,
         "stability": stability,
         "divergence": divergence,
