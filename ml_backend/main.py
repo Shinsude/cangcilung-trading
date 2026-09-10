@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import CACHE_TTL_SECONDS, SYMBOLS
-from services import backtest, timeframe, tuner, fcm
+from services import backtest, timeframe, tuner
 from services.data_service import data_service
 from services.indicators import compute_all
 from services.predictor import predict, directional_accuracy, hp_validation
@@ -344,26 +344,9 @@ def get_signal(symbol: str):
     return payload
 
 
-@app.get("/push/enabled")
-def push_enabled():
-    return {"enabled": fcm.push_enabled()}
-
-
-@app.get("/push/send")
-def push_send(symbol: str | None = None, title: str = "Cangcilung Trading AI", body: str | None = None):
-    if not fcm.push_enabled():
-        raise HTTPException(status_code=503, detail="FCM tidak dikonfigurasi (FCM_SERVICE_ACCOUNT_JSON kosong).")
-    symbol_clean = symbol.upper() if symbol else None
-    if symbol_clean not in SYMBOLS:
-        symbol_clean = None
-    sent = fcm.send_message(title=title, body=body or "Ada sinyal baru.", symbol=symbol_clean)
-    return {"sent": sent}
-
-
 @app.get("/warm")
 def warmup():
     results = {}
-    pushed = 0
     for symbol in SYMBOLS:
         now = time.time()
         cached = _response_cache.get(symbol)
@@ -374,18 +357,7 @@ def warmup():
             payload = _build_payload(symbol)
             _response_cache[symbol] = {"expires": time.time() + RESPONSE_CACHE_TTL_SECONDS, "payload": payload}
             results[symbol] = "ok"
-            has_push = fcm.push_enabled()
-            if has_push:
-                sig = payload.get("signal", {})
-                if sig.get("action") in ("BUY", "SELL") and sig.get("confidence", 0) >= 0.6:
-                    name = payload.get("name", symbol)
-                    fcm.send_message(
-                        title=f"{symbol} · {sig.get('action')}",
-                        body=f"{name} — sinyal {sig.get('action')} (konf. {sig.get('confidence')}).",
-                        symbol=symbol,
-                    )
-                    pushed += 1
         except Exception as exc:  # noqa: BLE001
             logger.warning("warmup %s failed: %s", symbol, exc)
             results[symbol] = f"error: {exc}"
-    return {"status": "ok", "symbols": results, "push_sent": pushed}
+    return {"status": "ok", "symbols": results}
