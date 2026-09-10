@@ -19,7 +19,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final ApiService _api = ApiService();
-  final List<String> _symbols = ['XAUUSD', 'NASDAQ', 'AUDUSD'];
+  final List<String> _symbols = ['XAUUSD', 'NASDAQ', 'AUDUSD', 'EURUSD', 'GBPUSD', 'BTCUSD', 'DXY'];
   String _selected = 'XAUUSD';
   TradingData? _data;
   String? _error;
@@ -384,6 +384,16 @@ class _TopBar extends StatelessWidget {
                 ],
               ),
               const Spacer(),
+              IconButton(
+                onPressed: () => showModalBottomSheet(
+                  context: context,
+                  backgroundColor: Colors.transparent,
+                  isScrollControlled: true,
+                  builder: (_) => const _GuideSheet(),
+                ),
+                icon: const Icon(Icons.help_outline_rounded, color: AppColors.textSecondary, size: 22),
+                tooltip: 'Cara Pakai',
+              ),
               _NotifButton(on: notifyOn, onToggle: onToggleNotify),
               const SizedBox(width: 10),
               _LiveIndicator(live: live),
@@ -468,16 +478,17 @@ class _SymbolBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (final s in symbols) ...[
-          Expanded(
-            child: GestureDetector(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          for (final s in symbols) ...[
+            GestureDetector(
               onTap: () => onSelect(s),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
-                margin: EdgeInsets.only(right: s != symbols.last ? 8 : 0),
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
                 decoration: BoxDecoration(
                   color: s == selected ? AppColors.blue.withValues(alpha: 0.15) : AppColors.surface,
                   borderRadius: BorderRadius.circular(14),
@@ -510,9 +521,10 @@ class _SymbolBar extends StatelessWidget {
                 ),
               ),
             ),
-          ),
+            const SizedBox(width: 8),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
@@ -1994,8 +2006,123 @@ class _SignalHistoryCard extends StatelessWidget {
                     ),
                   ],
                 ),
-              );
+              ],
+              ),
+            );
             }),
+        ],
+      ),
+    );
+  }
+}
+
+class _GuideSheet extends StatelessWidget {
+  const _GuideSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.72,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: ListView(
+          controller: scrollController,
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
+          children: [
+            Center(
+              child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.textTertiary, borderRadius: BorderRadius.circular(4))),
+            ),
+            const SizedBox(height: 16),
+            const Text('Cara Pakai', style: TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            const Text('Panduan singkat membaca Cangcilung Trading AI', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+            const SizedBox(height: 18),
+            _GuideSection(
+              icon: Icons.traffic_rounded,
+              title: '1. Membaca sinyal',
+              body:
+                  'BUY = peluang naik, SELL = peluang turun, HOLD = tunggu. Kekuatan STRONG lebih yakin daripada MODERATE. Persentase di kartu sinyal = tingkat keyakinan model, bukan jaminan. Selalu cek tab Indikator & Chart untuk konfirmasi.',
+            ),
+            _GuideSection(
+              icon: Icons.alt_route_rounded,
+              title: '2. Plan Entry (SL/TP)',
+              body:
+                  'Saat sinyal BUY/SELL muncul, kartu Plan Entry memberi harga masuk (Entry), Stop Loss (SL) dan Take Profit (TP) berbasis ATR. Risk-reward 1.67 artinya potensi profit 1.67x risiko. Jangan risiko lebih dari 1-2% saldo per trade.',
+            ),
+            _GuideSection(
+              icon: Icons.notifications_active_rounded,
+              title: '3. Notifikasi otomatis',
+              body:
+                  'Aktifkan ikon lonceng di kanan atas. App mengecek sinyal baru setiap 1 jam di latar belakang (Android) meski app tertutup, lalu memunculkan notifikasi lokal. Tidak perlu langganan Google.',
+            ),
+            _GuideSection(
+              icon: Icons.flag_rounded,
+              title: '4. Alert harga',
+              body:
+                  'Ketik harga target di bawah sinyal untuk diberi tahu saat harga mencapai target. Satu alert per simbol, otomatis terhapus setelah tersentuh.',
+            ),
+            _GuideSection(
+              icon: Icons.candlestick_chart_rounded,
+              title: '5. Simbol yang didukung',
+              body: 'XAUUSD (Emas), NASDAQ, AUDUSD, EURUSD, GBPUSD, BTCUSD (Bitcoin), DXY (Indeks Dolar). Geser bar simbol di atas untuk berpindah.',
+            ),
+            _GuideSection(
+              icon: Icons.psychology_rounded,
+              title: '6. Model & akurasi',
+              body:
+                  'Tab Model menampilkan backtest walk-forward (win-rate, drawdown) dan akurasi nyata dari sinyal historis. Model MLP dilatih ulang otomatis. Akurasi >55% dianggap baik, <45% lemah — perhatikan tren sebelum mengikuti sinyal.',
+            ),
+            _GuideSection(
+              icon: Icons.warning_amber_rounded,
+              title: 'Disclaimer',
+              body:
+                  'Sinyal adalah hasil analisis statistik otomatis, bukan saran keuangan. Pasar bisa bergerak melawan prediksi. Trading berisiko tinggi — gunakan uang yang siap hilang dan kelola risiko dengan disiplin.',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GuideSection extends StatelessWidget {
+  const _GuideSection({required this.icon, required this.title, required this.body});
+
+  final IconData icon;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.blue.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 18, color: AppColors.blue),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Text(body, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5, height: 1.5)),
+              ],
+            ),
+          ),
         ],
       ),
     );
