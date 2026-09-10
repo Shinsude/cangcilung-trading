@@ -19,7 +19,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final ApiService _api = ApiService();
-  final List<String> _symbols = ['XAUUSD', 'NASDAQ', 'AUDUSD', 'EURUSD', 'GBPUSD', 'BTCUSD', 'DXY'];
+  final List<String> _symbols = ['XAUUSD', 'NASDAQ', 'AUDUSD'];
   String _selected = 'XAUUSD';
   TradingData? _data;
   String? _error;
@@ -478,17 +478,16 @@ class _SymbolBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          for (final s in symbols) ...[
-            GestureDetector(
+    return Row(
+      children: [
+        for (final s in symbols) ...[
+          Expanded(
+            child: GestureDetector(
               onTap: () => onSelect(s),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                margin: EdgeInsets.only(right: s != symbols.last ? 8 : 0),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: s == selected ? AppColors.blue.withValues(alpha: 0.15) : AppColors.surface,
                   borderRadius: BorderRadius.circular(14),
@@ -521,10 +520,9 @@ class _SymbolBar extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-          ],
+          ),
         ],
-      ),
+      ],
     );
   }
 }
@@ -2079,7 +2077,7 @@ class _GuideSheet extends StatelessWidget {
             const _GuideSection(
               icon: Icons.candlestick_chart_rounded,
               title: '5. Simbol yang didukung',
-              body: 'XAUUSD (Emas), NASDAQ, AUDUSD, EURUSD, GBPUSD, BTCUSD (Bitcoin), DXY (Indeks Dolar). Geser bar simbol di atas untuk berpindah.',
+              body: 'Simbol yang didukung saat ini: XAUUSD (Emas), NASDAQ, dan AUDUSD. Pilih dari bar di atas untuk berpindah.',
             ),
             const _GuideSection(
               icon: Icons.psychology_rounded,

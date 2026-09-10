@@ -19,30 +19,6 @@ SYMBOLS = {
         "decimals": 5,
         "category": "Forex",
     },
-    "EURUSD": {
-        "yahoo": "EURUSD=X",
-        "name": "EUR / USD",
-        "decimals": 5,
-        "category": "Forex",
-    },
-    "GBPUSD": {
-        "yahoo": "GBPUSD=X",
-        "name": "GBP / USD",
-        "decimals": 5,
-        "category": "Forex",
-    },
-    "BTCUSD": {
-        "yahoo": "BTC-USD",
-        "name": "Bitcoin / USD",
-        "decimals": 2,
-        "category": "Crypto",
-    },
-    "DXY": {
-        "yahoo": "DX-Y.NYB",
-        "name": "US Dollar Index",
-        "decimals": 2,
-        "category": "Index",
-    },
 }
 
 PERIOD = os.getenv("DATA_PERIOD", "1y")

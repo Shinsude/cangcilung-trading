@@ -38,7 +38,7 @@ class PushService {
 }
 
 const String _api = 'https://cangcilung-trading-api.vercel.app';
-const List<String> _signalSymbols = ['XAUUSD', 'NASDAQ', 'AUDUSD', 'EURUSD', 'GBPUSD', 'BTCUSD', 'DXY'];
+const List<String> _signalSymbols = ['XAUUSD', 'NASDAQ', 'AUDUSD'];
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
