@@ -1304,7 +1304,7 @@ class _AdvancedScores extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          SizedBox(width: 32, child: Text('${score.toStringAsFixed(0)}', textAlign: TextAlign.right, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w700))),
+          SizedBox(width: 32, child: Text(score.toStringAsFixed(0), textAlign: TextAlign.right, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w700))),
         ],
       ),
     );
