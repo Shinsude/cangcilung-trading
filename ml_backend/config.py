@@ -21,7 +21,7 @@ SYMBOLS = {
     },
 }
 
-PERIOD = os.getenv("DATA_PERIOD", "6mo")
+PERIOD = os.getenv("DATA_PERIOD", "1y")
 INTERVAL = os.getenv("DATA_INTERVAL", "1d")
 LOOKBACK_WINDOWS = [12, 24, 36]
 GRU_EPOCHS = 180
@@ -33,6 +33,7 @@ MACD_SIGNAL = 9
 EMA_FAST = 9
 EMA_MEDIUM = 21
 EMA_SLOW = 50
+ATR_PERIOD = 14
 
 FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY", "")
 NEWS_LIMIT = 5

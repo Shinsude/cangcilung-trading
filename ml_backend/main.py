@@ -41,6 +41,10 @@ app.add_middleware(
 )
 
 
+MODEL_CACHE_TTL = 300
+_model_cache: list = [0.0, None]  # [at, body]
+
+
 def serialize_datetime(index):
     try:
         return index.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -111,7 +115,7 @@ def _build_payload(symbol: str) -> dict:
 
     ind = compute_all(df)
     closes = df["Close"].to_numpy()
-    prediction = predict(closes)
+    prediction = predict(closes, df=df)
 
     last_close = ind["price"]
     prev_close = float(df["Close"].iloc[-2]) if len(df) > 1 else last_close
@@ -246,31 +250,34 @@ def get_stats(symbol: str):
 
 @app.get("/model")
 def model_info():
-    out = {}
-    for symbol in SYMBOLS:
+    now = time.time()
+    if _model_cache[0] and now - _model_cache[0] < MODEL_CACHE_TTL:
+        return _model_cache[1]
+    out: dict = {}
+
+    def _work(symbol: str) -> tuple[str, dict]:
         cached = tuner.get_cached(symbol)
         if not cached:
             try:
                 df = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
                 cached = tuner.tuned(df, symbol)
             except Exception as exc:  # noqa: BLE001
-                out[symbol] = {"error": str(exc)}
-                continue
+                return symbol, {"error": str(exc)}
         try:
             mdf = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
             acc = backtest.rolling(mdf["Close"].to_numpy(), weights=cached["weights"], df=mdf)
         except Exception:  # noqa: BLE001
             acc = {}
         try:
-            mlp_acc = directional_accuracy(mdf["Close"].to_numpy())
+            mlp_acc = directional_accuracy(mdf["Close"].to_numpy(), df=mdf)
         except Exception as exc:  # noqa: BLE001
             mlp_acc = {"error": f"{type(exc).__name__}: {exc}"}
         try:
-            hp = hp_validation(mdf["Close"].to_numpy())
+            hp = hp_validation(mdf["Close"].to_numpy(), df=mdf)
         except Exception:  # noqa: BLE001
             hp = {"error": "hp validation failed"}
         real = _real_accuracy(_fetch_real_log(), symbol, mdf)
-        out[symbol] = {
+        return symbol, {
             "trained_at": dt.datetime.fromtimestamp(cached["at"]).isoformat() + "Z",
             "weights": cached["weights"],
             "multipliers": cached["multipliers"],
@@ -280,11 +287,19 @@ def model_info():
             "hp_validation": hp,
             "real_accuracy": real,
         }
-    return {
+
+    for symbol in SYMBOLS:
+        sym, payload = _work(symbol)
+        out[sym] = payload
+
+    body = {
         "strategy": "grid-search auto-tune per symbol (walk-forward backtest)",
         "lookbacks": [12, 24, 36],
         "symbols": out,
     }
+    _model_cache[0] = time.time()
+    _model_cache[1] = body
+    return body
 
 
 @app.get("/history/{symbol}")

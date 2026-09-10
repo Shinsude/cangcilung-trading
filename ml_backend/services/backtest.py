@@ -49,11 +49,14 @@ def _components(close: np.ndarray, df=None) -> dict:
             out["rsi"][i] = -1.5
         elif 45 <= rv <= 55:
             out["rsi"][i] = 0.1
-        # MACD: cross efektif mengikuti arah histogram (sama dgn signal.py live)
+        # MACD: cross hanya saat persilangan sejati (sama dgn signal.py live)
         mh, mh_prev = macd_hist[i], macd_hist[i - 1]
         if not np.isnan(mh) and not np.isnan(mh_prev):
             out["macd_hist"][i] = 0.8 if mh > 0 else -0.8
-            out["macd_cross"][i] = 2.0 if mh > 0 else -2.0
+            if mh_prev <= 0 < mh:
+                out["macd_cross"][i] = 2.0
+            elif mh_prev >= 0 > mh:
+                out["macd_cross"][i] = -2.0
         # EMA trend
         if not (np.isnan(ema_m[i]) or np.isnan(ema_s[i]) or np.isnan(ema_f[i])):
             out["ema_trend"][i] = 1.2 if close[i] > ema_m[i] else -1.2
@@ -78,11 +81,6 @@ def _components(close: np.ndarray, df=None) -> dict:
             mom20 = close[i] / close[i - 20] - 1.0
             if not np.isnan(mom20):
                 out["sentiment"][i] = max(-1.0, min(1.0, mom20 * 12.0)) * 1.5
-    # Sentimen proksi momentum 20-bar
-        if i >= 20:
-            mom20 = close[i] / close[i - 20] - 1.0
-            if not np.isnan(mom20):
-                out["sentiment"][i] = max(-1.0, min(1.0, mom20 * 12.0)) * 1.5
         # Komponen volume:kekuatan konfirmasi tren (z-score volume bounded, arah tren)
         if i >= 20:
             v20 = vol[i - 20 : i + 1]
@@ -95,13 +93,13 @@ def _components(close: np.ndarray, df=None) -> dict:
                 out["volume"][i] = 0.5 * direction + 0.5 * zc
             else:
                 out["volume"][i] = 0.5 * direction
-        # S/R momentum: posisi harga terhadap range 20-bar terakhir
+        # S/R momentum: posisi harga terhadap range 20-bar terakhir (sama dgn signal.py ±0.6)
         if i >= 20:
             hi20 = float(np.max(high[i - 20 : i + 1]))
             lo20 = float(np.min(low[i - 20 : i + 1]))
             if hi20 != lo20:
                 pos = (close[i] - lo20) / (hi20 - lo20)
-                out["sr"][i] = 1.0 if pos > 0.8 else (-1.0 if pos < 0.2 else 0.0)
+                out["sr"][i] = 0.6 if pos > 0.8 else (-0.6 if pos < 0.2 else 0.0)
     return {k: v for k, v in out.items()}, fwd
 
 

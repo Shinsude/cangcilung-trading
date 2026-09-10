@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from config import (
+    ATR_PERIOD,
     EMA_FAST,
     EMA_MEDIUM,
     EMA_SLOW,
@@ -65,14 +66,26 @@ def compute_all(df: pd.DataFrame) -> dict:
     prev_hist = (
         float(macd_hist.iloc[last - 1]) if last > 1 and np.isfinite(macd_hist.iloc[last - 1]) else 0.0
     )
+    # MACD cross hanya saat terjadi persilangan SUNGGAH (bukan sekadar arah histogram)
     cross = None
     if np.isfinite(prev_hist):
         if prev_hist <= 0 < mac_hist:
             cross = "bullish"
         elif prev_hist >= 0 > mac_hist:
             cross = "bearish"
-        else:
-            cross = "bullish" if mac_hist > 0 else "bearish"
+
+    # ATR(14) — ukuran volatilitas absolut, dipakai SL/TP & normalisasi
+    atr14 = None
+    if len(close) > ATR_PERIOD:
+        tr = pd.concat(
+            [
+                (df["High"] - df["Low"]),
+                (df["High"] - close).abs(),
+                (df["Low"] - close).abs(),
+            ],
+            axis=1,
+        ).max(axis=1)
+        atr14 = float(tr.ewm(alpha=1 / ATR_PERIOD, adjust=False).mean().iloc[last])
 
     price = float(close.iloc[last])
     bb_range = bb_upper.iloc[last] - bb_lower.iloc[last]
@@ -124,6 +137,7 @@ def compute_all(df: pd.DataFrame) -> dict:
         },
         "sma20": round(float(sma_20.iloc[last]), 5),
         "volatility_20": round(float(close.tail(20).pct_change().std() or 0.0), 5),
+        "atr": round(atr14, 5) if atr14 is not None else None,
         "volume": round(vol_conf, 3),
         "sr": round(sr_pos, 3),
     }
