@@ -167,6 +167,7 @@ class TradingData {
   final List<Candle> candles;
   final Map<String, double> weights;
   final Risk risk;
+  final DateTime? updatedAt;
 
   TradingData({
     required this.symbol,
@@ -183,6 +184,7 @@ class TradingData {
     required this.candles,
     this.weights = const {},
     Risk? risk,
+    this.updatedAt,
   }) : risk = risk ?? const Risk();
 
   factory TradingData.fromJson(Map<String, dynamic> json) => TradingData(
@@ -204,6 +206,7 @@ class TradingData {
         weights: ((json['weights'] as Map<String, dynamic>?) ?? const {})
             .map((k, v) => MapEntry(k, (v as num).toDouble())),
         risk: Risk.fromJson(json['risk'] as Map<String, dynamic>? ?? {}),
+        updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? ''),
       );
 }
 
