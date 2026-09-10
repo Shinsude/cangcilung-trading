@@ -964,7 +964,7 @@ class _RiskPlanCard extends StatelessWidget {
 
     final side = risk.side == 'SELL';
     final col = side ? AppColors.red : AppColors.green;
-    final fmt = (double v) => v.toStringAsFixed(decimals);
+    String fmt(double v) => v.toStringAsFixed(decimals);
 
     return Container(
       padding: const EdgeInsets.all(14),
