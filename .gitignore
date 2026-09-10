@@ -21,3 +21,4 @@ flutter_app/.dart_tool/
 
 # Local build artifacts
 builds/
+apk_download/
