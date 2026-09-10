@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -831,7 +831,7 @@ class _SignalHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final sigColor = signal.action.toSignalColor();
     final dirColor = prediction.direction.toSignalColor();
-    final arrow = prediction.direction == 'UP' ? '▲' : prediction.direction == 'DOWN' ? '▼' : '◆';
+    final arrow = prediction.direction == 'UP' ? 'â–²' : prediction.direction == 'DOWN' ? 'â–¼' : 'â—†';
     final pct = price == 0 ? 0.0 : (prediction.nextPrice - price) / price * 100;
 
     return AnimatedBuilder(
@@ -917,7 +917,7 @@ class _SignalHero extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${pct >= 0 ? '+' : ''}${pct.toStringAsFixed(2)}% · ${prediction.horizon}',
+                      '${pct >= 0 ? '+' : ''}${pct.toStringAsFixed(2)}% Â· ${prediction.horizon}',
                       style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
                     ),
                   ],
@@ -1991,7 +1991,7 @@ class _SignalHistoryCard extends StatelessWidget {
                     if (cThen != null && cNext != null)
                       Expanded(
                         child: Text(
-                          '${cThen.toStringAsFixed(cThen > 100 ? 0 : 5)} → ${cNext.toStringAsFixed(cNext > 100 ? 0 : 5)}',
+                          '${cThen.toStringAsFixed(cThen > 100 ? 0 : 5)} â†’ ${cNext.toStringAsFixed(cNext > 100 ? 0 : 5)}',
                           style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
                           textAlign: TextAlign.right,
                         ),
@@ -2006,9 +2006,7 @@ class _SignalHistoryCard extends StatelessWidget {
                     ),
                   ],
                 ),
-              ],
-              ),
-            );
+              );
             }),
         ],
       ),
@@ -2041,46 +2039,46 @@ class _GuideSheet extends StatelessWidget {
             const SizedBox(height: 4),
             const Text('Panduan singkat membaca Cangcilung Trading AI', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
             const SizedBox(height: 18),
-            _GuideSection(
+            const _GuideSection(
               icon: Icons.traffic_rounded,
               title: '1. Membaca sinyal',
               body:
                   'BUY = peluang naik, SELL = peluang turun, HOLD = tunggu. Kekuatan STRONG lebih yakin daripada MODERATE. Persentase di kartu sinyal = tingkat keyakinan model, bukan jaminan. Selalu cek tab Indikator & Chart untuk konfirmasi.',
             ),
-            _GuideSection(
+            const _GuideSection(
               icon: Icons.alt_route_rounded,
               title: '2. Plan Entry (SL/TP)',
               body:
                   'Saat sinyal BUY/SELL muncul, kartu Plan Entry memberi harga masuk (Entry), Stop Loss (SL) dan Take Profit (TP) berbasis ATR. Risk-reward 1.67 artinya potensi profit 1.67x risiko. Jangan risiko lebih dari 1-2% saldo per trade.',
             ),
-            _GuideSection(
+            const _GuideSection(
               icon: Icons.notifications_active_rounded,
               title: '3. Notifikasi otomatis',
               body:
                   'Aktifkan ikon lonceng di kanan atas. App mengecek sinyal baru setiap 1 jam di latar belakang (Android) meski app tertutup, lalu memunculkan notifikasi lokal. Tidak perlu langganan Google.',
             ),
-            _GuideSection(
+            const _GuideSection(
               icon: Icons.flag_rounded,
               title: '4. Alert harga',
               body:
                   'Ketik harga target di bawah sinyal untuk diberi tahu saat harga mencapai target. Satu alert per simbol, otomatis terhapus setelah tersentuh.',
             ),
-            _GuideSection(
+            const _GuideSection(
               icon: Icons.candlestick_chart_rounded,
               title: '5. Simbol yang didukung',
               body: 'XAUUSD (Emas), NASDAQ, AUDUSD, EURUSD, GBPUSD, BTCUSD (Bitcoin), DXY (Indeks Dolar). Geser bar simbol di atas untuk berpindah.',
             ),
-            _GuideSection(
+            const _GuideSection(
               icon: Icons.psychology_rounded,
               title: '6. Model & akurasi',
               body:
-                  'Tab Model menampilkan backtest walk-forward (win-rate, drawdown) dan akurasi nyata dari sinyal historis. Model MLP dilatih ulang otomatis. Akurasi >55% dianggap baik, <45% lemah — perhatikan tren sebelum mengikuti sinyal.',
+                  'Tab Model menampilkan backtest walk-forward (win-rate, drawdown) dan akurasi nyata dari sinyal historis. Model MLP dilatih ulang otomatis. Akurasi >55% dianggap baik, <45% lemah â€” perhatikan tren sebelum mengikuti sinyal.',
             ),
-            _GuideSection(
+            const _GuideSection(
               icon: Icons.warning_amber_rounded,
               title: 'Disclaimer',
               body:
-                  'Sinyal adalah hasil analisis statistik otomatis, bukan saran keuangan. Pasar bisa bergerak melawan prediksi. Trading berisiko tinggi — gunakan uang yang siap hilang dan kelola risiko dengan disiplin.',
+                  'Sinyal adalah hasil analisis statistik otomatis, bukan saran keuangan. Pasar bisa bergerak melawan prediksi. Trading berisiko tinggi â€” gunakan uang yang siap hilang dan kelola risiko dengan disiplin.',
             ),
           ],
         ),
