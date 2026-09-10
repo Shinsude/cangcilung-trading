@@ -1934,7 +1934,6 @@ class _CalendarPageState extends State<_CalendarPage> {
                   child: Switch(
                     value: _hideMedium,
                     onChanged: (v) => setState(() => _hideMedium = v),
-                    activeColor: AppColors.blue,
                     activeTrackColor: AppColors.blue.withValues(alpha: 0.3),
                     inactiveThumbColor: AppColors.textTertiary,
                     inactiveTrackColor: AppColors.surfaceAlt,
