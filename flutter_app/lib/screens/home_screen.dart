@@ -907,7 +907,7 @@ class _SystemHealthCard extends StatelessWidget {
           if (system.safety.violations > 0)
             Padding(
               padding: const EdgeInsets.only(top: 4, left: 44),
-              child: Text('⚠ ${system.safety.violations} pelanggaran · SL min ${system.safety.minimumStop.toStringAsFixed(0)} · RR ${system.safety.riskRewardtoStringAsFixed(1)}',
+              child: Text('⚠ ${system.safety.violations} pelanggaran · SL min ${system.safety.minimumStop.toStringAsFixed(0)} · RR ${system.safety.riskReward.toStringAsFixed(1)}',
                   style: const TextStyle(color: AppColors.red, fontSize: 9)),
             ),
         ],
@@ -925,6 +925,7 @@ class _SystemHealthCard extends StatelessWidget {
         ),
       );
 }
+class _SessionTimeline extends StatefulWidget {
   const _SessionTimeline();
   @override
   State<_SessionTimeline> createState() => _SessionTimelineState();
@@ -1119,7 +1120,7 @@ class _SignalPage extends StatelessWidget {
               _PipelineCard(pipeline: data.pipeline),
             ],
             const SizedBox(height: 14),
-            _SystemHealthCard(system: data.system),
+            _SystemHealthCard(system: data.system ?? const SystemHealth()),
           ],
         ],
       ),

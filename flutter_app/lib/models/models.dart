@@ -457,8 +457,11 @@ class TradingData {
 }
 
 class SystemHealth {
-  final double minimumStop;
-  final double riskReward;
+  final double tsIntrinsic;
+  final double tsSnr;
+  final String decompRegime;
+  final int barTotal;
+  final Theta theta;
   final SafetyBounds safety;
 
   const SystemHealth({
@@ -479,7 +482,7 @@ class SystemHealth {
       barTotal: (j['bar_total'] as num?)?.toInt() ?? 0,
       theta: Theta.fromJson(j['theta'] as Map<String, dynamic>?),
       safety: SafetyBounds.fromJson(j['safety'] as Map<String, dynamic>?) ??
-          SafetyBounds.fromJson(_payload()['safety'] as Map<String, dynamic>?),
+          const SafetyBounds(),
     );
   }
 }
