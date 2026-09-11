@@ -459,6 +459,14 @@ def _build_payload(symbol: str) -> dict:
         "weights": tuning["weights"],
         "timeframe": {"value": tf_value, "parts": tf_parts},
         "advanced": advanced,
+        "system": {
+            "ts_intrinsic": advanced.get("ts_intrinsic", 0),
+            "ts_snr": advanced.get("ts_snr", 0),
+            "decomp_regime": advanced.get("decomp_regime", "NO DATA"),
+            "bar_total": advanced.get("bar_total", 0),
+            "theta": advanced.get("theta", {}),
+            "safety": _build_safety(plan, ind.get("atr", 0)),
+        },
     }
 
 
