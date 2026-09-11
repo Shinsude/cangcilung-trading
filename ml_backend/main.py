@@ -319,6 +319,7 @@ def _build_payload(symbol: str) -> dict:
         signal_history=hist,
     )
 
+    meta = SYMBOLS[symbol]
     plan = _profit_plan(ind, signal["action"], last_close, meta["decimals"])
 
     candles = []
@@ -335,7 +336,6 @@ def _build_payload(symbol: str) -> dict:
             }
         )
 
-    meta = SYMBOLS[symbol]
     return {
         "symbol": symbol,
         "name": meta["name"],
