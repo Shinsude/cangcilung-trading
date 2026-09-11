@@ -1594,7 +1594,7 @@ class _PositionCard extends StatelessWidget {
                 _chip('SL ${fmt(position.stopLoss)}', AppColors.red),
               _chip('TP ${fmt(position.takeProfit)}', AppColors.green),
               if (position.trailActive)
-                _chip('LOCK +${position.profitLockedPct.toStringAsFixed(2)}%', AppColors.cyan),
+                _chip('LOCK +${position.profitLockedPct.toStringAsFixed(2)}%', AppColors.blue),
             ],
           ),
           const SizedBox(height: 10),
@@ -1873,7 +1873,7 @@ class _PipelineCard extends StatelessWidget {
           const SizedBox(height: 12),
           _dirBar('BUY', pipeline.directionCounts['BUY'] ?? 0, total, AppColors.green),
           _dirBar('SELL', pipeline.directionCounts['SELL'] ?? 0, total, AppColors.red),
-          _dirBar('HOLD', pipeline.directionCounts['HOLD'] ?? 0, total, AppColors.grey),
+          _dirBar('HOLD', pipeline.directionCounts['HOLD'] ?? 0, total, AppColors.textSecondary),
           const SizedBox(height: 10),
           ...[
             'ULTIMATE',
