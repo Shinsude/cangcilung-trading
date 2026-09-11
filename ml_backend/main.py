@@ -336,6 +336,26 @@ def _build_pipeline(symbol: str) -> dict:
     }
 
 
+def _build_safety(plan: dict, atr: float) -> dict:
+    """Check SL/TP are inside sane volatility bounds (K-Synthesizer safety)."""
+    entry = plan.get("entry")
+    sl = plan.get("stop_loss")
+    tp = plan.get("take_profit")
+    if entry is None or sl is None or tp is None or not atr or atr <= 0:
+        return {"status": "N/A", "violations": 0, "note": "Belum ada plan entry"}
+    sl_dist = abs(sl - entry)
+    tp_dist = abs(tp - entry)
+    ok_sl = sl_dist >= 0.5 * atr
+    ok_rr = plan.get("risk_reward", 0.0) >= 1.0
+    violations = (0 if ok_sl else 1) + (0 if ok_rr else 1)
+    return {
+        "status": "OK" if violations == 0 else "CHECK",
+        "violations": violations,
+        "minimum_stop": round(entry - 0.5 * atr, 2) if plan.get("side") == "BUY" else round(entry + 0.5 * atr, 2),
+        "risk_reward": plan.get("risk_reward", 0.0),
+    }
+
+
 def _build_payload(symbol: str) -> dict:
     df = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
 
@@ -429,6 +449,7 @@ def _build_payload(symbol: str) -> dict:
         },
         "signal": signal,
         "risk": plan,
+        "safety": _build_safety(plan, ind.get("atr", 0)),
         "position": _build_sim_position(symbol, plan, last_close, meta["decimals"]),
         "pipeline": _build_pipeline(symbol),
         "indicators": ind,

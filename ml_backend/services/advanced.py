@@ -467,6 +467,8 @@ def analyze(df_1d: pd.DataFrame, ind: dict, signal: dict, prediction: dict,
     weaknesses = compute_weaknesses(ind, divergence, bar_level, stability, cvd_eff, alignment, trend_consistency)
     rollunder = compute_rollunder(action, stability, risk_level)
     regime = compute_regime(mtf, ind, df_1d, trend_consistency)
+    sys_health = compute_system_health(df_1d, mtf, signal, stability, bar_level,
+                                       regime["decomp_regime"])
 
     is_dead_zone = bar_level == "DEAD" or stability == "LOW"
     ml_rejected = confidence < 0.4
@@ -490,4 +492,71 @@ def analyze(df_1d: pd.DataFrame, ind: dict, signal: dict, prediction: dict,
         "is_dead_zone": is_dead_zone,
         "ml_rejected": ml_rejected,
         **tech_scores,
+        **sys_health,
+    }
+
+
+# ── System Health (K-Synthesizer style) ────────────────────────────────────
+
+def compute_system_health(df_1d: pd.DataFrame, mtf: dict, signal: dict,
+                          stability: str, bar_level: str,
+                          decomp_regime: str) -> dict:
+    """Compute honest, data-driven system-health KPIs: TS intrinsic/SNR,
+    decomp regime, composite BAR score, and AI-vs-RULES (theta) alignment.
+    These are local proxies modelled on the K-Synthesizer health row; no
+    fabricated win-rates are produced."""
+    closes = df_1d["Close"].dropna().astype(float).to_numpy()
+    n = len(closes)
+
+    # TS intrinsic + SNR via slow-trend / residual decomposition.
+    ts_intrinsic = 0.0
+    ts_snr = 0.0
+    if n >= 40:
+        s = pd.Series(closes)
+        slow = s.rolling(20).mean().dropna()
+        if len(slow) >= 20:
+            resid = s.loc[slow.index] - slow
+            cstd = s.std()
+            rstd = resid.std()
+            if cstd and cstd > 0:
+                ts_intrinsic = float(np.clip(100 * (1 - rstd / cstd), 0, 100))
+            v_slow = float(slow.diff().std())
+            v_resid = float(resid.diff().std())
+            if v_resid > 0:
+                ts_snr = round(v_slow / v_resid, 2)
+            else:
+                ts_snr = round(v_slow, 2)
+
+    # Composite BAR total score 0-100 from MTF stack, confidence and stability.
+    alignment = compute_weighted_alignment(signal.get("score", 50),
+                                           mtf["mtf_alignment"],
+                                           cvd=compute_cvd_efficiency(df_1d),
+                                           bar_level=bar_level)
+    stability_bonus = {"HIGH": 8, "MED": 4, "LOW": -6}.get(stability, 0)
+    bar_total = int(round(float(np.clip(
+        0.6 * alignment + 0.4 * float(signal.get("confidence", 0.0)) * 100 + stability_bonus, 0, 100))))
+
+    # Theta: compare AI direction (signal) vs RULES (short-term momentum).
+    ai_dir = 1 if signal.get("action") == "BUY" else -1 if signal.get("action") == "SELL" else 0
+    rules_dir = 0
+    momentum_pct = 0.0
+    if n >= 22:
+        raw = closes[-1] / closes[-21] - 1
+        momentum_pct = round(float(raw) * 100, 2)
+        rules_dir = 1 if raw > 0.0005 else -1 if raw < -0.0005 else 0
+    aligned = bool(ai_dir and rules_dir and ai_dir == rules_dir)
+    theta = {
+        "ai_dir": ai_dir,
+        "rules_dir": rules_dir,
+        "momentum_pct": momentum_pct,
+        "aligned": aligned,
+        "label": "ALIGN" if aligned else ("DIVERGE" if ai_dir and rules_dir else "NEUTRAL"),
+    }
+
+    return {
+        "ts_intrinsic": round(ts_intrinsic, 1),
+        "ts_snr": ts_snr,
+        "decomp_regime": decomp_regime,
+        "bar_total": bar_total,
+        "theta": theta,
     }

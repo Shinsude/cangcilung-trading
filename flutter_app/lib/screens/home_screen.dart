@@ -844,7 +844,87 @@ class _CandleTimerState extends State<_CandleTimer> {
   }
 }
 
-class _SessionTimeline extends StatefulWidget {
+class _SystemHealthCard extends StatelessWidget {
+  const _SystemHealthCard({required this.system});
+  final SystemHealth system;
+
+  String get _tsLabel {
+    final i = system.tsIntrinsic;
+    if (i >= 60) return 'STRONG';
+    if (i >= 40) return 'MED';
+    if (i > 5) return 'WEAK';
+    return 'NOISE';
+  }
+
+  Color get _tsColor =>
+      system.tsIntrinsic >= 60 ? AppColors.green : system.tsIntrinsic >= 40 ? AppColors.amber : AppColors.red;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.border)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.monitor_heart_outlined, size: 14, color: AppColors.textSecondary),
+              SizedBox(width: 6),
+              Text('SISTEM HEALTH', style: TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _row('TS', '${_tsLabel} ${system.tsIntrinsic.toStringAsFixed(0)}%',
+              system.tsIntrinsic >= 40 ? AppColors.green : system.tsIntrinsic >= 25 ? AppColors.amber : AppColors.red),
+          _row('SNR', '${system.tsSnr.toStringAsFixed(1)}x',
+              system.tsSnr >= 1.5 ? AppColors.green : system.tsSnr >= 0.8 ? AppColors.amber : AppColors.red),
+          _row('DECOMP', '${system.decompRegime}',
+              system.decompRegime == 'TRENDING' ? AppColors.green : system.decompRegime == 'RANGING' ? AppColors.amber : AppColors.red),
+          _row('BAR', '${system.barTotal.toStringAsFixed(0)}/100',
+              system.barTotal >= 70 ? AppColors.green : system.barTotal >= 40 ? AppColors.amber : AppColors.red),
+          const SizedBox(height: 4),
+          const Divider(color: AppColors.border, height: 14),
+          Row(
+            children: [
+              const Text('THETA', style: TextStyle(color: AppColors.textSecondary, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.7)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '${system.theta.label} · AI ${system.theta.aiDir == 0 ? '–' : system.theta.aiDir > 0 ? '▲' : '▼'} vs RULES ${system.theta.rulesDir == 0 ? '–' : system.theta.rulesDir > 0 ? '▲' : '▼'}',
+                  style: TextStyle(
+                    color: system.theta.aligned ? AppColors.green : AppColors.amber,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          _row('SAFE', system.safety.status,
+              system.safety.status == 'OK' ? AppColors.green : system.safety.status == 'N/A' ? AppColors.textSecondary : AppColors.red),
+          if (system.safety.violations > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 44),
+              child: Text('⚠ ${system.safety.violations} pelanggaran · SL min ${system.safety.minimumStop.toStringAsFixed(0)} · RR ${system.safety.riskRewardtoStringAsFixed(1)}',
+                  style: const TextStyle(color: AppColors.red, fontSize: 9)),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _row(String k, String v, Color c) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          children: [
+            SizedBox(width: 40, child: Text(k, style: const TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5))),
+            Text(v, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w800)),
+          ],
+        ),
+      );
+}
   const _SessionTimeline();
   @override
   State<_SessionTimeline> createState() => _SessionTimelineState();
@@ -1038,6 +1118,8 @@ class _SignalPage extends StatelessWidget {
               const SizedBox(height: 14),
               _PipelineCard(pipeline: data.pipeline),
             ],
+            const SizedBox(height: 14),
+            _SystemHealthCard(system: data.system),
           ],
         ],
       ),

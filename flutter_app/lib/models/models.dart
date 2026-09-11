@@ -1,4 +1,4 @@
-class Candle {
+﻿class Candle {
   final String t;
   final double o, h, l, c;
   final int v;
@@ -383,74 +383,73 @@ class PipelineStats {
   }
 }
 
-class TradingData {
-  final String symbol;
-  final String name;
-  final String category;
-  final int decimals;
-  final double currentPrice;
-  final double previousClose;
-  final double changePct;
-  final Prediction prediction;
-  final Signal signal;
-  final Indicators indicators;
-  final Sentiment sentiment;
-  final List<Candle> candles;
-  final Map<String, double> weights;
-  final Risk risk;
-  final PositionPlan position;
-  final PipelineStats pipeline;
-  final Advanced advanced;
-  final DateTime? updatedAt;
+class SystemHealth {
+  final double minimumStop;
+  final double riskReward;
+  final SafetyBounds safety;
 
-  TradingData({
-    required this.symbol,
-    required this.name,
-    required this.category,
-    required this.decimals,
-    required this.currentPrice,
-    required this.previousClose,
-    required this.changePct,
-    required this.prediction,
-    required this.signal,
-    required this.indicators,
-    required this.sentiment,
-    required this.candles,
-    this.weights = const {},
-    Risk? risk,
-    PositionPlan? position,
-    PipelineStats? pipeline,
-    Advanced? advanced,
-    this.updatedAt,
-  })  : risk = risk ?? const Risk(),
-        position = position ?? const PositionPlan(),
-        pipeline = pipeline ?? const PipelineStats(),
-        advanced = advanced ?? const Advanced();
+  const SystemHealth({
+    this.tsIntrinsic = 0,
+    this.tsSnr = 0,
+    this.decompRegime = 'NO DATA',
+    this.barTotal = 0,
+    this.theta = const Theta(),
+    this.safety = const SafetyBounds(),
+  });
 
-  factory TradingData.fromJson(Map<String, dynamic> json) => TradingData(
-        symbol: json['symbol'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        category: json['category'] as String? ?? '',
-        decimals: (json['decimals'] as num?)?.toInt() ?? 2,
-        currentPrice: (json['current_price'] as num?)?.toDouble() ?? 0,
-        previousClose: (json['previous_close'] as num?)?.toDouble() ?? 0,
-        changePct: (json['change_pct'] as num?)?.toDouble() ?? 0,
-        prediction: Prediction.fromJson(json['prediction'] as Map<String, dynamic>? ?? {}),
-        signal: Signal.fromJson(json['signal'] as Map<String, dynamic>? ?? {}),
-        indicators: Indicators.fromJson(json['indicators'] as Map<String, dynamic>? ?? {}),
-        sentiment: Sentiment.fromJson(json['sentiment'] as Map<String, dynamic>? ?? {}),
-        candles: ((json['candles'] as List?) ?? const [])
-            .whereType<Map<String, dynamic>>()
-            .map(Candle.fromJson)
-            .toList(),
-        weights: ((json['weights'] as Map<String, dynamic>?) ?? const {})
-            .map((k, v) => MapEntry(k, (v as num).toDouble())),
-        risk: Risk.fromJson(json['risk'] as Map<String, dynamic>? ?? {}),
-        position: PositionPlan.fromJson(json['position'] as Map<String, dynamic>? ?? {}),
-        pipeline: PipelineStats.fromJson(json['pipeline'] as Map<String, dynamic>? ?? {}),
-        advanced: Advanced.fromJson(json['advanced'] as Map<String, dynamic>? ?? {}),
-        updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? ''),
-      );
+  factory SystemHealth.fromJson(Map<String, dynamic>? json) {
+    final j = json ?? const {};
+    return SystemHealth(
+      tsIntrinsic: (j['ts_intrinsic'] as num?)?.toDouble() ?? 0,
+      tsSnr: (j['ts_snr'] as num?)?.toDouble() ?? 0,
+      decompRegime: (j['decomp_regime'] as String? ?? 'NO DATA').toUpperCase(),
+      barTotal: (j['bar_total'] as num?)?.toInt() ?? 0,
+      theta: Theta.fromJson(j['theta'] as Map<String, dynamic>?),
+      safety: SafetyBounds.fromJson(j['safety'] as Map<String, dynamic>?) ??
+          SafetyBounds.fromJson(_payload()['safety'] as Map<String, dynamic>?),
+    );
+  }
+}
+
+class Theta {
+  final int aiDir;
+  final int rulesDir;
+  final double momentumPct;
+  final bool aligned;
+  final String label;
+
+  const Theta({this.aiDir = 0, this.rulesDir = 0, this.momentumPct = 0, this.aligned = false, this.label = 'NEUTRAL'});
+
+  factory Theta.fromJson(Map<String, dynamic>? json) {
+    final j = json ?? const {};
+    return Theta(
+      aiDir: (j['ai_dir'] as num?)?.toInt() ?? 0,
+      rulesDir: (j['rules_dir'] as num?)?.toInt() ?? 0,
+      momentumPct: (j['momentum_pct'] as num?)?.toDouble() ?? 0,
+      aligned: (j['aligned'] as bool?) ?? false,
+      label: (j['label'] as String? ?? 'NEUTRAL').toUpperCase(),
+    );
+  }
+}
+
+class SafetyBounds {
+  final String status;
+  final int violations;
+  final double minimumStop;
+  final double riskReward;
+
+  const SafetyBounds({this.status = 'N/A', this.violations = 0, this.minimumStop = 0, this.riskReward = 0});
+
+  factory SafetyBounds.fromJson(Map<String, dynamic>? json) {
+    final j = json ?? const {};
+    return SafetyBounds(
+      status: (j['status'] as String? ?? 'N/A').toUpperCase(),
+      violations: (j['violations'] as num?)?.toInt() ?? 0,
+      minimumStop: (j['minimum_stop'] as num?)?.toDouble() ?? 0,
+      riskReward: (j['risk_reward'] as num?)?.toDouble() ?? 0,
+    );
+  }
+}
 }
 
 class Risk {
