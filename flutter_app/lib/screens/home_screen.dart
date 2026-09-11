@@ -783,7 +783,9 @@ class _CandleTimerState extends State<_CandleTimer> {
     final now = DateTime.now().toUtc().add(const Duration(hours: 7));
     final mins = (now.minute ~/ 15 + 1) * 15 % 60;
     var next = DateTime(now.year, now.month, now.day, now.hour, mins);
-    if (next.isBefore(now)) next = next.add(const Duration(hours: 1));
+    if (next.isBefore(now)) {
+      next = next.add(const Duration(hours: 1));
+    }
     final d = next.difference(now);
     final prog = ((900 - d.inSeconds) / 900).clamp(0.0, 1.0);
     if (mounted && (d != _remaining || prog != _progress)) setState(() {
