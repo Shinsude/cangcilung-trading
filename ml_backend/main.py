@@ -24,6 +24,7 @@ _response_cache: dict[str, dict] = {}
 LOG_URL = os.getenv("SIGNALS_LOG_URL", "https://raw.githubusercontent.com/Shinsude/cangcilung-trading/main/flutter_app/web/signals_log.json")
 _real_log_cache: dict = {}
 _signal_history: dict[str, list[str]] = {}  # symbol -> list of recent action strings
+_sim_positions: dict[str, dict] = {}  # symbol -> simulated open position
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api")
@@ -199,6 +200,69 @@ def _profit_plan(ind: dict, action: str, price: float, decimals: int) -> dict:
     }
 
 
+def _build_sim_position(symbol: str, plan: dict, price: float, decimals: int) -> dict:
+    """Tracks a simulated open position from the latest actionable signal.
+
+    Mirrors K-Synthesizer's open positions block without a live MT5 account:
+    a BUY/SELL signal opens (or rolls) a position at the plan entry; while the
+    same side persists the original entry is kept and live P&L is computed
+    against the current price until TP/SL is hit.
+    """
+    side = plan.get("side")
+    now_ts = dt.datetime.utcnow()
+    pos = _sim_positions.get(symbol)
+
+    if side is not None:
+        if pos is None or pos["side"] != side or pos.get("closed"):
+            pos = {
+                "side": side,
+                "entry": plan["entry"],
+                "sl": plan.get("stop_loss", 0.0),
+                "tp": plan.get("take_profit", 0.0),
+                "opened_at": now_ts.isoformat() + "Z",
+                "closed": False,
+            }
+            _sim_positions[symbol] = pos
+
+    if pos is None:
+        return {"open": False}
+
+    entry, sl, tp = pos["entry"], pos["sl"], pos["tp"]
+    points = (price - entry) if pos["side"] == "BUY" else (entry - price)
+    pnl = round(points, decimals)
+    pnl_pct = round(points / entry * 100, 2) if entry else 0.0
+
+    status = "OPEN"
+    if sl and entry:
+        near_buy_stop = pos["side"] == "BUY" and price <= sl
+        near_sell_stop = pos["side"] == "SELL" and price >= sl
+        near_buy_tp = pos["side"] == "BUY" and price >= tp
+        near_sell_tp = pos["side"] == "SELL" and price <= tp
+        if near_buy_stop or near_sell_stop:
+            status = "STOP"
+        elif near_buy_tp or near_sell_tp:
+            status = "TARGET"
+    pos["closed"] = status != "OPEN"
+
+    dist_stop = round(abs(price - sl) / entry * 100, 2) if sl and entry else 0.0
+    dist_tp = round(abs(price - tp) / entry * 100, 2) if tp and entry else 0.0
+
+    return {
+        "open": status == "OPEN",
+        "side": pos["side"],
+        "entry_price": round(entry, decimals),
+        "current_price": round(price, decimals),
+        "stop_loss": round(sl, decimals),
+        "take_profit": round(tp, decimals),
+        "points": pnl,
+        "pnl_pct": pnl_pct,
+        "dist_stop_pct": dist_stop,
+        "dist_tp_pct": dist_tp,
+        "status": status,
+        "opened_at": pos["opened_at"],
+    }
+
+
 def _build_payload(symbol: str) -> dict:
     df = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
 
@@ -255,6 +319,8 @@ def _build_payload(symbol: str) -> dict:
         signal_history=hist,
     )
 
+    plan = _profit_plan(ind, signal["action"], last_close, meta["decimals"])
+
     candles = []
     last_rows = df.tail(40)
     for idx, row in last_rows.iterrows():
@@ -288,7 +354,8 @@ def _build_payload(symbol: str) -> dict:
             "ensembles": prediction.get("ensembles", 0),
         },
         "signal": signal,
-        "risk": _profit_plan(ind, signal["action"], last_close, meta["decimals"]),
+        "risk": plan,
+        "position": _build_sim_position(symbol, plan, last_close, meta["decimals"]),
         "indicators": ind,
         "sentiment": sentiment,
         "candles": candles,

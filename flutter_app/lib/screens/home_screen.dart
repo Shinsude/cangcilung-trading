@@ -855,6 +855,10 @@ class _SignalPage extends StatelessWidget {
           if (!minimal) ...[
             const SizedBox(height: 14),
             _RiskPlanCard(risk: data.risk, decimals: data.decimals),
+            if (data.position.open) ...[
+              const SizedBox(height: 14),
+              _PositionCard(position: data.position, decimals: data.decimals),
+            ],
           ],
           const SizedBox(height: 14),
           _AlertBar(target: alertTarget, price: data.currentPrice, decimals: data.decimals, onSet: onSetAlert, onClear: onClearAlert),
@@ -1512,6 +1516,99 @@ class _PlanCell extends StatelessWidget {
         const SizedBox(height: 4),
         Text(value, style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w800)),
       ],
+    );
+  }
+}
+
+class _PositionCard extends StatelessWidget {
+  const _PositionCard({required this.position, required this.decimals});
+
+  final PositionPlan position;
+  final int decimals;
+
+  @override
+  Widget build(BuildContext context) {
+    final sell = position.side == 'SELL';
+    final col = sell ? AppColors.red : AppColors.green;
+    final profit = position.pnlPct > 0;
+    final pnlCol = position.points == 0 ? AppColors.textSecondary : profit ? AppColors.green : AppColors.red;
+    final closed = position.status == 'STOP' || position.status == 'TARGET';
+
+    String fmt(double v) => v.toStringAsFixed(decimals);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: col.withValues(alpha: 0.45)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(sell ? Icons.south_rounded : Icons.north_rounded, size: 15, color: col),
+              const SizedBox(width: 6),
+              const Text('POSISI SIMULASI', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+              const Spacer(),
+              _chip(position.status == 'OPEN' ? 'OPEN' : position.status, position.status == 'OPEN' ? (closed ? AppColors.amber : AppColors.green) : position.status == 'TARGET' ? AppColors.green : AppColors.red),
+              const SizedBox(width: 6),
+              Text(_fmtOpened, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(position.pnlPct >= 0 ? '+' : '', style: TextStyle(color: pnlCol, fontSize: 15, fontWeight: FontWeight.w800)),
+              Text('${position.pnlPct.toStringAsFixed(2)}%', style: TextStyle(color: pnlCol, fontSize: 26, fontWeight: FontWeight.w900)),
+              const SizedBox(width: 8),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 3),
+                child: Text('${position.points >= 0 ? '+' : ''}${position.points.toStringAsFixed(decimals)}', style: TextStyle(color: pnlCol, fontSize: 12, fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _PlanCell(label: 'Entry', value: fmt(position.entryPrice), color: AppColors.textPrimary)),
+              Expanded(child: _PlanCell(label: 'Now', value: fmt(position.currentPrice), color: pnlCol)),
+              Expanded(child: _PlanCell(label: 'SL', value: fmt(position.stopLoss), color: AppColors.red)),
+              Expanded(child: _PlanCell(label: 'TP', value: fmt(position.takeProfit), color: AppColors.green)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children: [
+              _chip('STOP ${position.distStopPct.toStringAsFixed(2)}%', AppColors.red.withValues(alpha: 0.9)),
+              _chip('TP ${position.distTpPct.toStringAsFixed(2)}%', AppColors.green.withValues(alpha: 0.9)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text('Simulasi dari sinyal terakhir — bukan akun MT5 live.', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, height: 1.4)),
+        ],
+      ),
+    );
+  }
+
+  String get _fmtOpened {
+    final t = DateTime.tryParse(position.openedAt);
+    if (t == null) return '';
+    final wib = t.toUtc().add(const Duration(hours: 7));
+    final hh = wib.hour.toString().padLeft(2, '0');
+    final mm = wib.minute.toString().padLeft(2, '0');
+    return '$hh:$mm WIB';
+  }
+
+  Widget _chip(String text, Color c) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(4)),
+      child: Text(text, style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w800)),
     );
   }
 }

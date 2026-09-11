@@ -289,6 +289,51 @@ class Advanced {
       );
 }
 
+class PositionPlan {
+  final bool open;
+  final String side;
+  final double entryPrice;
+  final double currentPrice;
+  final double stopLoss;
+  final double takeProfit;
+  final double points;
+  final double pnlPct;
+  final double distStopPct;
+  final double distTpPct;
+  final String status;
+  final String openedAt;
+
+  const PositionPlan({
+    this.open = false,
+    this.side = '',
+    this.entryPrice = 0,
+    this.currentPrice = 0,
+    this.stopLoss = 0,
+    this.takeProfit = 0,
+    this.points = 0,
+    this.pnlPct = 0,
+    this.distStopPct = 0,
+    this.distTpPct = 0,
+    this.status = 'OPEN',
+    this.openedAt = '',
+  });
+
+  factory PositionPlan.fromJson(Map<String, dynamic> json) => PositionPlan(
+        open: json['open'] as bool? ?? false,
+        side: (json['side'] as String? ?? '').toUpperCase(),
+        entryPrice: (json['entry_price'] as num?)?.toDouble() ?? 0,
+        currentPrice: (json['current_price'] as num?)?.toDouble() ?? 0,
+        stopLoss: (json['stop_loss'] as num?)?.toDouble() ?? 0,
+        takeProfit: (json['take_profit'] as num?)?.toDouble() ?? 0,
+        points: (json['points'] as num?)?.toDouble() ?? 0,
+        pnlPct: (json['pnl_pct'] as num?)?.toDouble() ?? 0,
+        distStopPct: (json['dist_stop_pct'] as num?)?.toDouble() ?? 0,
+        distTpPct: (json['dist_tp_pct'] as num?)?.toDouble() ?? 0,
+        status: (json['status'] as String? ?? 'OPEN').toUpperCase(),
+        openedAt: json['opened_at'] as String? ?? '',
+      );
+}
+
 class TradingData {
   final String symbol;
   final String name;
@@ -304,6 +349,7 @@ class TradingData {
   final List<Candle> candles;
   final Map<String, double> weights;
   final Risk risk;
+  final PositionPlan position;
   final Advanced advanced;
   final DateTime? updatedAt;
 
@@ -322,9 +368,11 @@ class TradingData {
     required this.candles,
     this.weights = const {},
     Risk? risk,
+    PositionPlan? position,
     Advanced? advanced,
     this.updatedAt,
   })  : risk = risk ?? const Risk(),
+        position = position ?? const PositionPlan(),
         advanced = advanced ?? const Advanced();
 
   factory TradingData.fromJson(Map<String, dynamic> json) => TradingData(
@@ -346,6 +394,7 @@ class TradingData {
         weights: ((json['weights'] as Map<String, dynamic>?) ?? const {})
             .map((k, v) => MapEntry(k, (v as num).toDouble())),
         risk: Risk.fromJson(json['risk'] as Map<String, dynamic>? ?? {}),
+        position: PositionPlan.fromJson(json['position'] as Map<String, dynamic>? ?? {}),
         advanced: Advanced.fromJson(json['advanced'] as Map<String, dynamic>? ?? {}),
         updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? ''),
       );
