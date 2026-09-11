@@ -1,3 +1,4 @@
+import collections
 import datetime as dt
 import json
 import logging
@@ -25,6 +26,7 @@ LOG_URL = os.getenv("SIGNALS_LOG_URL", "https://raw.githubusercontent.com/Shinsu
 _real_log_cache: dict = {}
 _signal_history: dict[str, list[str]] = {}  # symbol -> list of recent action strings
 _sim_positions: dict[str, dict] = {}  # symbol -> simulated open position
+_pipeline_stats: dict[str, collections.Counter] = {}  # symbol -> rolling counters
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api")
@@ -219,6 +221,9 @@ def _build_sim_position(symbol: str, plan: dict, price: float, decimals: int) ->
                 "entry": plan["entry"],
                 "sl": plan.get("stop_loss", 0.0),
                 "tp": plan.get("take_profit", 0.0),
+                "trail_level": None,
+                "trail_buffer": max(plan.get("atr", 0.0) * 0.75, 0.0),
+                "profit_locked_pct": 0.0,
                 "opened_at": now_ts.isoformat() + "Z",
                 "closed": False,
             }
@@ -228,23 +233,50 @@ def _build_sim_position(symbol: str, plan: dict, price: float, decimals: int) ->
         return {"open": False}
 
     entry, sl, tp = pos["entry"], pos["sl"], pos["tp"]
+    trail_level = pos.get("trail_level")
+    buffer = pos.get("trail_buffer", 0.0)
+
+    # ── Trailing stop: ratchet the stop toward price once in profit ──
+    if pos["side"] == "BUY" and price > entry and buffer > 0:
+        candidate = price - buffer
+        if trail_level is None or candidate > trail_level:
+            trail_level = candidate
+        if sl > 0 and trail_level < sl:
+            trail_level = sl
+        pos["trail_level"] = trail_level
+    elif pos["side"] == "SELL" and price < entry and buffer > 0:
+        candidate = price + buffer
+        if trail_level is None or candidate < trail_level:
+            trail_level = candidate
+        if sl > 0 and trail_level > sl:
+            trail_level = sl
+        pos["trail_level"] = trail_level
+
+    effective_stop = trail_level if trail_level is not None else sl
+
     points = (price - entry) if pos["side"] == "BUY" else (entry - price)
     pnl = round(points, decimals)
     pnl_pct = round(points / entry * 100, 2) if entry else 0.0
 
     status = "OPEN"
-    if sl and entry:
-        near_buy_stop = pos["side"] == "BUY" and price <= sl
-        near_sell_stop = pos["side"] == "SELL" and price >= sl
-        near_buy_tp = pos["side"] == "BUY" and price >= tp
-        near_sell_tp = pos["side"] == "SELL" and price <= tp
+    if effective_stop and entry:
+        near_buy_stop = pos["side"] == "BUY" and price <= effective_stop
+        near_sell_stop = pos["side"] == "SELL" and price >= effective_stop
+        near_buy_tp = pos["side"] == "BUY" and tp > 0 and price >= tp
+        near_sell_tp = pos["side"] == "SELL" and tp > 0 and price <= tp
         if near_buy_stop or near_sell_stop:
             status = "STOP"
         elif near_buy_tp or near_sell_tp:
             status = "TARGET"
     pos["closed"] = status != "OPEN"
 
-    dist_stop = round(abs(price - sl) / entry * 100, 2) if sl and entry else 0.0
+    profit_locked = 0.0
+    if trail_level is not None:
+        locked_abs = (price - trail_level) if pos["side"] == "BUY" else (trail_level - price)
+        profit_locked = max(0.0, locked_abs / entry * 100) if entry else 0.0
+    pos["profit_locked_pct"] = round(profit_locked, 2)
+
+    dist_stop = round(abs(price - (effective_stop or price)) / entry * 100, 2) if entry else 0.0
     dist_tp = round(abs(price - tp) / entry * 100, 2) if tp and entry else 0.0
 
     return {
@@ -254,12 +286,53 @@ def _build_sim_position(symbol: str, plan: dict, price: float, decimals: int) ->
         "current_price": round(price, decimals),
         "stop_loss": round(sl, decimals),
         "take_profit": round(tp, decimals),
+        "trail_level": round(trail_level, decimals) if trail_level is not None else None,
+        "trail_active": trail_level is not None,
+        "profit_locked_pct": pos["profit_locked_pct"],
         "points": pnl,
         "pnl_pct": pnl_pct,
         "dist_stop_pct": dist_stop,
         "dist_tp_pct": dist_tp,
         "status": status,
         "opened_at": pos["opened_at"],
+    }
+
+
+def _push_pipeline(symbol: str, signal: dict, advanced: dict) -> None:
+    """Accumulate per-symbol rolling counters describing the signal pipeline."""
+    c = _pipeline_stats.setdefault(symbol, collections.Counter())
+    c["total"] += 1
+    c[signal["action"]] += 1
+    if advanced.get("is_dead_zone"):
+        c["dead_zone"] += 1
+    if advanced.get("ml_rejected"):
+        c["ml_reject"] += 1
+    grade = advanced.get("grade", "C")
+    c[f"grade_{grade}"] += 1
+    c["conf_sum"] += float(signal.get("confidence", 0.0))
+    if c["total"] > 1000:
+        _pipeline_stats[symbol] = collections.Counter()
+
+
+def _build_pipeline(symbol: str) -> dict:
+    c = _pipeline_stats.get(symbol)
+    if not c or not c["total"]:
+        return {"tracked": 0}
+    total = int(c["total"])
+    entry = int(c.get("BUY", 0)) + int(c.get("SELL", 0))
+    holds = int(c.get("HOLD", 0))
+    dead = int(c.get("dead_zone", 0))
+    grades = ["ULTIMATE", "APLUS", "A", "BPLUS", "B", "C"]
+    return {
+        "tracked": total,
+        "entry_rate": round(entry / total, 3),
+        "hold_rate": round(holds / total, 3),
+        "rejection_rate": round((holds + dead) / total, 3),
+        "dead_zone_rate": round(dead / total, 3),
+        "ml_reject_rate": round(c.get("ml_reject", 0) / total, 3),
+        "avg_confidence": round(c["conf_sum"] / total, 3),
+        "grade_distribution": {g: int(c.get(f"grade_{g}", 0)) for g in grades},
+        "direction_counts": {"BUY": int(c.get("BUY", 0)), "SELL": int(c.get("SELL", 0)), "HOLD": holds},
     }
 
 
@@ -318,6 +391,7 @@ def _build_payload(symbol: str) -> dict:
         df_15m=df_15m,
         signal_history=hist,
     )
+    _push_pipeline(symbol, signal, advanced)
 
     meta = SYMBOLS[symbol]
     plan = _profit_plan(ind, signal["action"], last_close, meta["decimals"])
@@ -356,6 +430,7 @@ def _build_payload(symbol: str) -> dict:
         "signal": signal,
         "risk": plan,
         "position": _build_sim_position(symbol, plan, last_close, meta["decimals"]),
+        "pipeline": _build_pipeline(symbol),
         "indicators": ind,
         "sentiment": sentiment,
         "candles": candles,

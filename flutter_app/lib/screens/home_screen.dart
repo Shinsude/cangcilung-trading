@@ -867,6 +867,10 @@ class _SignalPage extends StatelessWidget {
             _QuickIndicators(ind: data.indicators),
             const SizedBox(height: 14),
             _AdvancedScores(adv: data.advanced),
+            if (data.pipeline.tracked > 0) ...[
+              const SizedBox(height: 14),
+              _PipelineCard(pipeline: data.pipeline),
+            ],
           ],
         ],
       ),
@@ -1584,8 +1588,13 @@ class _PositionCard extends StatelessWidget {
             spacing: 6,
             runSpacing: 4,
             children: [
-              _chip('STOP ${position.distStopPct.toStringAsFixed(2)}%', AppColors.red.withValues(alpha: 0.9)),
-              _chip('TP ${position.distTpPct.toStringAsFixed(2)}%', AppColors.green.withValues(alpha: 0.9)),
+              if (position.trailActive && position.trailLevel != null)
+                _chip('TRAIL ${fmt(position.trailLevel!)}', AppColors.amber)
+              else if (position.stopLoss > 0)
+                _chip('SL ${fmt(position.stopLoss)}', AppColors.red),
+              _chip('TP ${fmt(position.takeProfit)}', AppColors.green),
+              if (position.trailActive)
+                _chip('LOCK +${position.profitLockedPct.toStringAsFixed(2)}%', AppColors.cyan),
             ],
           ),
           const SizedBox(height: 10),
@@ -1819,6 +1828,112 @@ class _AdvancedScores extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(4)),
       child: Text('$label $value', style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w700)),
+    );
+  }
+}
+
+class _PipelineCard extends StatelessWidget {
+  const _PipelineCard({required this.pipeline});
+
+  final PipelineStats pipeline;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = pipeline.tracked;
+    String pct(double v) => '${(v * 100).toStringAsFixed(0)}%';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('PIPELINE', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+              const SizedBox(width: 8),
+              Text('$total sinyal', style: const TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              _pchip('ENTRY', pct(pipeline.entryRate), pipeline.entryRate >= 0.2 ? Colors.green : Colors.amber),
+              _pchip('REJECT', pct(pipeline.rejectionRate), pipeline.rejectionRate > 0.7 ? Colors.red : Colors.amber),
+              _pchip('DEAD', pct(pipeline.deadZoneRate), pipeline.deadZoneRate > 0.2 ? Colors.red : Colors.grey),
+              _pchip('CONF', pct(pipeline.avgConfidence), pipeline.avgConfidence >= 0.5 ? Colors.green : Colors.blue),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _dirBar('BUY', pipeline.directionCounts['BUY'] ?? 0, total, AppColors.green),
+          _dirBar('SELL', pipeline.directionCounts['SELL'] ?? 0, total, AppColors.red),
+          _dirBar('HOLD', pipeline.directionCounts['HOLD'] ?? 0, total, AppColors.grey),
+          const SizedBox(height: 10),
+          ...[
+            'ULTIMATE',
+            'APLUS',
+            'A',
+            'BPLUS',
+            'B',
+            'C',
+          ].where((g) => (pipeline.gradeDistribution[g] ?? 0) > 0).map((g) => _gradeBar(g, pipeline.gradeDistribution[g] ?? 0, total)),
+        ],
+      ),
+    );
+  }
+
+  Widget _pchip(String label, String value, Color c) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6)),
+      child: Text('$label $value', style: TextStyle(color: c, fontSize: 10, fontWeight: FontWeight.w800)),
+    );
+  }
+
+  Widget _dirBar(String label, int n, int total, Color c) {
+    final f = total > 0 ? (n / total).clamp(0.0, 1.0).toDouble() : 0.0;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          SizedBox(width: 30, child: Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w700))),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(value: f, minHeight: 6, backgroundColor: AppColors.surfaceAlt, color: c),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(width: 30, child: Text('$n', textAlign: TextAlign.right, style: TextStyle(color: c, fontSize: 10, fontWeight: FontWeight.w800))),
+        ],
+      ),
+    );
+  }
+
+  Widget _gradeBar(String grade, int n, int total) {
+    final c = grade == 'ULTIMATE' ? Colors.amber : grade == 'APLUS' ? Colors.green : grade == 'A' ? Colors.lightGreen : grade == 'BPLUS' ? Colors.blue : Colors.cyan;
+    final f = total > 0 ? (n / total).clamp(0.0, 1.0).toDouble() : 0.0;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          SizedBox(width: 42, child: Text(grade, style: TextStyle(color: c, fontSize: 10, fontWeight: FontWeight.w800))),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(value: f, minHeight: 6, backgroundColor: AppColors.surfaceAlt, color: c),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(width: 30, child: Text('$n', textAlign: TextAlign.right, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w700))),
+        ],
+      ),
     );
   }
 }

@@ -300,6 +300,9 @@ class PositionPlan {
   final double pnlPct;
   final double distStopPct;
   final double distTpPct;
+  final double? trailLevel;
+  final bool trailActive;
+  final double profitLockedPct;
   final String status;
   final String openedAt;
 
@@ -314,6 +317,9 @@ class PositionPlan {
     this.pnlPct = 0,
     this.distStopPct = 0,
     this.distTpPct = 0,
+    this.trailLevel,
+    this.trailActive = false,
+    this.profitLockedPct = 0,
     this.status = 'OPEN',
     this.openedAt = '',
   });
@@ -329,9 +335,52 @@ class PositionPlan {
         pnlPct: (json['pnl_pct'] as num?)?.toDouble() ?? 0,
         distStopPct: (json['dist_stop_pct'] as num?)?.toDouble() ?? 0,
         distTpPct: (json['dist_tp_pct'] as num?)?.toDouble() ?? 0,
+        trailLevel: (json['trail_level'] as num?)?.toDouble(),
+        trailActive: json['trail_active'] as bool? ?? false,
+        profitLockedPct: (json['profit_locked_pct'] as num?)?.toDouble() ?? 0,
         status: (json['status'] as String? ?? 'OPEN').toUpperCase(),
         openedAt: json['opened_at'] as String? ?? '',
       );
+}
+
+class PipelineStats {
+  final int tracked;
+  final double entryRate;
+  final double holdRate;
+  final double rejectionRate;
+  final double deadZoneRate;
+  final double mlRejectRate;
+  final double avgConfidence;
+  final Map<String, int> gradeDistribution;
+  final Map<String, int> directionCounts;
+
+  const PipelineStats({
+    this.tracked = 0,
+    this.entryRate = 0,
+    this.holdRate = 0,
+    this.rejectionRate = 0,
+    this.deadZoneRate = 0,
+    this.mlRejectRate = 0,
+    this.avgConfidence = 0,
+    this.gradeDistribution = const {},
+    this.directionCounts = const {},
+  });
+
+  factory PipelineStats.fromJson(Map<String, dynamic> json) {
+    Map<String, int> toIntMap(Map<String, dynamic>? m) => (m ?? const {})
+        .map((k, v) => MapEntry(k, (v as num).toInt()));
+    return PipelineStats(
+      tracked: (json['tracked'] as num?)?.toInt() ?? 0,
+      entryRate: (json['entry_rate'] as num?)?.toDouble() ?? 0,
+      holdRate: (json['hold_rate'] as num?)?.toDouble() ?? 0,
+      rejectionRate: (json['rejection_rate'] as num?)?.toDouble() ?? 0,
+      deadZoneRate: (json['dead_zone_rate'] as num?)?.toDouble() ?? 0,
+      mlRejectRate: (json['ml_reject_rate'] as num?)?.toDouble() ?? 0,
+      avgConfidence: (json['avg_confidence'] as num?)?.toDouble() ?? 0,
+      gradeDistribution: toIntMap(json['grade_distribution'] as Map<String, dynamic>?),
+      directionCounts: toIntMap(json['direction_counts'] as Map<String, dynamic>?),
+    );
+  }
 }
 
 class TradingData {
@@ -350,6 +399,7 @@ class TradingData {
   final Map<String, double> weights;
   final Risk risk;
   final PositionPlan position;
+  final PipelineStats pipeline;
   final Advanced advanced;
   final DateTime? updatedAt;
 
@@ -369,10 +419,12 @@ class TradingData {
     this.weights = const {},
     Risk? risk,
     PositionPlan? position,
+    PipelineStats? pipeline,
     Advanced? advanced,
     this.updatedAt,
   })  : risk = risk ?? const Risk(),
         position = position ?? const PositionPlan(),
+        pipeline = pipeline ?? const PipelineStats(),
         advanced = advanced ?? const Advanced();
 
   factory TradingData.fromJson(Map<String, dynamic> json) => TradingData(
@@ -395,6 +447,7 @@ class TradingData {
             .map((k, v) => MapEntry(k, (v as num).toDouble())),
         risk: Risk.fromJson(json['risk'] as Map<String, dynamic>? ?? {}),
         position: PositionPlan.fromJson(json['position'] as Map<String, dynamic>? ?? {}),
+        pipeline: PipelineStats.fromJson(json['pipeline'] as Map<String, dynamic>? ?? {}),
         advanced: Advanced.fromJson(json['advanced'] as Map<String, dynamic>? ?? {}),
         updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? ''),
       );
