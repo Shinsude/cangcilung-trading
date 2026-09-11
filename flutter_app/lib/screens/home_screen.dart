@@ -856,9 +856,6 @@ class _SystemHealthCard extends StatelessWidget {
     return 'NOISE';
   }
 
-  Color get _tsColor =>
-      system.tsIntrinsic >= 60 ? AppColors.green : system.tsIntrinsic >= 40 ? AppColors.amber : AppColors.red;
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -875,11 +872,11 @@ class _SystemHealthCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _row('TS', '${_tsLabel} ${system.tsIntrinsic.toStringAsFixed(0)}%',
+          _row('TS', '$_tsLabel ${system.tsIntrinsic.toStringAsFixed(0)}%',
               system.tsIntrinsic >= 40 ? AppColors.green : system.tsIntrinsic >= 25 ? AppColors.amber : AppColors.red),
           _row('SNR', '${system.tsSnr.toStringAsFixed(1)}x',
               system.tsSnr >= 1.5 ? AppColors.green : system.tsSnr >= 0.8 ? AppColors.amber : AppColors.red),
-          _row('DECOMP', '${system.decompRegime}',
+          _row('DECOMP', system.decompRegime,
               system.decompRegime == 'TRENDING' ? AppColors.green : system.decompRegime == 'RANGING' ? AppColors.amber : AppColors.red),
           _row('BAR', '${system.barTotal.toStringAsFixed(0)}/100',
               system.barTotal >= 70 ? AppColors.green : system.barTotal >= 40 ? AppColors.amber : AppColors.red),

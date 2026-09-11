@@ -481,8 +481,7 @@ class SystemHealth {
       decompRegime: (j['decomp_regime'] as String? ?? 'NO DATA').toUpperCase(),
       barTotal: (j['bar_total'] as num?)?.toInt() ?? 0,
       theta: Theta.fromJson(j['theta'] as Map<String, dynamic>?),
-      safety: SafetyBounds.fromJson(j['safety'] as Map<String, dynamic>?) ??
-          const SafetyBounds(),
+      safety: SafetyBounds.fromJson(j['safety'] as Map<String, dynamic>?),
     );
   }
 }
@@ -525,7 +524,6 @@ class SafetyBounds {
       riskReward: (j['risk_reward'] as num?)?.toDouble() ?? 0,
     );
   }
-}
 }
 
 class Risk {
