@@ -383,6 +383,79 @@ class PipelineStats {
   }
 }
 
+class TradingData {
+  final String symbol;
+  final String name;
+  final String category;
+  final int decimals;
+  final double currentPrice;
+  final double previousClose;
+  final double changePct;
+  final Prediction prediction;
+  final Signal signal;
+  final Indicators indicators;
+  final Sentiment sentiment;
+  final List<Candle> candles;
+  final Map<String, double> weights;
+  final Risk risk;
+  final PositionPlan position;
+  final PipelineStats pipeline;
+  final Advanced advanced;
+  final SystemHealth? system;
+  final DateTime? updatedAt;
+
+  TradingData({
+    required this.symbol,
+    required this.name,
+    required this.category,
+    required this.decimals,
+    required this.currentPrice,
+    required this.previousClose,
+    required this.changePct,
+    required this.prediction,
+    required this.signal,
+    required this.indicators,
+    required this.sentiment,
+    required this.candles,
+    this.weights = const {},
+    Risk? risk,
+    PositionPlan? position,
+    PipelineStats? pipeline,
+    Advanced? advanced,
+    this.updatedAt,
+    this.system,
+  })  : risk = risk ?? const Risk(),
+        position = position ?? const PositionPlan(),
+        pipeline = pipeline ?? const PipelineStats(),
+        advanced = advanced ?? const Advanced();
+
+  factory TradingData.fromJson(Map<String, dynamic> json) => TradingData(
+        symbol: json['symbol'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        category: json['category'] as String? ?? '',
+        decimals: (json['decimals'] as num?)?.toInt() ?? 2,
+        currentPrice: (json['current_price'] as num?)?.toDouble() ?? 0,
+        previousClose: (json['previous_close'] as num?)?.toDouble() ?? 0,
+        changePct: (json['change_pct'] as num?)?.toDouble() ?? 0,
+        prediction: Prediction.fromJson(json['prediction'] as Map<String, dynamic>? ?? {}),
+        signal: Signal.fromJson(json['signal'] as Map<String, dynamic>? ?? {}),
+        indicators: Indicators.fromJson(json['indicators'] as Map<String, dynamic>? ?? {}),
+        sentiment: Sentiment.fromJson(json['sentiment'] as Map<String, dynamic>? ?? {}),
+        candles: ((json['candles'] as List?) ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map(Candle.fromJson)
+            .toList(),
+        weights: ((json['weights'] as Map<String, dynamic>?) ?? const {})
+            .map((k, v) => MapEntry(k, (v as num).toDouble())),
+        risk: Risk.fromJson(json['risk'] as Map<String, dynamic>? ?? {}),
+        position: PositionPlan.fromJson(json['position'] as Map<String, dynamic>? ?? {}),
+        pipeline: PipelineStats.fromJson(json['pipeline'] as Map<String, dynamic>? ?? {}),
+        advanced: Advanced.fromJson(json['advanced'] as Map<String, dynamic>? ?? {}),
+        system: SystemHealth.fromJson(json['system'] as Map<String, dynamic>? ?? {}),
+        updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? ''),
+      );
+}
+
 class SystemHealth {
   final double minimumStop;
   final double riskReward;
