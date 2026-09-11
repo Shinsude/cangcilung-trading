@@ -788,10 +788,12 @@ class _CandleTimerState extends State<_CandleTimer> {
     }
     final d = next.difference(now);
     final prog = ((900 - d.inSeconds) / 900).clamp(0.0, 1.0);
-    if (mounted && (d != _remaining || prog != _progress)) setState(() {
-      _remaining = d;
-      _progress = prog;
-    });
+    if (mounted && (d != _remaining || prog != _progress)) {
+      setState(() {
+        _remaining = d;
+        _progress = prog;
+      });
+    }
   }
 
   @override
