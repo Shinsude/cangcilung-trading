@@ -770,6 +770,7 @@ class _CandleTimer extends StatefulWidget {
 class _CandleTimerState extends State<_CandleTimer> {
   Timer? _t;
   Duration _remaining = Duration.zero;
+  double _progress = 0;
 
   @override
   void initState() {
@@ -784,7 +785,11 @@ class _CandleTimerState extends State<_CandleTimer> {
     var next = DateTime(now.year, now.month, now.day, now.hour, mins);
     if (next.isBefore(now)) next = next.add(const Duration(hours: 1));
     final d = next.difference(now);
-    if (mounted && d != _remaining) setState(() => _remaining = d);
+    final prog = ((900 - d.inSeconds) / 900).clamp(0.0, 1.0);
+    if (mounted && (d != _remaining || prog != _progress)) setState(() {
+      _remaining = d;
+      _progress = prog;
+    });
   }
 
   @override
@@ -808,13 +813,169 @@ class _CandleTimerState extends State<_CandleTimer> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),
-      child: Row(
+      child: Column(
         children: [
-          const Icon(Icons.timer_outlined, size: 14, color: AppColors.textSecondary),
-          const SizedBox(width: 6),
-          const Text('M15 CLOSE', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
-          const Spacer(),
-          Text(_mmss, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700, fontFeatures: [FontFeature.tabularFigures()])),
+          Row(
+            children: [
+              const Icon(Icons.timer_outlined, size: 14, color: AppColors.textSecondary),
+              const SizedBox(width: 6),
+              const Text('M15 CLOSE', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+              const Spacer(),
+              Text(_mmss, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700, fontFeatures: [FontFeature.tabularFigures()])),
+            ],
+          ),
+          const SizedBox(height: 4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: LinearProgressIndicator(
+              value: _progress,
+              minHeight: 3,
+              backgroundColor: AppColors.surfaceAlt,
+              color: AppColors.blue,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SessionTimeline extends StatefulWidget {
+  const _SessionTimeline();
+  @override
+  State<_SessionTimeline> createState() => _SessionTimelineState();
+}
+
+class _SessionTimelineState extends State<_SessionTimeline> {
+  Timer? _t;
+  DateTime _now = DateTime.now().toUtc();
+
+  @override
+  void initState() {
+    super.initState();
+    _tick();
+    _t = Timer.periodic(const Duration(seconds: 30), (_) => _tick());
+  }
+
+  void _tick() {
+    final n = DateTime.now().toUtc();
+    if (mounted && n != _now) setState(() => _now = n);
+  }
+
+  @override
+  void dispose() {
+    _t?.cancel();
+    super.dispose();
+  }
+
+  static final List<int> _asia = [for (var h = 0; h < 9; h++) h];
+  static final List<int> _london = [for (var h = 8; h < 17; h++) h];
+  static final List<int> _ny = [for (var h = 13; h < 22; h++) h];
+
+  Color _hourColor(int h) {
+    final inA = _asia.contains(h), inL = _london.contains(h), inN = _ny.contains(h);
+    if (inA && inL) return AppColors.blue;
+    if (inL && inN) return AppColors.purple;
+    if (inA) return AppColors.blue.withValues(alpha: 0.55);
+    if (inL) return AppColors.green.withValues(alpha: 0.55);
+    if (inN) return AppColors.amber.withValues(alpha: 0.55);
+    return AppColors.surfaceAlt;
+  }
+
+  String get _sessionLabel {
+    final h = _now.hour + _now.minute / 60.0;
+    final active = <String>[];
+    if (h >= 0 && h < 9) active.add('ASIA');
+    if (h >= 8 && h < 17) active.add('LONDON');
+    if (h >= 13 && h < 22) active.add('NEW YORK');
+    if (active.isEmpty) return 'CLOSED';
+    if (active.length == 2) return '${active[0]} → ${active[1]}';
+    return active.first;
+  }
+
+  Color get _sessionColor {
+    final s = _sessionLabel;
+    if (s.contains('ASIA') && s.contains('LONDON')) return AppColors.blue;
+    if (s.contains('NEW YORK') && s.contains('LONDON')) return AppColors.purple;
+    if (s.contains('ASIA')) return AppColors.blue;
+    if (s.contains('LONDON')) return AppColors.green;
+    if (s.contains('NEW YORK')) return AppColors.amber;
+    return AppColors.textSecondary;
+  }
+
+  Widget _legendDot(Color c) => Container(width: 6, height: 6, decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(2)));
+
+  @override
+  Widget build(BuildContext context) {
+    final frac = (_now.hour + _now.minute / 60.0) / 24.0;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('SESI TRADING', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(color: _sessionColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+                child: Text(_sessionLabel, style: TextStyle(color: _sessionColor, fontSize: 9, fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          LayoutBuilder(
+            builder: (context, c) => SizedBox(
+              height: 18,
+              child: Stack(
+                children: [
+                  Row(
+                    children: [
+                      for (var h = 0; h < 24; h++)
+                        Expanded(
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 0.5),
+                            decoration: BoxDecoration(color: _hourColor(h), borderRadius: BorderRadius.circular(2)),
+                          ),
+                        ),
+                    ],
+                  ),
+                  Positioned(
+                    left: c.maxWidth * frac - 1,
+                    top: 0,
+                    bottom: 0,
+                    child: Container(width: 2, decoration: BoxDecoration(color: AppColors.textPrimary, borderRadius: BorderRadius.circular(1))),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _legendDot(AppColors.blue),
+              const SizedBox(width: 4),
+              const Text('ASIA', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700)),
+              const SizedBox(width: 12),
+              _legendDot(AppColors.green),
+              const SizedBox(width: 4),
+              const Text('LONDON', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700)),
+              const SizedBox(width: 12),
+              _legendDot(AppColors.amber),
+              const SizedBox(width: 4),
+              const Text('NEW YORK', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700)),
+              const SizedBox(width: 12),
+              _legendDot(AppColors.purple),
+              const SizedBox(width: 4),
+              const Text('OVERLAP', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700)),
+            ],
+          ),
         ],
       ),
     );
@@ -846,6 +1007,8 @@ class _SignalPage extends StatelessWidget {
           if (!minimal) ...[
             const SizedBox(height: 10),
             const _CandleTimer(),
+            const SizedBox(height: 8),
+            const _SessionTimeline(),
           ],
           const SizedBox(height: 14),
           _Tilt3D(
