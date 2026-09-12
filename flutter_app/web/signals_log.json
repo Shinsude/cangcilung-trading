@@ -118,5 +118,29 @@
   "strength": "WEAK",
   "score": -1.469,
   "close": 0.71654
+ },
+ {
+  "date": "2026-09-12",
+  "symbol": "XAUUSD",
+  "action": "BUY",
+  "strength": "STRONG",
+  "score": 5.209,
+  "close": 4514.92
+ },
+ {
+  "date": "2026-09-12",
+  "symbol": "NASDAQ",
+  "action": "BUY",
+  "strength": "STRONG",
+  "score": 4.73,
+  "close": 18399.06
+ },
+ {
+  "date": "2026-09-12",
+  "symbol": "AUDUSD",
+  "action": "BUY",
+  "strength": "MODERATE",
+  "score": 2.648,
+  "close": 0.67987
  }
 ]
