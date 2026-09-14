@@ -242,9 +242,7 @@ jobs:
     permissions:
       contents: read
     needs: build-web
-    if: >
-      (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main') &&
-      secrets.VERCEL_TOKEN != ''
+    if: ${{ github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -291,6 +289,7 @@ jobs:
           PY
 
       - name: Deploy to Vercel
+        if: ${{ env.VERCEL_TOKEN != '' }}
         working-directory: flutter_app/build/web
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
