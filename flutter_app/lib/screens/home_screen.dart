@@ -38,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final Map<String, List<double>> _confHistory = {};
   List<Map<String, dynamic>> _history = const [];
   bool _historyLoading = false;
+  MorningDigest? _digest;
 
   late AnimationController _pulseCtrl;
 
@@ -52,6 +53,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _initMinimalPref();
     _loadAlerts();
     _loadHistory(_selected);
+    _loadDigest();
   }
 
   @override
@@ -141,6 +143,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     } on Exception {
       if (!mounted) return;
       setState(() => _historyLoading = false);
+    }
+  }
+
+  Future<void> _loadDigest() async {
+    final d = await _api.fetchDigest();
+    if (d == null || !mounted) return;
+    setState(() => _digest = d);
+    if (_notifOn && !kIsWeb) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final seenKey = 'digest_seen_${d.date}';
+        final seen = prefs.getBool(seenKey) ?? false;
+        if (!seen) {
+          await prefs.setBool(seenKey, true);
+          unawaited(NotificationService.instance.showMorningDigest(d.date, d.text));
+        }
+      } catch (_) {}
     }
   }
 
@@ -414,6 +433,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           confHistory: _confHistory[d.symbol] ?? const [],
           history: _history,
           historyLoading: _historyLoading,
+          digest: _digest,
+          onSelectSymbol: _selectSymbol,
         ),
         _ChartPage(data: d),
         _IndicatorsPage(ind: d.indicators, price: d.currentPrice, weights: d.weights),
@@ -1176,7 +1197,7 @@ class _SessionTimelineState extends State<_SessionTimeline> {
 }
 
 class _SignalPage extends StatelessWidget {
-  const _SignalPage({required this.data, required this.onRefresh, required this.pulse, required this.alertTarget, required this.onSetAlert, required this.onClearAlert, this.minimal = false, this.confHistory = const [], this.history = const [], this.historyLoading = false});
+  const _SignalPage({required this.data, required this.onRefresh, required this.pulse, required this.alertTarget, required this.onSetAlert, required this.onClearAlert, this.minimal = false, this.confHistory = const [], this.history = const [], this.historyLoading = false, this.digest, this.onSelectSymbol});
 
   final TradingData data;
   final Future<void> Function() onRefresh;
@@ -1188,6 +1209,8 @@ class _SignalPage extends StatelessWidget {
   final List<double> confHistory;
   final List<Map<String, dynamic>> history;
   final bool historyLoading;
+  final MorningDigest? digest;
+  final ValueChanged<String>? onSelectSymbol;
 
   @override
   Widget build(BuildContext context) {
@@ -1198,6 +1221,10 @@ class _SignalPage extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
+          if (!minimal && digest != null) ...[
+            _DigestCard(digest: digest!, onSelect: onSelectSymbol),
+            const SizedBox(height: 14),
+          ],
           _PriceHero(data: data),
           if (!minimal) ...[
             const SizedBox(height: 10),
@@ -1240,9 +1267,110 @@ class _SignalPage extends StatelessWidget {
   }
 }
 
+class _DigestCard extends StatelessWidget {
+  const _DigestCard({required this.digest, this.onSelect});
+
+  final MorningDigest digest;
+  final ValueChanged<String>? onSelect;
+
+  Color _actionColor(String action) {
+    switch (action) {
+      case 'BUY':
+        return AppColors.green;
+      case 'SELL':
+        return AppColors.red;
+      default:
+        return AppColors.amber;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF101D29), AppColors.surface],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: AppColors.blue.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.wb_sunny_rounded, size: 15, color: AppColors.amber),
+              const SizedBox(width: 8),
+              const Text('REKAP HARIAN', style: TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1)),
+              const SizedBox(width: 8),
+              Text(digest.date, style: const TextStyle(color: AppColors.textSecondary, fontSize: 9)),
+              const Spacer(),
+              const Icon(Icons.auto_awesome, size: 13, color: AppColors.blue),
+            ],
+          ),
+          const SizedBox(height: 10),
+          for (final s in digest.symbols)
+            GestureDetector(
+              onTap: onSelect == null ? null : () => onSelect!(s.symbol),
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 68,
+                      child: Text(s.symbol, style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: _actionColor(s.action).withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                      child: Text('${s.action}${s.strength.isNotEmpty ? '·${s.strength}' : ''}', style: TextStyle(color: _actionColor(s.action), fontSize: 9, fontWeight: FontWeight.w800)),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _predictionText(s),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
+                      ),
+                    ),
+                    if (s.price != null)
+                      Text(
+                        _fmt(s.price!),
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w700),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  String _fmt(double v) {
+    if (v >= 10000) return v.toStringAsFixed(0);
+    if (v >= 1000) return v.toStringAsFixed(1);
+    return v.toStringAsFixed(4);
+  }
+
+  String _predictionText(DigestSymbol s) {
+    final np = s.nextPrice;
+    if (np == null || s.action == 'HOLD') return 'tunggu sinyal';
+    final arrow = s.direction == 'UP' ? '\u25B2' : '\u25BC';
+    return '$arrow $np ${s.horizon}';
+  }
+}
+
 class _AlertBar extends StatelessWidget {
   const _AlertBar({required this.target, required this.price, required this.decimals, required this.onSet, required this.onClear});
-
   final double? target;
   final double price;
   final int decimals;

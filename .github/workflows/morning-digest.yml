@@ -1,0 +1,25 @@
+name: Morning digest (rekap pagi)
+
+on:
+  schedule:
+    # 23:50 UTC = 06:50 WIB — warm cache /digest menjelang pagi
+    - cron: '50 23 * * *'
+  workflow_dispatch:
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Panaskan /digest
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/digest.json -w '%{http_code}' -m 120 https://cangcilung-trading-api.vercel.app/digest)
+            echo "attempt $i: HTTP $code"
+            if [ "$code" = "200" ]; then
+              head -c 600 /tmp/digest.json
+              echo ""
+              break
+            fi
+            sleep 45
+          done

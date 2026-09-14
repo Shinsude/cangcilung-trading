@@ -132,6 +132,17 @@ class ApiService {
     } catch (_) {}
     return const [];
   }
+
+  Future<MorningDigest?> fetchDigest() async {
+    try {
+      final uri = Uri.parse('$baseUrl/digest');
+      final response = await http.get(uri).timeout(const Duration(seconds: 90));
+      if (response.statusCode == 200) {
+        return MorningDigest.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      }
+    } catch (_) {}
+    return null;
+  }
 }
 
 class ApiException implements Exception {

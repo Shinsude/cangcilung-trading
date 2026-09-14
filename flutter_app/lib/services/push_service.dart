@@ -46,6 +46,7 @@ void callbackDispatcher() {
     if (task != 'checkSignals') return true;
     try {
       await _checkSignalsInBackground();
+      await _checkDigestInBackground();
     } catch (_) {}
     return true;
   });
@@ -98,4 +99,45 @@ Future<void> _checkSignalsInBackground() async {
       // lewati simbol yang gagal; lanjut simbol berikutnya
     }
   }
+}
+
+/// Rekap harian: tampilkan notifikasi digest sekali per tanggal (berdasarkan
+/// WorkManager periodik pertama setelah pukul 00.00 UTC = 07.00 WIB).
+Future<void> _checkDigestInBackground() async {
+  final resp = await http
+      .get(Uri.parse('$_api/digest'))
+      .timeout(const Duration(seconds: 60));
+  if (resp.statusCode != 200) return;
+
+  final dateM = RegExp(r'"date"\s*:\s*"([^"]+)"').firstMatch(resp.body);
+  final date = dateM?.group(1) ?? '';
+  if (date.isEmpty) return;
+
+  final prefs = await SharedPreferences.getInstance();
+  final seenKey = 'digest_seen_$date';
+  if (prefs.getBool(seenKey) ?? false) return;
+
+  final textM = RegExp(r'"text"\s*:\s*"([^"]+)"').firstMatch(resp.body);
+  final text = textM?.group(1) ?? 'Cek prediksi XAUUSD, NASDAQ, AUDUSD hari ini.';
+  await prefs.setBool(seenKey, true);
+
+  final plugin = FlutterLocalNotificationsPlugin();
+  const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const ios = DarwinInitializationSettings();
+  await plugin.initialize(const InitializationSettings(android: android, iOS: ios));
+  await plugin.show(
+    date.hashCode + 90000,
+    'Rekap harian $date',
+    text,
+    const NotificationDetails(
+      android: AndroidNotificationDetails(
+        'signals',
+        'Sinyal Trading',
+        channelDescription: 'Notifikasi saat sinyal BUY/SELL baru muncul',
+        importance: Importance.high,
+        priority: Priority.high,
+      ),
+      iOS: DarwinNotificationDetails(),
+    ),
+  );
 }

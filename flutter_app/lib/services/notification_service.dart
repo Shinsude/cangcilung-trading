@@ -71,4 +71,26 @@ class NotificationService {
       );
     } catch (_) {}
   }
+
+  Future<void> showMorningDigest(String date, String text) async {
+    if (kIsWeb) return;
+    await _init();
+    try {
+      await _plugin.show(
+        date.hashCode,
+        'Rekap harian $date',
+        text,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'signals',
+            'Sinyal Trading',
+            channelDescription: 'Notifikasi saat sinyal BUY/SELL baru muncul',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(),
+        ),
+      );
+    } catch (_) {}
+  }
 }

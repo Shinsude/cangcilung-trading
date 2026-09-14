@@ -764,3 +764,62 @@ def warmup():
             logger.warning("warmup %s failed: %s", symbol, exc)
             results[symbol] = f"error: {exc}"
     return {"status": "ok", "symbols": results}
+
+
+@app.get("/digest")
+def get_digest():
+    """Rekap harian pagi: ringkasan sinyal & prediksi untuk semua simbol dalam satu payload."""
+    now = dt.datetime.utcnow()
+    now_ts = time.time()
+    out: list[dict] = []
+    for symbol in SYMBOLS:
+        cached = _response_cache.get(symbol)
+        if cached and cached["expires"] > now_ts:
+            p = cached["payload"]
+        else:
+            try:
+                p = _build_payload(symbol)
+                _response_cache[symbol] = {"expires": now_ts + RESPONSE_CACHE_TTL_SECONDS, "payload": p}
+            except Exception as exc:  # noqa: BLE001
+                out.append({"symbol": symbol, "error": str(exc)})
+                continue
+        sig = p.get("signal", {})
+        pred = p.get("prediction", {})
+        out.append(
+            {
+                "symbol": symbol,
+                "name": p.get("name", ""),
+                "price": round(float(p.get("current_price", 0)), p.get("decimals", 4)),
+                "change_pct": p.get("change_pct", 0),
+                "action": sig.get("action", "HOLD"),
+                "strength": sig.get("strength", ""),
+                "confidence": pred.get("confidence"),
+                "direction": pred.get("direction", "NEUTRAL"),
+                "next_price": pred.get("next_price"),
+                "horizon": pred.get("horizon", ""),
+            }
+        )
+
+    text_parts: list[str] = []
+    for r in out:
+        if r.get("error"):
+            text_parts.append(f"{r['symbol']} GAGAL")
+            continue
+        sym = r["symbol"]
+        act = r["action"]
+        if act == "HOLD":
+            text_parts.append(f"{sym} HOLD")
+            continue
+        conf = f"{int(r['confidence'] * 100)}%" if isinstance(r.get("confidence"), (int, float)) and r["confidence"] else ""
+        arrow = "naik" if r.get("direction") == "UP" else "turun"
+        np_ = r.get("next_price")
+        nud = f" ke {np_:,}" if isinstance(np_, (int, float)) else ""
+        text_parts.append(f"{sym} {act} ({conf}) {arrow}{nud}")
+
+    header = {
+        "date": now.strftime("%Y-%m-%d"),
+        "generated_at": now.isoformat() + "Z",
+    }
+    if not text_parts:
+        return {**header, "text": "Belum ada sinyal hari ini.", "symbols": out}
+    return {**header, "text": "Rekap pagi: " + ", ".join(text_parts) + ".", "symbols": out}

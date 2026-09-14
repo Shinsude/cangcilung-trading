@@ -663,3 +663,61 @@ class BacktestResponse {
     );
   }
 }
+
+class DigestSymbol {
+  final String symbol;
+  final String name;
+  final double? price;
+  final double changePct;
+  final String action;
+  final String strength;
+  final double? confidence;
+  final String direction;
+  final double? nextPrice;
+  final String horizon;
+
+  DigestSymbol({
+    required this.symbol,
+    required this.name,
+    required this.price,
+    required this.changePct,
+    required this.action,
+    required this.strength,
+    required this.confidence,
+    required this.direction,
+    required this.nextPrice,
+    required this.horizon,
+  });
+
+  factory DigestSymbol.fromJson(Map<String, dynamic> json) => DigestSymbol(
+        symbol: json['symbol'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        price: (json['price'] as num?)?.toDouble(),
+        changePct: (json['change_pct'] as num?)?.toDouble() ?? 0,
+        action: json['action'] as String? ?? 'HOLD',
+        strength: json['strength'] as String? ?? '',
+        confidence: (json['confidence'] as num?)?.toDouble(),
+        direction: json['direction'] as String? ?? 'NEUTRAL',
+        nextPrice: (json['next_price'] as num?)?.toDouble(),
+        horizon: json['horizon'] as String? ?? '',
+      );
+}
+
+class MorningDigest {
+  final String date;
+  final String generatedAt;
+  final String text;
+  final List<DigestSymbol> symbols;
+
+  MorningDigest({required this.date, required this.generatedAt, required this.text, this.symbols = const []});
+
+  factory MorningDigest.fromJson(Map<String, dynamic> json) {
+    final list = (json['symbols'] as List?) ?? const [];
+    return MorningDigest(
+      date: json['date'] as String? ?? '',
+      generatedAt: json['generated_at'] as String? ?? '',
+      text: json['text'] as String? ?? '',
+      symbols: list.whereType<Map<String, dynamic>>().map(DigestSymbol.fromJson).toList(),
+    );
+  }
+}
