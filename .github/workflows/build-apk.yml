@@ -218,7 +218,7 @@ jobs:
 
       - name: Build Web
         working-directory: flutter_app
-        run: flutter build web --release --base-href /cangcilung-trading/ --dart-define=FLUTTER_WEB_CANVASKIT_URL=https://www.gstatic.com/canvaskit/
+        run: flutter build web --release --base-href /cangcilung-trading/
 
       - name: Report web bundle size
         working-directory: flutter_app
