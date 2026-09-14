@@ -56,23 +56,31 @@ class DataService:
 
     def _download(self, yahoo: str, period: str = PERIOD, interval: str = INTERVAL) -> pd.DataFrame:
         import time as _time
+        from concurrent.futures import ThreadPoolExecutor
 
         last_error = None
-        for attempt in range(3):
+        for attempt in range(2):
             try:
                 import yfinance as yf
 
                 ticker = yf.Ticker(yahoo)
-                df = ticker.history(period=period, interval=interval, auto_adjust=False)
+                ex = ThreadPoolExecutor(max_workers=1)
+                try:
+                    fut = ex.submit(
+                        lambda: ticker.history(period=period, interval=interval, auto_adjust=False)
+                    )
+                    df = fut.result(timeout=12)
+                finally:
+                    ex.shutdown(wait=False)
                 if df is None or df.empty:
                     last_error = ValueError("empty result")
                 else:
                     return df
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 last_error = exc
-            if attempt < 2:
-                _time.sleep(3 + attempt * 2)
-        logger.warning("yfinance download failed after 3 attempts: %s", last_error)
+            if attempt < 1:
+                _time.sleep(1)
+        logger.warning("yfinance download failed after attempts: %s", last_error)
         return None
 
     def _synthetic(self, symbol: str) -> pd.DataFrame:

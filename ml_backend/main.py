@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,8 +20,10 @@ from services.advanced import analyze as advanced_analyze
 
 PORT = int(os.getenv("PORT", "8000"))
 
-RESPONSE_CACHE_TTL_SECONDS = int(os.getenv("RESPONSE_CACHE_TTL_SECONDS", "180"))
+RESPONSE_CACHE_TTL_SECONDS = int(os.getenv("RESPONSE_CACHE_TTL_SECONDS", "600"))
 _response_cache: dict[str, dict] = {}
+_digest_cache: list = [0.0, None]  # [at, body]
+DIGEST_CACHE_TTL = 600
 
 LOG_URL = os.getenv("SIGNALS_LOG_URL", "https://raw.githubusercontent.com/Shinsude/cangcilung-trading/main/flutter_app/web/signals_log.json")
 _real_log_cache: dict = {}
@@ -356,6 +359,13 @@ def _build_safety(plan: dict, atr: float) -> dict:
     }
 
 
+def _fetch_interval(symbol: str, interval: str, period: str):
+    try:
+        return data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS, interval=interval, period=period)
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _build_payload(symbol: str) -> dict:
     df = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
 
@@ -375,22 +385,26 @@ def _build_payload(symbol: str) -> dict:
     tuning = tuner.tuned(df, symbol)
 
     df_1h = df_4h = df_30m = df_15m = None
-    try:
-        df_1h = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS, interval="1h", period="1mo")
-    except Exception:  # noqa: BLE001
-        pass
-    try:
-        df_4h = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS, interval="4h", period="3mo")
-    except Exception:  # noqa: BLE001
-        pass
-    try:
-        df_30m = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS, interval="30m", period="1mo")
-    except Exception:  # noqa: BLE001
-        pass
-    try:
-        df_15m = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS, interval="15m", period="1mo")
-    except Exception:  # noqa: BLE001
-        pass
+    with ThreadPoolExecutor(max_workers=4) as ex:
+        futures = {
+            "1h": ex.submit(_fetch_interval, symbol, "1h", "1mo"),
+            "4h": ex.submit(_fetch_interval, symbol, "4h", "3mo"),
+            "30m": ex.submit(_fetch_interval, symbol, "30m", "1mo"),
+            "15m": ex.submit(_fetch_interval, symbol, "15m", "1mo"),
+        }
+        for name, fut in futures.items():
+            try:
+                dfx = fut.result()
+            except Exception:  # noqa: BLE001
+                dfx = None
+            if name == "1h":
+                df_1h = dfx
+            elif name == "4h":
+                df_4h = dfx
+            elif name == "30m":
+                df_30m = dfx
+            else:
+                df_15m = dfx
     tf_value, tf_parts = timeframe.alignment(df_1h, df_4h)
 
     signal = build_signal(ind, prediction, sentiment, weights=tuning["weights"], extra=tf_value * timeframe.TF_WEIGHT)
@@ -841,6 +855,10 @@ def _build_digest_row(symbol: str) -> dict:
 @app.get("/digest")
 def get_digest():
     """Rekap harian pagi: ringkasan sinyal & prediksi untuk semua simbol dalam satu payload."""
+    now_ts = time.time()
+    if _digest_cache[0] and now_ts - _digest_cache[0] < DIGEST_CACHE_TTL:
+        return _digest_cache[1]
+
     now = dt.datetime.utcnow()
     out: list[dict] = []
     for symbol in SYMBOLS:
@@ -870,5 +888,9 @@ def get_digest():
         "generated_at": now.isoformat() + "Z",
     }
     if not text_parts:
-        return {**header, "text": "Belum ada sinyal hari ini.", "symbols": out}
-    return {**header, "text": "Rekap pagi: " + ", ".join(text_parts) + ".", "symbols": out}
+        body = {**header, "text": "Belum ada sinyal hari ini.", "symbols": out}
+    else:
+        body = {**header, "text": "Rekap pagi: " + ", ".join(text_parts) + ".", "symbols": out}
+    _digest_cache[0] = now_ts
+    _digest_cache[1] = body
+    return body
