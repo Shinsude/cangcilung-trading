@@ -9,7 +9,6 @@ import '../models/models.dart';
 import '../services/api_service.dart';
 import '../services/notification_service.dart';
 import '../theme.dart';
-import '../widgets/candle_chart.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -436,7 +435,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           digest: _digest,
           onSelectSymbol: _selectSymbol,
         ),
-        _ChartPage(data: d),
         _IndicatorsPage(ind: d.indicators, price: d.currentPrice, weights: d.weights),
         _CalendarPage(api: _api),
         _SentimentPage(sentiment: d.sentiment),
@@ -670,13 +668,13 @@ class _BottomNav extends StatelessWidget {
   final int tab;
   final ValueChanged<int> onChanged;
 
-  static const _icons = [Icons.auto_graph, Icons.candlestick_chart, Icons.insights, Icons.event_rounded, Icons.newspaper, Icons.psychology_rounded];
-  static const _labels = ['Signal', 'Chart', 'Indikator', 'Kalender', 'Sentimen', 'Model'];
+  static const _icons = [Icons.auto_graph, Icons.insights, Icons.event_rounded, Icons.newspaper, Icons.psychology_rounded];
+  static const _labels = ['Signal', 'Indikator', 'Kalender', 'Sentimen', 'Model'];
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: List.generate(6, (i) {
+      children: List.generate(_labels.length, (i) {
         final active = i == tab;
         return Expanded(
           child: GestureDetector(
@@ -2424,48 +2422,6 @@ class _PipelineCard extends StatelessWidget {
           SizedBox(width: 30, child: Text('$n', textAlign: TextAlign.right, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w700))),
         ],
       ),
-    );
-  }
-}
-
-class _ChartPage extends StatelessWidget {
-  const _ChartPage({required this.data});
-  final TradingData data;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.candlestick_chart, size: 18, color: AppColors.blue),
-                  const SizedBox(width: 8),
-                  const Text('Price Chart', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(color: AppColors.surfaceAlt, borderRadius: BorderRadius.circular(8)),
-                    child: Text('${data.candles.length} candles', style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              CandleChart(candles: data.candles, decimals: data.decimals, risk: data.risk),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }
