@@ -220,6 +220,14 @@ jobs:
         working-directory: flutter_app
         run: flutter build web --release --base-href /cangcilung-trading/
 
+      - name: Report web bundle size
+        working-directory: flutter_app
+        run: |
+          echo "main.dart.js: $(du -h build/web/main.dart.js | cut -f1)"
+          echo "total web: $(du -sh build/web | cut -f1)"
+          echo "--- top assets ---"
+          du -h build/web/* | sort -h | tail -12
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

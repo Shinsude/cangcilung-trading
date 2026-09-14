@@ -108,13 +108,6 @@ def _fetch_calendar(hours: int) -> dict:
         return {"events": [], "warning": str(exc)}
 
 
-def serialize_datetime(index):
-    try:
-        return index.strftime("%Y-%m-%dT%H:%M:%SZ")
-    except (AttributeError, ValueError):
-        return str(index)
-
-
 @app.get("/health")
 def health():
     return {"status": "ok", "time": dt.datetime.utcnow().isoformat() + "Z"}
@@ -430,20 +423,6 @@ def _build_payload(symbol: str) -> dict:
     meta = SYMBOLS[symbol]
     plan = _profit_plan(ind, signal["action"], last_close, meta["decimals"])
 
-    candles = []
-    last_rows = df.tail(40)
-    for idx, row in last_rows.iterrows():
-        candles.append(
-            {
-                "t": serialize_datetime(idx),
-                "o": round(float(row["Open"]), 6),
-                "h": round(float(row["High"]), 6),
-                "l": round(float(row["Low"]), 6),
-                "c": round(float(row["Close"]), 6),
-                "v": int(row["Volume"]) if str(row["Volume"]) not in ("nan", "None") else 0,
-            }
-        )
-
     return {
         "symbol": symbol,
         "name": meta["name"],
@@ -469,7 +448,6 @@ def _build_payload(symbol: str) -> dict:
         "pipeline": _build_pipeline(symbol),
         "indicators": ind,
         "sentiment": sentiment,
-        "candles": candles,
         "data_points": len(df),
         "weights": tuning["weights"],
         "timeframe": {"value": tf_value, "parts": tf_parts},

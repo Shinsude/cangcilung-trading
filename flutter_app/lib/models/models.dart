@@ -1,21 +1,4 @@
-﻿class Candle {
-  final String t;
-  final double o, h, l, c;
-  final int v;
-
-  Candle({required this.t, required this.o, required this.h, required this.l, required this.c, required this.v});
-
-  factory Candle.fromJson(Map<String, dynamic> json) => Candle(
-        t: json['t'] as String? ?? '',
-        o: (json['o'] as num?)?.toDouble() ?? 0,
-        h: (json['h'] as num?)?.toDouble() ?? 0,
-        l: (json['l'] as num?)?.toDouble() ?? 0,
-        c: (json['c'] as num?)?.toDouble() ?? 0,
-        v: (json['v'] as num?)?.toInt() ?? 0,
-      );
-}
-
-class Prediction {
+﻿class Prediction {
   final double nextPrice;
   final String horizon;
   final String direction;
@@ -396,7 +379,6 @@ class TradingData {
   final Signal signal;
   final Indicators indicators;
   final Sentiment sentiment;
-  final List<Candle> candles;
   final Map<String, double> weights;
   final Risk risk;
   final PositionPlan position;
@@ -417,7 +399,6 @@ class TradingData {
     required this.signal,
     required this.indicators,
     required this.sentiment,
-    required this.candles,
     this.weights = const {},
     Risk? risk,
     PositionPlan? position,
@@ -444,10 +425,6 @@ class TradingData {
         signal: Signal.fromJson(json['signal'] as Map<String, dynamic>? ?? {}),
         indicators: Indicators.fromJson(json['indicators'] as Map<String, dynamic>? ?? {}),
         sentiment: Sentiment.fromJson(json['sentiment'] as Map<String, dynamic>? ?? {}),
-        candles: ((json['candles'] as List?) ?? const [])
-            .whereType<Map<String, dynamic>>()
-            .map(Candle.fromJson)
-            .toList(),
         weights: ((json['weights'] as Map<String, dynamic>?) ?? const {})
             .map((k, v) => MapEntry(k, (v as num).toDouble())),
         risk: Risk.fromJson(json['risk'] as Map<String, dynamic>? ?? {}),
