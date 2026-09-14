@@ -100,6 +100,7 @@ flutter build apk --release --dart-define=API_URL=https://URL-ANDA.vercel.app
 - **Akurasi nyata (B1/B6)**: GitHub Actions mencatat sinyal harian ke `signals_log.json` (artefak repo), backend membacanya dan mengevaluasi sinyal TERHADAP CLOSE AKTUAL hari berikutnya di `/stats` & `/model`.
 - **Riwayat sinyal / scoreboard**: `/history/{symbol}` + kartu "Riwayat Sinyal" di tab Model menampilkan setiap sinyal tercatat, harga saat log, hasil, dan status WIN/LOSS/pending.
 - **Retraining terjadwal**: cron harian Vercel (21:00 UTC) memanggil `/warm` + fallback GitHub Actions (22:00 UTC).
+- **Sistim health (K-Synthesizer)**: agregat `system` di `/signal/{symbol}` memuat `ts_intrinsic`, `ts_snr`, `decomp_regime`, `bar_total`, `theta` (label AI vs RULES), dan `safety` (status, jumlah pelanggaran, SL minimum, risk/reward) — ditampilkan sebagai kartu **SISTEM HEALTH** di aplikasi agar pengguna melihat kualitas sinyal secara sekilas.
 - **Aplikasi**: Tab **Model** menampilkan akurasi rolling + akurasi nyata, profit factor, bobot, validasi MLP, dan **scoreboard riwayat sinyal** per simbol; **backtest interaktif** (pilih simbol + rentang); **notifikasi sinyal** dan **alert harga** lokal (cek berkala saat aplikasi terbuka, tanpa Firebase).
 
 ## iOS
