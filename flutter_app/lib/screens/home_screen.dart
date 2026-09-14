@@ -1162,7 +1162,7 @@ class _SessionTimelineState extends State<_SessionTimeline> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'MOMEN TERBAIK: ${_bestMomentLabel}',
+                    'MOMEN TERBAIK: $_bestMomentLabel',
                     style: TextStyle(color: _bestMomentColor, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.3),
                   ),
                 ),
