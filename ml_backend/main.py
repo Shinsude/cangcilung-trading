@@ -766,30 +766,21 @@ def warmup():
     return {"status": "ok", "symbols": results}
 
 
-@app.get("/digest")
-def get_digest():
-    """Rekap harian pagi: ringkasan sinyal & prediksi untuk semua simbol dalam satu payload."""
-    now = dt.datetime.utcnow()
-    now_ts = time.time()
-    out: list[dict] = []
-    for symbol in SYMBOLS:
+def _build_digest_row(symbol: str) -> dict:
+    """Versi ringan untuk /digest: 1 fetch harian + indikator + prediksi saja.
+    Menghindari 5 fetch interval + grid-search agar muat di batas waktu Lambda."""
+    meta = SYMBOLS[symbol]
+    try:
         cached = _response_cache.get(symbol)
-        if cached and cached["expires"] > now_ts:
+        now = time.time()
+        if cached and cached["expires"] > now:
             p = cached["payload"]
-        else:
-            try:
-                p = _build_payload(symbol)
-                _response_cache[symbol] = {"expires": now_ts + RESPONSE_CACHE_TTL_SECONDS, "payload": p}
-            except Exception as exc:  # noqa: BLE001
-                out.append({"symbol": symbol, "error": str(exc)})
-                continue
-        sig = p.get("signal", {})
-        pred = p.get("prediction", {})
-        out.append(
-            {
+            sig = p.get("signal", {})
+            pred = p.get("prediction", {})
+            return {
                 "symbol": symbol,
                 "name": p.get("name", ""),
-                "price": round(float(p.get("current_price", 0)), p.get("decimals", 4)),
+                "price": p.get("current_price"),
                 "change_pct": p.get("change_pct", 0),
                 "action": sig.get("action", "HOLD"),
                 "strength": sig.get("strength", ""),
@@ -798,7 +789,46 @@ def get_digest():
                 "next_price": pred.get("next_price"),
                 "horizon": pred.get("horizon", ""),
             }
-        )
+    except Exception:  # noqa: BLE001
+        pass
+
+    df = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
+    ind = compute_all(df)
+    closes = df["Close"].to_numpy()
+    prediction = predict(closes, df=df)
+    last_close = float(ind["price"])
+    prev_close = float(df["Close"].iloc[-2]) if len(df) > 1 else last_close
+    change_pct = ((last_close - prev_close) / prev_close * 100) if prev_close else 0.0
+    momentum = float(closes[-1] / closes[-20] - 1.0) if len(closes) >= 20 else 0.0
+    sentiment = analyze_sentiment(symbol, momentum)
+    tuning = tuner.get_cached(symbol)
+    weights = tuning["weights"] if tuning else None
+    signal = build_signal(ind, prediction, sentiment, weights=weights)
+
+    return {
+        "symbol": symbol,
+        "name": meta["name"],
+        "price": round(last_close, meta["decimals"]),
+        "change_pct": round(change_pct, 3),
+        "action": signal["action"],
+        "strength": signal["strength"],
+        "confidence": prediction.get("confidence"),
+        "direction": prediction.get("direction", "NEUTRAL"),
+        "next_price": prediction.get("next_price"),
+        "horizon": prediction.get("horizon", ""),
+    }
+
+
+@app.get("/digest")
+def get_digest():
+    """Rekap harian pagi: ringkasan sinyal & prediksi untuk semua simbol dalam satu payload."""
+    now = dt.datetime.utcnow()
+    out: list[dict] = []
+    for symbol in SYMBOLS:
+        try:
+            out.append(_build_digest_row(symbol))
+        except Exception as exc:  # noqa: BLE001
+            out.append({"symbol": symbol, "error": str(exc)})
 
     text_parts: list[str] = []
     for r in out:
@@ -813,7 +843,7 @@ def get_digest():
         conf = f"{int(r['confidence'] * 100)}%" if isinstance(r.get("confidence"), (int, float)) and r["confidence"] else ""
         arrow = "naik" if r.get("direction") == "UP" else "turun"
         np_ = r.get("next_price")
-        nud = f" ke {np_:,}" if isinstance(np_, (int, float)) else ""
+        nud = f" ke {np_:,.4f}".rstrip("0").rstrip(".") if isinstance(np_, (int, float)) else ""
         text_parts.append(f"{sym} {act} ({conf}) {arrow}{nud}")
 
     header = {
