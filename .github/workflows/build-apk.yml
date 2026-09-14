@@ -204,8 +204,16 @@ jobs:
               setTimeout(function(){var s=document.getElementById('splash');if(s){s.style.transition='opacity .4s ease';s.style.opacity='0';setTimeout(function(){s.remove()},500);}},20000);
               </script>'''
               html = html.replace("</body>", hide_script + "\n</body>", 1)
-              p.write_text(html)
-          print("splash patched")
+          if 'cangcilung-trading-api.vercel.app' not in html:
+              pre = '<link rel="preconnect" href="https://cangcilung-trading-api.vercel.app" crossorigin>'
+              html = html.replace("</head>", pre + "\n</head>", 1)
+          if 'serviceWorker.register' not in html:
+              reg = '''<script>
+              if ('serviceWorker' in navigator) { window.addEventListener('load', function(){ navigator.serviceWorker.register('./sw.js').catch(function(){}); }); }
+              </script>'''
+              html = html.replace("</body>", reg + "\n</body>", 1)
+          p.write_text(html)
+          print("index.html patched (splash + preconnect + service worker)")
           PY
 
       - name: Build Web

@@ -30,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   ModelInfo? _model;
   bool _modelLoading = false;
   String? _modelError;
+  bool _warmed = false;
   bool _notifOn = false;
   bool _minimal = false;
   Timer? _signalWatcher;
@@ -46,8 +47,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.initState();
     _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
     _load();
-    _warmAndSeed();
-    _loadModel();
     _initNotifPref();
     _initMinimalPref();
     _loadAlerts();
@@ -306,14 +305,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _warmAndSeed() async {
-    await _api.warmup();
-    if (!mounted) return;
-    await Future.wait(_symbols.map((s) async {
+  Future<void> _warmOthers() async {
+    if (_warmed) return;
+    _warmed = true;
+    for (final s in _symbols) {
+      if (s == _selected) continue;
       try {
         await _api.fetchSignal(s, useCache: false);
       } catch (_) {}
-    }));
+    }
   }
 
   Future<void> _load() async {
@@ -346,6 +346,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _fetching = false;
         _live = true;
       });
+      unawaited(_warmOthers());
       unawaited(_checkPriceAlert(_selected, data.currentPrice));
       Timer(const Duration(seconds: 4), () {
         if (mounted) setState(() => _live = false);
@@ -410,7 +411,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         padding: EdgeInsets.only(bottom: bottomPad),
         child: _BottomNav(
           tab: _tab,
-          onChanged: (i) => setState(() => _tab = i),
+          onChanged: (i) {
+            setState(() => _tab = i);
+            if (i == 4 && _model == null && !_modelLoading) {
+              unawaited(_loadModel());
+            }
+          },
         ),
       ),
     );
