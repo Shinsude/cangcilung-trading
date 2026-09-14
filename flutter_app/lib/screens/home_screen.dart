@@ -1224,6 +1224,10 @@ class _SignalPage extends StatelessWidget {
             const SizedBox(height: 14),
           ],
           _PriceHero(data: data),
+          if (data.dataSource != 'live') ...[
+            const SizedBox(height: 8),
+            _DataSourceWarning(source: data.dataSource),
+          ],
           if (!minimal) ...[
             const SizedBox(height: 10),
             const _CandleTimer(),
@@ -1259,6 +1263,38 @@ class _SignalPage extends StatelessWidget {
             const SizedBox(height: 14),
             _SystemHealthCard(system: data.system ?? const SystemHealth()),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DataSourceWarning extends StatelessWidget {
+  const _DataSourceWarning({required this.source});
+
+  final String source;
+
+  @override
+  Widget build(BuildContext context) {
+    final synthetic = source == 'synthetic';
+    final msg = synthetic
+        ? 'Data pasar tidak tersedia saat ini. Sinyal memakai data simulasi — jangan untuk trading nyata.'
+        : 'Harga/timestamp data mencurigakan (stale). Verifikasi sebelum eksekusi.';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: AppColors.amber.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.amber.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.warning_amber_rounded, size: 16, color: AppColors.amber),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(msg, style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, height: 1.35)),
+          ),
         ],
       ),
     );
@@ -1393,7 +1429,7 @@ class _AlertBar extends StatelessWidget {
           Expanded(
             child: active
                 ? Text('Target ${target!.toStringAsFixed(decimals)} \u2022 Harga saat ini ${price.toStringAsFixed(decimals)}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w700))
-                : const Text('Setel alert harga (notifikasi saat tembus level)', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                : const Text('Setel alert harga \u2022 dicek tiap 5 menit saat app aktif (best-effort, tanpa push server)', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
           ),
           if (active)
             GestureDetector(
@@ -3768,13 +3804,13 @@ class _GuideSheet extends StatelessWidget {
               icon: Icons.notifications_active_rounded,
               title: '3. Notifikasi otomatis',
               body:
-                  'Aktifkan ikon lonceng di kanan atas. App mengecek sinyal baru setiap 1 jam di latar belakang (Android) meski app tertutup, lalu memunculkan notifikasi lokal. Tidak perlu langganan Google.',
+                  'Aktifkan ikon lonceng di kanan atas. App mengecek sinyal baru setiap 1 jam di latar belakang (Android) meski app tertutup dan setiap 5 menit saat app dibuka, lalu memunculkan notifikasi lokal. Tanpa Firebase: ini polling, bukan push instan — mungkin tertunda beberapa menit.',
             ),
             const _GuideSection(
               icon: Icons.flag_rounded,
               title: '4. Alert harga',
               body:
-                  'Ketik harga target di bawah sinyal untuk diberi tahu saat harga mencapai target. Satu alert per simbol, otomatis terhapus setelah tersentuh.',
+                  'Ketik harga target di bawah sinyal. App memeriksa harga tiap 5 menit saat aplikasi aktif dan menampilkan notifikasi saat level tersentuh. Penting: tanpa infrastruktur push, alert tidak dijamin real-time dan tidak berfungsi saat app benar-benar tertutup.',
             ),
             const _GuideSection(
               icon: Icons.candlestick_chart_rounded,

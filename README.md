@@ -101,7 +101,8 @@ flutter build apk --release --dart-define=API_URL=https://URL-ANDA.vercel.app
 - **Riwayat sinyal / scoreboard**: `/history/{symbol}` + kartu "Riwayat Sinyal" di tab Model menampilkan setiap sinyal tercatat, harga saat log, hasil, dan status WIN/LOSS/pending.
 - **Retraining terjadwal**: cron harian Vercel (21:00 UTC) memanggil `/warm` + fallback GitHub Actions (22:00 UTC).
 - **Sistim health (K-Synthesizer)**: agregat `system` di `/signal/{symbol}` memuat `ts_intrinsic`, `ts_snr`, `decomp_regime`, `bar_total`, `theta` (label AI vs RULES), dan `safety` (status, jumlah pelanggaran, SL minimum, risk/reward) — ditampilkan sebagai kartu **SISTEM HEALTH** di aplikasi agar pengguna melihat kualitas sinyal secara sekilas.
-- **Aplikasi**: Tab **Model** menampilkan akurasi rolling + akurasi nyata, profit factor, bobot, validasi MLP, dan **scoreboard riwayat sinyal** per simbol; **backtest interaktif** (pilih simbol + rentang); **notifikasi sinyal** dan **alert harga** lokal (cek berkala saat aplikasi terbuka, tanpa Firebase).
+- **Aplikasi**: Tab **Model** menampilkan akurasi rolling + akurasi nyata, profit factor, bobot, validasi MLP, dan **scoreboard riwayat sinyal** per simbol; **backtest interaktif** (pilih simbol + rentang); **notifikasi sinyal** dan **alert harga** — ini *polling lokal* (WorkManager 1 jam saat app di background; cek tiap 5 menit saat app terbuka), **bukan pusaran push server real-time**. Tanpa Firebase.
+- **Data source**: setiap sinyal menandai asal data (`live`/`synthetic`). Bila Yahoo Finance gagal, app memakai data simulasi **dan menunjukkan peringatan** alih-alih menyajikan sinyal seolah-olah nyata.
 
 ## iOS
 

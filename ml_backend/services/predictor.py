@@ -301,6 +301,8 @@ def predict(closes: np.ndarray, df=None, horizon_hours: int = 6):
 
     pred_return = float(np.mean(preds))
     confidence = float(np.mean(confs))
+    # Clamp agar np.exp tidak overflow -> inf (price takfisis)
+    pred_return = min(max(pred_return, -0.25), 0.25)
     last_price = float(closes[-1])
     next_price = last_price * np.exp(pred_return)
     direction = "UP" if next_price > last_price else ("DOWN" if next_price < last_price else "NEUTRAL")

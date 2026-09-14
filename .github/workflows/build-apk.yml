@@ -6,6 +6,24 @@ on:
     branches: [main]
 
 jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ml_backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          pip install --quiet --disable-pip-version-check -r requirements.txt pytest
+      - name: Run backend tests
+        run: python -m pytest tests -q
+
   build-apk:
     runs-on: ubuntu-latest
     steps:

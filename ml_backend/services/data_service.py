@@ -12,6 +12,7 @@ logger = logging.getLogger("data")
 class DataService:
     def __init__(self):
         self._cache = {}
+        self._source = {}  # key -> "live" | "synthetic"
         self._lock = threading.Lock()
 
     def _get(self, key):
@@ -24,6 +25,13 @@ class DataService:
     def _put(self, key, df, ttl):
         with self._lock:
             self._cache[key] = {"df": df, "expires": time.time() + ttl}
+
+    def source(self, symbol: str, interval: str | None = None, period: str | None = None) -> str:
+        yahoo = SYMBOLS[symbol]["yahoo"]
+        interval = interval or INTERVAL
+        period = period or PERIOD
+        key = f"{yahoo}|{period}|{interval}"
+        return self._source.get(key, "live")
 
     def fetch(self, symbol: str, ttl: int = 180, interval: str | None = None, period: str | None = None) -> pd.DataFrame:
         if symbol not in SYMBOLS:
@@ -39,6 +47,9 @@ class DataService:
         if df is None or df.empty:
             logger.warning("yfinance returned empty data, using synthetic fallback")
             df = self._synthetic(symbol)
+            self._source[cache_key] = "synthetic"
+        else:
+            self._source[cache_key] = "live"
         df = self._clean(df)
         self._put(cache_key, df, ttl)
         return df.copy()

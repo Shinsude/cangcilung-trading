@@ -391,6 +391,7 @@ class TradingData {
   final double currentPrice;
   final double previousClose;
   final double changePct;
+  final String dataSource;
   final Prediction prediction;
   final Signal signal;
   final Indicators indicators;
@@ -424,6 +425,7 @@ class TradingData {
     Advanced? advanced,
     this.updatedAt,
     this.system,
+    this.dataSource = 'live',
   })  : risk = risk ?? const Risk(),
         position = position ?? const PositionPlan(),
         pipeline = pipeline ?? const PipelineStats(),
@@ -437,6 +439,7 @@ class TradingData {
         currentPrice: (json['current_price'] as num?)?.toDouble() ?? 0,
         previousClose: (json['previous_close'] as num?)?.toDouble() ?? 0,
         changePct: (json['change_pct'] as num?)?.toDouble() ?? 0,
+        dataSource: json['data_source'] as String? ?? 'live',
         prediction: Prediction.fromJson(json['prediction'] as Map<String, dynamic>? ?? {}),
         signal: Signal.fromJson(json['signal'] as Map<String, dynamic>? ?? {}),
         indicators: Indicators.fromJson(json['indicators'] as Map<String, dynamic>? ?? {}),

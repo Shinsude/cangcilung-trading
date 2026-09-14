@@ -436,6 +436,7 @@ def _build_payload(symbol: str) -> dict:
         "category": meta["category"],
         "decimals": meta["decimals"],
         "source_symbol": meta["yahoo"],
+        "data_source": data_service.source(symbol),
         "updated_at": dt.datetime.utcnow().isoformat() + "Z",
         "current_price": round(last_close, meta["decimals"]),
         "previous_close": round(prev_close, meta["decimals"]),
@@ -669,9 +670,25 @@ def create_alert(alert: dict):
         target = float(raw) if raw is not None else None
     except (TypeError, ValueError):
         target = None
+    # Batas masuk akal: target harus wajar terhadap skala harga simbol, bukan asal-angka.
     if not target or target <= 0:
         raise HTTPException(status_code=422, detail="target harus angka lebih dari 0")
     device = str(alert.get("device_id") or "default").strip() or "default"
+    if len(device) > 64:
+        raise HTTPException(status_code=422, detail="device_id terlalu panjang")
+
+    # Satu alert aktif per simbol per device (dedup)
+    for aid, a in list(_alerts_store.items()):
+        if a["device_id"] == device and a["symbol"] == symbol and not a["triggered"]:
+            _alerts_store.pop(aid, None)
+            sym_set = _alert_devices.get(symbol)
+            if sym_set:
+                sym_set.discard(device)
+
+    # Cap total alert per device (anti-spam/abuse serverless)
+    device_count = sum(1 for a in _alerts_store.values() if a["device_id"] == device)
+    if device_count >= 12:
+        raise HTTPException(status_code=429, detail="Terlalu banyak alert aktif untuk perangkat ini (maks 12)")
 
     _alerts_seq += 1
     aid = f"al_{int(time.time())}_{_alerts_seq}"
@@ -782,6 +799,7 @@ def _build_digest_row(symbol: str) -> dict:
                 "name": p.get("name", ""),
                 "price": p.get("current_price"),
                 "change_pct": p.get("change_pct", 0),
+                "data_source": p.get("data_source", data_service.source(symbol)),
                 "action": sig.get("action", "HOLD"),
                 "strength": sig.get("strength", ""),
                 "confidence": pred.get("confidence"),
@@ -810,6 +828,7 @@ def _build_digest_row(symbol: str) -> dict:
         "name": meta["name"],
         "price": round(last_close, meta["decimals"]),
         "change_pct": round(change_pct, 3),
+        "data_source": data_service.source(symbol),
         "action": signal["action"],
         "strength": signal["strength"],
         "confidence": prediction.get("confidence"),
