@@ -1,4 +1,4 @@
-part of 'home_screen.dart';
+﻿part of 'package:cangcilung_trading/screens/home_screen.dart';
 
 class _TopBar extends StatelessWidget {
   const _TopBar({required this.symbols, required this.selected, required this.onSelect, required this.live, required this.notifyOn, required this.onToggleNotify, required this.minimal, required this.onToggleMinimal});

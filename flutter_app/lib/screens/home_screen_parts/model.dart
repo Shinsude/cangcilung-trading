@@ -1,4 +1,4 @@
-part of 'home_screen.dart';
+﻿part of 'package:cangcilung_trading/screens/home_screen.dart';
 
 class _ModelPage extends StatefulWidget {
   const _ModelPage({required this.model, required this.loading, required this.error, required this.onRetry, required this.notifyOn, required this.onToggleNotify, required this.api});

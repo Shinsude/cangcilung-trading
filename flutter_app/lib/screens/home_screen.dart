@@ -10,6 +10,15 @@ import '../services/api_service.dart';
 import '../services/notification_service.dart';
 import '../theme.dart';
 
+part 'home_screen_parts/nav.dart';
+part 'home_screen_parts/shared.dart';
+part 'home_screen_parts/signal.dart';
+part 'home_screen_parts/indicators.dart';
+part 'home_screen_parts/model.dart';
+part 'home_screen_parts/calendar.dart';
+part 'home_screen_parts/sentiment.dart';
+part 'home_screen_parts/extras.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -460,12 +469,3 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 }
-
-part 'home_screen_parts/nav.dart';
-part 'home_screen_parts/shared.dart';
-part 'home_screen_parts/signal.dart';
-part 'home_screen_parts/indicators.dart';
-part 'home_screen_parts/model.dart';
-part 'home_screen_parts/calendar.dart';
-part 'home_screen_parts/sentiment.dart';
-part 'home_screen_parts/extras.dart';

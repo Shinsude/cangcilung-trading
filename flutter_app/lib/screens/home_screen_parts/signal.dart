@@ -1,4 +1,4 @@
-part of 'home_screen.dart';
+﻿part of 'package:cangcilung_trading/screens/home_screen.dart';
 
 class _SignalPage extends StatelessWidget {
   const _SignalPage({required this.data, required this.onRefresh, required this.pulse, required this.alertTarget, required this.onSetAlert, required this.onClearAlert, this.minimal = false, this.confHistory = const [], this.history = const [], this.historyLoading = false, this.digest, this.onSelectSymbol});
@@ -84,7 +84,7 @@ class _DataSourceWarning extends StatelessWidget {
   Widget build(BuildContext context) {
     final synthetic = source == 'synthetic';
     final msg = synthetic
-        ? 'Data pasar tidak tersedia saat ini. Sinyal memakai data simulasi — jangan untuk trading nyata.'
+        ? 'Data pasar tidak tersedia saat ini. Sinyal memakai data simulasi â€” jangan untuk trading nyata.'
         : 'Harga/timestamp data mencurigakan (stale). Verifikasi sebelum eksekusi.';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
@@ -170,7 +170,7 @@ class _DigestCard extends StatelessWidget {
                         color: _actionColor(s.action).withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(7),
                       ),
-                      child: Text('${s.action}${s.strength.isNotEmpty ? '·${s.strength}' : ''}', style: TextStyle(color: _actionColor(s.action), fontSize: 9, fontWeight: FontWeight.w800)),
+                      child: Text('${s.action}${s.strength.isNotEmpty ? 'Â·${s.strength}' : ''}', style: TextStyle(color: _actionColor(s.action), fontSize: 9, fontWeight: FontWeight.w800)),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -512,7 +512,7 @@ class _SignalHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final sigColor = signal.action.toSignalColor();
     final dirColor = prediction.direction.toSignalColor();
-    final arrow = prediction.direction == 'UP' ? 'â–²' : prediction.direction == 'DOWN' ? 'â–¼' : 'â—†';
+    final arrow = prediction.direction == 'UP' ? 'Ã¢â€“Â²' : prediction.direction == 'DOWN' ? 'Ã¢â€“Â¼' : 'Ã¢â€”â€ ';
     final pct = price == 0 ? 0.0 : (prediction.nextPrice - price) / price * 100;
 
     return AnimatedBuilder(
@@ -618,7 +618,7 @@ class _SignalHero extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${pct >= 0 ? '+' : ''}${pct.toStringAsFixed(2)}% Â· ${prediction.horizon}',
+                      '${pct >= 0 ? '+' : ''}${pct.toStringAsFixed(2)}% Ã‚Â· ${prediction.horizon}',
                       style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
                     ),
                   ],
@@ -659,9 +659,9 @@ class _SignalHero extends StatelessWidget {
     final pct = price == 0 ? 0.0 : (prediction.nextPrice - price) / price * 100;
     final text = [
       'Cangcilung Trading AI',
-      'Sinyal: ${signal.action} (${signal.strength}) · ${(signal.confidence * 100).toStringAsFixed(0)}% keyakinan',
+      'Sinyal: ${signal.action} (${signal.strength}) Â· ${(signal.confidence * 100).toStringAsFixed(0)}% keyakinan',
       'Harga: ${price.toStringAsFixed(decimals)}',
-      'Prediksi ${prediction.horizon}: ${prediction.direction == 'UP' ? 'naik' : prediction.direction == 'DOWN' ? 'turun' : 'netral'} → ${prediction.nextPrice.toStringAsFixed(decimals)} (${pct >= 0 ? '+' : ''}${pct.toStringAsFixed(2)}%)',
+      'Prediksi ${prediction.horizon}: ${prediction.direction == 'UP' ? 'naik' : prediction.direction == 'DOWN' ? 'turun' : 'netral'} â†’ ${prediction.nextPrice.toStringAsFixed(decimals)} (${pct >= 0 ? '+' : ''}${pct.toStringAsFixed(2)}%)',
       signal.summary,
     ].join('\n');
     Clipboard.setData(ClipboardData(text: text));
@@ -928,7 +928,7 @@ class _PositionCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          const Text('Simulasi dari sinyal terakhir — bukan akun MT5 live.', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, height: 1.4)),
+          const Text('Simulasi dari sinyal terakhir â€” bukan akun MT5 live.', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, height: 1.4)),
         ],
       ),
     );

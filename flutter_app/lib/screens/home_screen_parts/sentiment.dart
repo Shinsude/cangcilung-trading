@@ -1,4 +1,4 @@
-part of 'home_screen.dart';
+﻿part of 'package:cangcilung_trading/screens/home_screen.dart';
 
 class _SentimentPage extends StatelessWidget {
   const _SentimentPage({required this.sentiment});

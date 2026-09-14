@@ -1,4 +1,4 @@
-part of 'home_screen.dart';
+﻿part of 'package:cangcilung_trading/screens/home_screen.dart';
 
 class _MiniScoreboard extends StatelessWidget {
   const _MiniScoreboard({required this.loading, required this.entries});
@@ -169,7 +169,7 @@ class _SignalHistoryCard extends StatelessWidget {
                     if (cThen != null && cNext != null)
                       Expanded(
                         child: Text(
-                          '${cThen.toStringAsFixed(cThen > 100 ? 0 : 5)} â†’ ${cNext.toStringAsFixed(cNext > 100 ? 0 : 5)}',
+                          '${cThen.toStringAsFixed(cThen > 100 ? 0 : 5)} Ã¢â€ â€™ ${cNext.toStringAsFixed(cNext > 100 ? 0 : 5)}',
                           style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
                           textAlign: TextAlign.right,
                         ),
@@ -233,7 +233,7 @@ class _GuideSheet extends StatelessWidget {
               icon: Icons.notifications_active_rounded,
               title: '3. Notifikasi otomatis',
               body:
-                  'Aktifkan ikon lonceng di kanan atas. App mengecek sinyal baru setiap 1 jam di latar belakang (Android) meski app tertutup dan setiap 5 menit saat app dibuka, lalu memunculkan notifikasi lokal. Tanpa Firebase: ini polling, bukan push instan — mungkin tertunda beberapa menit.',
+                  'Aktifkan ikon lonceng di kanan atas. App mengecek sinyal baru setiap 1 jam di latar belakang (Android) meski app tertutup dan setiap 5 menit saat app dibuka, lalu memunculkan notifikasi lokal. Tanpa Firebase: ini polling, bukan push instan â€” mungkin tertunda beberapa menit.',
             ),
             const _GuideSection(
               icon: Icons.flag_rounded,
@@ -250,13 +250,13 @@ class _GuideSheet extends StatelessWidget {
               icon: Icons.psychology_rounded,
               title: '6. Model & akurasi',
               body:
-                  'Tab Model menampilkan backtest walk-forward (win-rate, drawdown) dan akurasi nyata dari sinyal historis. Model MLP dilatih ulang otomatis. Akurasi >55% dianggap baik, <45% lemah â€” perhatikan tren sebelum mengikuti sinyal.',
+                  'Tab Model menampilkan backtest walk-forward (win-rate, drawdown) dan akurasi nyata dari sinyal historis. Model MLP dilatih ulang otomatis. Akurasi >55% dianggap baik, <45% lemah Ã¢â‚¬â€ perhatikan tren sebelum mengikuti sinyal.',
             ),
             const _GuideSection(
               icon: Icons.warning_amber_rounded,
               title: 'Disclaimer',
               body:
-                  'Sinyal adalah hasil analisis statistik otomatis, bukan saran keuangan. Pasar bisa bergerak melawan prediksi. Trading berisiko tinggi â€” gunakan uang yang siap hilang dan kelola risiko dengan disiplin.',
+                  'Sinyal adalah hasil analisis statistik otomatis, bukan saran keuangan. Pasar bisa bergerak melawan prediksi. Trading berisiko tinggi Ã¢â‚¬â€ gunakan uang yang siap hilang dan kelola risiko dengan disiplin.',
             ),
           ],
         ),
