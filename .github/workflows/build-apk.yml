@@ -236,3 +236,65 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  deploy-web-vercel:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: build-web
+    if: >
+      (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main') &&
+      secrets.VERCEL_TOKEN != ''
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Vercel CLI
+        working-directory: flutter_app
+        run: npm install -g vercel
+
+      - name: Download GitHub Pages artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          path: flutter_app/build/web
+
+      - name: Add vercel.json
+        working-directory: flutter_app/build/web
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("vercel.json")
+          p.write_text('''{
+            "version": 2,
+            "framework": null,
+            "buildCommand": null,
+            "outputDirectory": ".",
+            "cleanUrls": false,
+            "rewrites": [
+              { "source": "/cangcilung-trading/(.*)", "destination": "/$1" },
+              { "source": "/cangcilung-trading", "destination": "/" }
+            ],
+            "headers": [
+              { "source": "/assets/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, immutable" }] },
+              { "source": "/canvaskit/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, immutable" }] },
+              { "source": "/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=600" }] }
+            ]
+          }
+          ''')
+          print("vercel.json written")
+          PY
+
+      - name: Deploy to Vercel
+        working-directory: flutter_app/build/web
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_SCOPE: ${{ secrets.VERCEL_SCOPE }}
+        run: |
+          if [ -n "$VERCEL_SCOPE" ]; then SCOPE_ARGS="--scope $VERCEL_SCOPE"; else SCOPE_ARGS=""; fi
+          vercel deploy --prod --yes --token "$VERCEL_TOKEN" $SCOPE_ARGS
