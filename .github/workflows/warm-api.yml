@@ -1,0 +1,25 @@
+name: Warm backend API
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit warm endpoint
+        run: |
+          code=$(curl -s -o /tmp/warm.json -w "%{http_code}" --max-time 120 \
+            "https://cangcilung-trading-api.vercel.app/warm")
+          echo "HTTP $code"
+          if [ "$code" -lt 500 ]; then
+            cat /tmp/warm.json
+          else
+            echo "warmup gagal (HTTP $code), lihat /tmp/warm.json"
+            exit 0
+          fi
