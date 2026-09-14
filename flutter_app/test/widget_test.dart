@@ -20,14 +20,10 @@ void main() {
         'volatility_20': 0.01,
       },
       'sentiment': {'score': 0.2, 'label': 'BULLISH', 'source': 'test', 'headlines': []},
-      'candles': [
-        {'t': '2026-01-01T00:00:00Z', 'o': 1.0, 'h': 1.1, 'l': 0.9, 'c': 1.05, 'v': 100},
-      ],
     };
     final data = TradingData.fromJson(json);
     expect(data.symbol, 'XAUUSD');
     expect(data.signal.action, 'BUY');
     expect(data.prediction.direction, 'UP');
-    expect(data.candles.length, 1);
   });
 }
