@@ -39,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<Map<String, dynamic>> _history = const [];
   bool _historyLoading = false;
   MorningDigest? _digest;
+  bool _digestLoaded = false;
 
   late AnimationController _pulseCtrl;
 
@@ -51,7 +52,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _initMinimalPref();
     _loadAlerts();
     _loadHistory(_selected);
-    _loadDigest();
   }
 
   @override
@@ -145,8 +145,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _loadDigest() async {
+    if (_digestLoaded) return;
     final d = await _api.fetchDigest();
     if (d == null || !mounted) return;
+    _digestLoaded = true;
     setState(() => _digest = d);
     if (_notifOn && !kIsWeb) {
       try {
@@ -347,6 +349,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _live = true;
       });
       unawaited(_warmOthers());
+      unawaited(_loadDigest());
       unawaited(_checkPriceAlert(_selected, data.currentPrice));
       Timer(const Duration(seconds: 4), () {
         if (mounted) setState(() => _live = false);

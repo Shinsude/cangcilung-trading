@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'screens/home_screen.dart';
@@ -6,8 +8,8 @@ import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await PushService.instance.init();
   runApp(const CangcilungApp());
+  unawaited(PushService.instance.init());
 }
 
 class CangcilungApp extends StatelessWidget {
