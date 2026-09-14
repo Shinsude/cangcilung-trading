@@ -102,6 +102,36 @@ class ApiService {
     }
     throw ApiException('Server error (${response.statusCode})');
   }
+
+  Future<Map<String, dynamic>?> registerAlert(String deviceId, String symbol, double target) async {
+    try {
+      final uri = Uri.parse('$baseUrl/alerts');
+      final response = await http
+          .post(uri, headers: {'Content-Type': 'application/json'}, body: jsonEncode({'device_id': deviceId, 'symbol': symbol, 'target': target}))
+          .timeout(const Duration(seconds: 30));
+      if (response.statusCode == 200) return jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {}
+    return null;
+  }
+
+  Future<void> deleteAlert(String alertId) async {
+    try {
+      await http.delete(Uri.parse('$baseUrl/alerts/$alertId')).timeout(const Duration(seconds: 30));
+    } catch (_) {}
+  }
+
+  Future<List<Map<String, dynamic>>> fetchTriggeredAlerts() async {
+    try {
+      final uri = Uri.parse('$baseUrl/alerts/check');
+      final response = await http.get(uri).timeout(const Duration(seconds: 60));
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        final list = (body['triggered'] as List?) ?? const [];
+        return list.whereType<Map<String, dynamic>>().toList();
+      }
+    } catch (_) {}
+    return const [];
+  }
 }
 
 class ApiException implements Exception {

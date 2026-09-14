@@ -36,6 +36,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Timer? _signalWatcher;
   final Map<String, double> _alerts = {};
   final Map<String, List<double>> _confHistory = {};
+  List<Map<String, dynamic>> _history = const [];
+  bool _historyLoading = false;
 
   late AnimationController _pulseCtrl;
 
@@ -49,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _initNotifPref();
     _initMinimalPref();
     _loadAlerts();
+    _loadHistory(_selected);
   }
 
   @override
@@ -123,6 +126,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     } catch (_) {}
   }
 
+  Future<void> _loadHistory(String symbol) async {
+    setState(() {
+      _historyLoading = true;
+      _history = const [];
+    });
+    try {
+      final hist = await _api.fetchHistory(symbol, limit: 15);
+      if (!mounted) return;
+      setState(() {
+        _history = hist;
+        _historyLoading = false;
+      });
+    } on Exception {
+      if (!mounted) return;
+      setState(() => _historyLoading = false);
+    }
+  }
+
   Future<void> _setAlert(String symbol) async {
     final controller = TextEditingController();
     final target = await showDialog<double>(
@@ -163,11 +184,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('alert_$symbol', target);
     setState(() => _alerts[symbol] = target);
+    unawaited(_registerServerAlert(symbol, target));
+  }
+
+  Future<void> _registerServerAlert(String symbol, double target) async {
+    if (kIsWeb) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      var deviceId = prefs.getString('device_id') ?? '';
+      if (deviceId.isEmpty) {
+        deviceId = DateTime.now().microsecondsSinceEpoch.toString();
+        await prefs.setString('device_id', deviceId);
+      }
+      final reg = await _api.registerAlert(deviceId, symbol, target);
+      if (reg != null && mounted) {
+        final id = reg['id'] as String?;
+        if (id != null) await prefs.setString('alert_id_$symbol', id);
+      }
+    } catch (_) {}
   }
 
   Future<void> _clearAlert(String symbol) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('alert_$symbol');
+    final serverId = prefs.getString('alert_id_$symbol');
+    if (serverId != null && serverId.isNotEmpty) {
+      await prefs.remove('alert_id_$symbol');
+      if (!kIsWeb) unawaited(_api.deleteAlert(serverId));
+    }
     if (!mounted) return;
     setState(() => _alerts.remove(symbol));
   }
@@ -189,6 +233,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (kIsWeb) return;
     try {
       final prefs = await SharedPreferences.getInstance();
+      final trig = await _api.fetchTriggeredAlerts();
+      for (final t in trig) {
+        final sym = (t['symbol'] as String?)?.toUpperCase() ?? '';
+        final target = (t['target'] as num?)?.toDouble();
+        final price = (t['price'] as num?)?.toDouble();
+        if (sym.isEmpty || target == null || price == null) continue;
+        await prefs.remove('alert_$sym');
+        if (mounted) {
+          setState(() => _alerts.remove(sym));
+          unawaited(NotificationService.instance.showPriceAlert(sym, target, price));
+        }
+      }
       for (final s in _symbols) {
         final TradingData data;
         try {
@@ -292,6 +348,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (s == _selected) return;
     setState(() => _selected = s);
     _load();
+    _loadHistory(s);
   }
 
   @override
@@ -355,6 +412,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           onClearAlert: () => _clearAlert(d.symbol),
           minimal: _minimal,
           confHistory: _confHistory[d.symbol] ?? const [],
+          history: _history,
+          historyLoading: _historyLoading,
         ),
         _ChartPage(data: d),
         _IndicatorsPage(ind: d.indicators, price: d.currentPrice, weights: d.weights),
@@ -985,6 +1044,41 @@ class _SessionTimelineState extends State<_SessionTimeline> {
     return AppColors.textSecondary;
   }
 
+  String get _bestMomentLabel {
+    final h = _now.hour + _now.minute / 60.0;
+    final events = <double, String>{
+      8.0: 'ASIA+LONDON overlap MULAI',
+      13.0: 'LONDON+NEW YORK overlap MULAI',
+      17.0: 'LONDON tutup',
+      22.0: 'NEW YORK tutup',
+    };
+    double? next;
+    String? label;
+    for (final e in events.entries) {
+      if (e.key > h && (next == null || e.key < next)) {
+        next = e.key;
+        label = e.value;
+      }
+    }
+    double mins;
+    if (next == null) {
+      mins = (24 + 8 - h) * 60;
+      label = 'ASIA+LONDON overlap MULAI';
+    } else {
+      mins = (next - h) * 60;
+    }
+    final m = mins.round();
+    return '$label dalam ${m ~/ 60}j ${m % 60}m';
+  }
+
+  Color get _bestMomentColor {
+    final l = _bestMomentLabel;
+    if (l.startsWith('LONDON+NEW YORK')) return AppColors.purple;
+    if (l.startsWith('ASIA+LONDON')) return AppColors.blue;
+    if (l.startsWith('LONDON tutup')) return AppColors.green;
+    return AppColors.amber;
+  }
+
   Widget _legendDot(Color c) => Container(width: 6, height: 6, decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(2)));
 
   @override
@@ -1058,6 +1152,23 @@ class _SessionTimelineState extends State<_SessionTimeline> {
               const Text('OVERLAP', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700)),
             ],
           ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(color: _bestMomentColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
+            child: Row(
+              children: [
+                Icon(Icons.timelapse_rounded, size: 13, color: _bestMomentColor),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'MOMEN TERBAIK: ${_bestMomentLabel}',
+                    style: TextStyle(color: _bestMomentColor, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.3),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -1065,7 +1176,7 @@ class _SessionTimelineState extends State<_SessionTimeline> {
 }
 
 class _SignalPage extends StatelessWidget {
-  const _SignalPage({required this.data, required this.onRefresh, required this.pulse, required this.alertTarget, required this.onSetAlert, required this.onClearAlert, this.minimal = false, this.confHistory = const []});
+  const _SignalPage({required this.data, required this.onRefresh, required this.pulse, required this.alertTarget, required this.onSetAlert, required this.onClearAlert, this.minimal = false, this.confHistory = const [], this.history = const [], this.historyLoading = false});
 
   final TradingData data;
   final Future<void> Function() onRefresh;
@@ -1075,6 +1186,8 @@ class _SignalPage extends StatelessWidget {
   final VoidCallback onClearAlert;
   final bool minimal;
   final List<double> confHistory;
+  final List<Map<String, dynamic>> history;
+  final bool historyLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -1108,6 +1221,8 @@ class _SignalPage extends StatelessWidget {
           const SizedBox(height: 14),
           _AlertBar(target: alertTarget, price: data.currentPrice, decimals: data.decimals, onSet: onSetAlert, onClear: onClearAlert),
           if (!minimal) ...[
+            const SizedBox(height: 14),
+            _MiniScoreboard(loading: historyLoading, entries: history),
             const SizedBox(height: 14),
             _QuickIndicators(ind: data.indicators),
             const SizedBox(height: 14),
@@ -2577,6 +2692,12 @@ class _BacktestExplorer extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             _MetricRow(tuned: result!.tuned, baseline: result!.baseline),
+            if (result!.tuned.equityCurve.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              const Text('KURVA EQUITY (AUTO-TUNE)', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+              const SizedBox(height: 6),
+              _EquityCurveChart(curve: result!.tuned.equityCurve),
+            ],
           ],
         ],
       ),
@@ -2621,6 +2742,75 @@ class _MetricRow extends StatelessWidget {
       ],
     );
   }
+}
+
+class _EquityCurveChart extends StatelessWidget {
+  const _EquityCurveChart({required this.curve});
+  final List<EquityPoint> curve;
+
+  @override
+  Widget build(BuildContext context) {
+    if (curve.isEmpty) return const SizedBox.shrink();
+    final values = curve.map((p) => p.equity).toList();
+    var minV = values.reduce((a, b) => a < b ? a : b);
+    var maxV = values.reduce((a, b) => a > b ? a : b);
+    final span = (maxV - minV).abs();
+    if (span < 1e-9) {
+      minV -= 0.01;
+      maxV += 0.01;
+    }
+    final finalV = values.last;
+
+    return Container(
+      height: 110,
+      decoration: BoxDecoration(color: AppColors.surfaceAlt, borderRadius: BorderRadius.circular(12)),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final w = c.maxWidth;
+          final h = c.maxHeight;
+          final n = values.length;
+          final path = Path();
+          for (var i = 0; i < n; i++) {
+            final dx = n == 1 ? w / 2 : i / (n - 1) * w;
+            final dy = h - (values[i] - minV) / (maxV - minV) * h;
+            if (i == 0) {
+              path.moveTo(dx, dy);
+            } else {
+              path.lineTo(dx, dy);
+            }
+          }
+          final fill = Path.from(path)
+            ..lineTo(n == 1 ? w / 2 : w, h)
+            ..lineTo(0, h)
+            ..close();
+          final up = finalV >= 1.0;
+          final col = up ? AppColors.green : AppColors.red;
+          return CustomPaint(
+            painter: _EquityPainter(path: path, fill: fill, color: col),
+            child: const SizedBox.expand(),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _EquityPainter extends CustomPainter {
+  const _EquityPainter({required this.path, required this.fill, required this.color});
+  final Path path;
+  final Path fill;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawPath(fill, Paint()..color = color.withValues(alpha: 0.18)..style = PaintingStyle.fill);
+    canvas.drawPath(path, Paint()..color = color..style = PaintingStyle.stroke..strokeWidth = 2..strokeJoin = StrokeJoin.round);
+  }
+
+  @override
+  bool shouldRepaint(covariant _EquityPainter oldDelegate) =>
+      oldDelegate.path != path || oldDelegate.fill != fill || oldDelegate.color != color;
 }
 
 class _ChoiceChip extends StatelessWidget {
@@ -3255,6 +3445,123 @@ class _NewsItem extends StatelessWidget {
               style: const TextStyle(fontSize: 12, color: AppColors.textPrimary, height: 1.4, fontWeight: FontWeight.w500),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniScoreboard extends StatelessWidget {
+  const _MiniScoreboard({required this.loading, required this.entries});
+  final bool loading;
+  final List<Map<String, dynamic>> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    int win = 0, loss = 0, pending = 0;
+    for (final e in entries) {
+      final o = (e['outcome'] as String?) ?? 'pending';
+      if (o == 'win') {
+        win++;
+      } else if (o == 'loss') {
+        loss++;
+      } else if (o == 'pending') {
+        pending++;
+      }
+    }
+    final resolved = win + loss;
+    final winRate = resolved > 0 ? win / resolved : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.purple.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.scoreboard_rounded, size: 13, color: AppColors.purple),
+              SizedBox(width: 6),
+              Text('SCOREBOARD SINYAL', style: TextStyle(color: AppColors.purple, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (loading)
+            const Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.purple)))
+          else if (entries.isEmpty)
+            const Text('Belum ada data riwayat untuk simbol ini.', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontStyle: FontStyle.italic))
+          else ...[
+            Row(
+              children: [
+                _sbStat('WIN', win, AppColors.green),
+                const SizedBox(width: 8),
+                _sbStat('LOSS', loss, AppColors.red),
+                const SizedBox(width: 8),
+                _sbStat('PENDING', pending, AppColors.amber),
+                const Spacer(),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('${(winRate * 100).toStringAsFixed(0)}%', style: TextStyle(color: winRate >= 0.55 ? AppColors.green : (winRate >= 0.45 ? AppColors.amber : AppColors.red), fontSize: 18, fontWeight: FontWeight.w900)),
+                    const Text('WIN RATE', style: TextStyle(color: AppColors.textTertiary, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: 0.6)),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ...entries.take(6).map((e) {
+              final action = (e['action'] as String?) ?? 'HOLD';
+              final outcome = (e['outcome'] as String?) ?? 'pending';
+              final date = (e['date'] as String?) ?? '';
+              final cThen = (e['close_then'] as num?)?.toDouble();
+              final cNext = (e['close_next'] as num?)?.toDouble();
+              final oc = outcome == 'win' ? AppColors.green : (outcome == 'loss' ? AppColors.red : AppColors.textSecondary);
+              final ac = action == 'BUY' ? AppColors.green : (action == 'SELL' ? AppColors.red : AppColors.textSecondary);
+              return Container(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5))),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 56,
+                      child: Text(date.length > 5 ? date.substring(5) : date, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10)),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(color: ac.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                      child: Text(action, style: TextStyle(color: ac, fontSize: 9, fontWeight: FontWeight.w800)),
+                    ),
+                    const Spacer(),
+                    if (cThen != null && cNext != null)
+                      Text('${cThen.toStringAsFixed(cThen > 100 ? 0 : 5)} -> ${cNext.toStringAsFixed(cNext > 100 ? 0 : 5)}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 10)),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(color: oc.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                      child: Text(outcome.toUpperCase(), style: TextStyle(color: oc, fontSize: 9, fontWeight: FontWeight.w800)),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _sbStat(String label, int value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
+      child: Column(
+        children: [
+          Text('$value', style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w900)),
+          Text(label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
         ],
       ),
     );

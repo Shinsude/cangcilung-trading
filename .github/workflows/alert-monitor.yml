@@ -1,0 +1,24 @@
+name: Alert monitor (harga)
+
+on:
+  schedule:
+    # Cek alert harga server-side; terbatas menitan oleh GitHub Actions
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Panggil endpoint pemantau alert
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/alerts.json -w '%{http_code}' -m 60 https://cangcilung-trading-api.vercel.app/alerts/check)
+            echo "attempt $i: HTTP $code"
+            if [ "$code" = "200" ]; then
+              cat /tmp/alerts.json
+              break
+            fi
+            sleep 30
+          done

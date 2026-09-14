@@ -630,6 +630,107 @@ def get_history(symbol: str, limit: int = 30):
         return {"error": str(exc), "entries": []}
 
 
+_alerts_store: dict[str, dict] = {}  # id -> {device_id, symbol, target, created, triggered}
+_alerts_seq: int = 0
+_alert_devices: dict[str, set[str]] = {}  # symbol -> device ids
+
+
+def _current_price(symbol: str) -> float:
+    df = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
+    return float(df["Close"].iloc[-1])
+
+
+@app.get("/alerts")
+def list_alerts(device_id: str = ""):
+    did = (device_id or "").strip()
+    active = [
+        {
+            "id": aid,
+            "symbol": a["symbol"],
+            "target": a["target"],
+            "created": a["created"],
+            "triggered": a["triggered"],
+        }
+        for aid, a in _alerts_store.items()
+        if (not did or a["device_id"] == did)
+    ]
+    active.sort(key=lambda x: x["created"], reverse=True)
+    return {"alerts": active}
+
+
+@app.post("/alerts")
+def create_alert(alert: dict):
+    global _alerts_seq
+    symbol = str(alert.get("symbol", "")).upper()
+    if symbol not in SYMBOLS:
+        raise HTTPException(status_code=404, detail=f"Symbol tidak didukung. Gunakan: {', '.join(SYMBOLS)}")
+    raw = alert.get("target")
+    try:
+        target = float(raw) if raw is not None else None
+    except (TypeError, ValueError):
+        target = None
+    if not target or target <= 0:
+        raise HTTPException(status_code=422, detail="target harus angka lebih dari 0")
+    device = str(alert.get("device_id") or "default").strip() or "default"
+
+    _alerts_seq += 1
+    aid = f"al_{int(time.time())}_{_alerts_seq}"
+    _alerts_store[aid] = {
+        "device_id": device,
+        "symbol": symbol,
+        "target": target,
+        "created": dt.datetime.utcnow().isoformat() + "Z",
+        "triggered": False,
+    }
+    _alert_devices.setdefault(symbol, set()).add(device)
+    return {"id": aid, "symbol": symbol, "target": target}
+
+
+@app.delete("/alerts/{alert_id}")
+def delete_alert(alert_id: str):
+    a = _alerts_store.pop(alert_id, None)
+    if a is None:
+        raise HTTPException(status_code=404, detail="Alert tidak ditemukan")
+    sym_set = _alert_devices.get(a["symbol"])
+    if sym_set:
+        sym_set.discard(a["device_id"])
+    return {"ok": True}
+
+
+@app.get("/alerts/check")
+def check_alerts():
+    """Evaluasi semua alert aktif terhadap harga terkini; tandai yang ter-trigger."""
+    triggered: list[dict] = []
+    still_active: list[dict] = []
+    for aid, a in list(_alerts_store.items()):
+        if a["triggered"]:
+            continue
+        try:
+            price = _current_price(a["symbol"])
+        except Exception:  # noqa: BLE001
+            still_active.append(aid)
+            continue
+        if a["symbol"].upper() == "AUDUSD":
+            hit = price <= a["target"]
+        else:
+            hit = price >= a["target"]
+        if hit:
+            a["triggered"] = True
+            a["triggered_at"] = dt.datetime.utcnow().isoformat() + "Z"
+            a["triggered_price"] = round(price, 5)
+            triggered.append({
+                "id": aid,
+                "device_id": a["device_id"],
+                "symbol": a["symbol"],
+                "target": a["target"],
+                "price": round(price, 5),
+                "at": a["triggered_at"],
+            })
+        else:
+            still_active.append(aid)
+    return {"checked_at": dt.datetime.utcnow().isoformat() + "Z", "triggered": triggered, "active": len(still_active) + len(triggered)}
+
+
 @app.get("/signal/{symbol}")
 def get_signal(symbol: str):
     symbol = symbol.upper()

@@ -184,6 +184,7 @@ def run(df: pd.DataFrame, weights: dict | None = None, buy_th: float = 1.5, stro
 
     eq = 1.0
     equity_curve = []
+    curve_t = []
     trades = 0
     wins = 0
     gross_win = 0.0
@@ -216,6 +217,7 @@ def run(df: pd.DataFrame, weights: dict | None = None, buy_th: float = 1.5, stro
         peak = max(peak, eq)
         max_dd = max(max_dd, (peak - eq) / peak if peak else 0.0)
         equity_curve.append(eq)
+    curve_t = [str(df.index[i]) if i < len(df) else "" for i in idx]
 
     n = len(rets)
     total_return = eq - 1.0
@@ -225,6 +227,14 @@ def run(df: pd.DataFrame, weights: dict | None = None, buy_th: float = 1.5, stro
     profit_factor = (gross_win / gross_loss) if gross_loss > 0 else (float("inf") if gross_win > 0 else 0.0)
 
     quality = win_rate + 0.5 * max(-0.2, min(0.5, total_return)) + 0.1 * min(1.0, trades / max(1, n))
+
+    step = max(1, len(equity_curve) // 60)
+    equity_points = [
+        {"t": curve_t[i], "equity": float(round(equity_curve[i], 6))}
+        for i in range(0, len(equity_curve), step)
+    ]
+    if not equity_points and equity_curve:
+        equity_points = [{"t": curve_t[0], "equity": 1.0}]
 
     return {
         "quality": float(round(quality, 4)),
@@ -237,4 +247,5 @@ def run(df: pd.DataFrame, weights: dict | None = None, buy_th: float = 1.5, stro
         "bars": int(len(idx)),
         "max_drawdown": float(round(max_dd, 4)),
         "std_return": float(np.std(rets) if rets else 0.0),
+        "equity_curve": equity_points,
     }

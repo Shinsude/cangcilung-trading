@@ -568,6 +568,18 @@ class AccWindow {
       );
 }
 
+class EquityPoint {
+  final String t;
+  final double equity;
+
+  const EquityPoint({required this.t, required this.equity});
+
+  factory EquityPoint.fromJson(Map<String, dynamic> json) => EquityPoint(
+        t: json['t'] as String? ?? '',
+        equity: (json['equity'] as num?)?.toDouble() ?? 0,
+      );
+}
+
 class BacktestSummary {
   final double winRate;
   final double profitFactor;
@@ -575,17 +587,22 @@ class BacktestSummary {
   final double maxDrawdown;
   final int trades;
   final double quality;
+  final List<EquityPoint> equityCurve;
 
-  BacktestSummary({required this.winRate, required this.profitFactor, required this.totalReturn, required this.maxDrawdown, required this.trades, required this.quality});
+  BacktestSummary({required this.winRate, required this.profitFactor, required this.totalReturn, required this.maxDrawdown, required this.trades, required this.quality, this.equityCurve = const []});
 
-  factory BacktestSummary.fromJson(Map<String, dynamic> json) => BacktestSummary(
-        winRate: (json['win_rate'] as num?)?.toDouble() ?? 0,
-        profitFactor: (json['profit_factor'] as num?)?.toDouble() ?? 0,
-        totalReturn: (json['total_return'] as num?)?.toDouble() ?? 0,
-        maxDrawdown: (json['max_drawdown'] as num?)?.toDouble() ?? 0,
-        trades: (json['trades'] as num?)?.toInt() ?? 0,
-        quality: (json['quality'] as num?)?.toDouble() ?? 0,
-      );
+  factory BacktestSummary.fromJson(Map<String, dynamic> json) {
+    final curve = (json['equity_curve'] as List?) ?? const [];
+    return BacktestSummary(
+      winRate: (json['win_rate'] as num?)?.toDouble() ?? 0,
+      profitFactor: (json['profit_factor'] as num?)?.toDouble() ?? 0,
+      totalReturn: (json['total_return'] as num?)?.toDouble() ?? 0,
+      maxDrawdown: (json['max_drawdown'] as num?)?.toDouble() ?? 0,
+      trades: (json['trades'] as num?)?.toInt() ?? 0,
+      quality: (json['quality'] as num?)?.toDouble() ?? 0,
+      equityCurve: curve.whereType<Map<String, dynamic>>().map(EquityPoint.fromJson).toList(),
+    );
+  }
 }
 
 class ModelStats {
