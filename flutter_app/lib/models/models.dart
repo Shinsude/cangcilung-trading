@@ -1,4 +1,4 @@
-﻿class Prediction {
+class Prediction {
   final double nextPrice;
   final String horizon;
   final String direction;

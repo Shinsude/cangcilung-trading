@@ -1,4 +1,4 @@
-﻿part of 'package:cangcilung_trading/screens/home_screen.dart';
+part of 'package:cangcilung_trading/screens/home_screen.dart';
 
 class _LoadingView extends StatefulWidget {
   const _LoadingView();
@@ -257,7 +257,7 @@ class _SystemHealthCard extends StatelessWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  '${system.theta.label} Â· AI ${system.theta.aiDir == 0 ? 'â€“' : system.theta.aiDir > 0 ? 'â–²' : 'â–¼'} vs RULES ${system.theta.rulesDir == 0 ? 'â€“' : system.theta.rulesDir > 0 ? 'â–²' : 'â–¼'}',
+                  '${system.theta.label} \u00B7 AI ${system.theta.aiDir == 0 ? '\u2013' : system.theta.aiDir > 0 ? '\u25B2' : '\u25BC'} vs RULES ${system.theta.rulesDir == 0 ? '\u2013' : system.theta.rulesDir > 0 ? '\u25B2' : '\u25BC'}',
                   style: TextStyle(
                     color: system.theta.aligned ? AppColors.green : AppColors.amber,
                     fontSize: 10,
@@ -273,7 +273,7 @@ class _SystemHealthCard extends StatelessWidget {
           if (system.safety.violations > 0)
             Padding(
               padding: const EdgeInsets.only(top: 4, left: 44),
-              child: Text('âš  ${system.safety.violations} pelanggaran Â· SL min ${system.safety.minimumStop.toStringAsFixed(0)} Â· RR ${system.safety.riskReward.toStringAsFixed(1)}',
+              child: Text('\u26A0 ${system.safety.violations} pelanggaran \u00B7 SL min ${system.safety.minimumStop.toStringAsFixed(0)} \u00B7 RR ${system.safety.riskReward.toStringAsFixed(1)}',
                   style: const TextStyle(color: AppColors.red, fontSize: 9)),
             ),
         ],
@@ -340,7 +340,7 @@ class _SessionTimelineState extends State<_SessionTimeline> {
     if (h >= 8 && h < 17) active.add('LONDON');
     if (h >= 13 && h < 22) active.add('NEW YORK');
     if (active.isEmpty) return 'CLOSED';
-    if (active.length == 2) return '${active[0]} â†’ ${active[1]}';
+    if (active.length == 2) return '${active[0]} \u2192 ${active[1]}';
     return active.first;
   }
 
