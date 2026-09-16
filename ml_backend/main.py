@@ -143,6 +143,8 @@ def _real_accuracy(log_entries: list, symbol: str, df) -> dict:
         for e in log_entries:
             if e.get("symbol") != symbol:
                 continue
+            if e.get("data_source") == "synthetic":
+                continue
             i = dates.get(e.get("date"))
             if i is None or i + 1 >= len(df):
                 continue

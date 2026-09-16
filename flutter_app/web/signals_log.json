@@ -1,11 +1,12 @@
 [
  {
   "date": "2026-09-07",
-  "symbol": "XAUUSD",
+  "symbol": "AUDUSD",
   "action": "BUY",
   "strength": "STRONG",
-  "score": 5.179,
-  "close": 4514.92
+  "score": 4.547,
+  "close": 0.67987,
+  "data_source": "synthetic"
  },
  {
   "date": "2026-09-07",
@@ -13,23 +14,26 @@
   "action": "BUY",
   "strength": "STRONG",
   "score": 4.176,
-  "close": 18399.06
+  "close": 18399.06,
+  "data_source": "synthetic"
  },
  {
   "date": "2026-09-07",
-  "symbol": "AUDUSD",
-  "action": "BUY",
-  "strength": "STRONG",
-  "score": 4.547,
-  "close": 0.67987
- },
- {
-  "date": "2026-09-08",
   "symbol": "XAUUSD",
   "action": "BUY",
   "strength": "STRONG",
-  "score": 5.161,
-  "close": 4514.92
+  "score": 5.179,
+  "close": 4514.92,
+  "data_source": "synthetic"
+ },
+ {
+  "date": "2026-09-08",
+  "symbol": "AUDUSD",
+  "action": "BUY",
+  "strength": "STRONG",
+  "score": 4.577,
+  "close": 0.67987,
+  "data_source": "synthetic"
  },
  {
   "date": "2026-09-08",
@@ -37,23 +41,26 @@
   "action": "BUY",
   "strength": "STRONG",
   "score": 4.934,
-  "close": 18399.06
+  "close": 18399.06,
+  "data_source": "synthetic"
  },
  {
   "date": "2026-09-08",
-  "symbol": "AUDUSD",
-  "action": "BUY",
-  "strength": "STRONG",
-  "score": 4.577,
-  "close": 0.67987
- },
- {
-  "date": "2026-09-09",
   "symbol": "XAUUSD",
   "action": "BUY",
   "strength": "STRONG",
   "score": 5.161,
-  "close": 4514.92
+  "close": 4514.92,
+  "data_source": "synthetic"
+ },
+ {
+  "date": "2026-09-09",
+  "symbol": "AUDUSD",
+  "action": "BUY",
+  "strength": "STRONG",
+  "score": 4.577,
+  "close": 0.67987,
+  "data_source": "synthetic"
  },
  {
   "date": "2026-09-09",
@@ -61,23 +68,26 @@
   "action": "BUY",
   "strength": "STRONG",
   "score": 4.402,
-  "close": 18399.06
+  "close": 18399.06,
+  "data_source": "synthetic"
  },
  {
   "date": "2026-09-09",
-  "symbol": "AUDUSD",
-  "action": "BUY",
-  "strength": "STRONG",
-  "score": 4.577,
-  "close": 0.67987
- },
- {
-  "date": "2026-09-10",
   "symbol": "XAUUSD",
   "action": "BUY",
   "strength": "STRONG",
   "score": 5.161,
-  "close": 4514.92
+  "close": 4514.92,
+  "data_source": "synthetic"
+ },
+ {
+  "date": "2026-09-10",
+  "symbol": "AUDUSD",
+  "action": "BUY",
+  "strength": "STRONG",
+  "score": 4.577,
+  "close": 0.67987,
+  "data_source": "synthetic"
  },
  {
   "date": "2026-09-10",
@@ -85,23 +95,25 @@
   "action": "BUY",
   "strength": "STRONG",
   "score": 4.244,
-  "close": 18399.06
+  "close": 18399.06,
+  "data_source": "synthetic"
  },
  {
   "date": "2026-09-10",
-  "symbol": "AUDUSD",
+  "symbol": "XAUUSD",
   "action": "BUY",
   "strength": "STRONG",
-  "score": 4.577,
-  "close": 0.67987
+  "score": 5.161,
+  "close": 4514.92,
+  "data_source": "synthetic"
  },
  {
   "date": "2026-09-11",
-  "symbol": "XAUUSD",
+  "symbol": "AUDUSD",
   "action": "HOLD",
   "strength": "WEAK",
-  "score": 0.129,
-  "close": 4361.6
+  "score": -1.469,
+  "close": 0.71654
  },
  {
   "date": "2026-09-11",
@@ -113,19 +125,19 @@
  },
  {
   "date": "2026-09-11",
-  "symbol": "AUDUSD",
+  "symbol": "XAUUSD",
   "action": "HOLD",
   "strength": "WEAK",
-  "score": -1.469,
-  "close": 0.71654
+  "score": 0.129,
+  "close": 4361.6
  },
  {
   "date": "2026-09-12",
-  "symbol": "XAUUSD",
+  "symbol": "AUDUSD",
   "action": "BUY",
-  "strength": "STRONG",
-  "score": 5.209,
-  "close": 4514.92
+  "strength": "MODERATE",
+  "score": 2.648,
+  "close": 0.67987
  },
  {
   "date": "2026-09-12",
@@ -137,6 +149,14 @@
  },
  {
   "date": "2026-09-12",
+  "symbol": "XAUUSD",
+  "action": "BUY",
+  "strength": "STRONG",
+  "score": 5.209,
+  "close": 4514.92
+ },
+ {
+  "date": "2026-09-13",
   "symbol": "AUDUSD",
   "action": "BUY",
   "strength": "MODERATE",
@@ -152,20 +172,12 @@
   "close": 18399.06
  },
  {
-  "date": "2026-09-13",
-  "symbol": "AUDUSD",
-  "action": "BUY",
-  "strength": "MODERATE",
-  "score": 2.648,
-  "close": 0.67987
- },
- {
   "date": "2026-09-14",
-  "symbol": "XAUUSD",
-  "action": "HOLD",
-  "strength": "WEAK",
-  "score": -0.384,
-  "close": 4380.3
+  "symbol": "AUDUSD",
+  "action": "SELL",
+  "strength": "MODERATE",
+  "score": -1.991,
+  "close": 0.71485
  },
  {
   "date": "2026-09-14",
@@ -177,19 +189,19 @@
  },
  {
   "date": "2026-09-14",
-  "symbol": "AUDUSD",
-  "action": "SELL",
-  "strength": "MODERATE",
-  "score": -1.991,
-  "close": 0.71485
- },
- {
-  "date": "2026-09-15",
   "symbol": "XAUUSD",
   "action": "HOLD",
   "strength": "WEAK",
-  "score": -0.926,
-  "close": 4334.6
+  "score": -0.384,
+  "close": 4380.3
+ },
+ {
+  "date": "2026-09-15",
+  "symbol": "AUDUSD",
+  "action": "SELL",
+  "strength": "MODERATE",
+  "score": -1.706,
+  "close": 0.71378
  },
  {
   "date": "2026-09-15",
@@ -201,27 +213,11 @@
  },
  {
   "date": "2026-09-15",
-  "symbol": "AUDUSD",
-  "action": "SELL",
-  "strength": "MODERATE",
-  "score": -1.706,
-  "close": 0.71378
- },
- {
-  "date": "2026-09-16",
   "symbol": "XAUUSD",
-  "action": "BUY",
-  "strength": "STRONG",
-  "score": 5.209,
-  "close": 4514.92
- },
- {
-  "date": "2026-09-16",
-  "symbol": "NASDAQ",
-  "action": "BUY",
-  "strength": "STRONG",
-  "score": 4.673,
-  "close": 18399.06
+  "action": "HOLD",
+  "strength": "WEAK",
+  "score": -0.926,
+  "close": 4334.6
  },
  {
   "date": "2026-09-16",
@@ -229,6 +225,25 @@
   "action": "BUY",
   "strength": "MODERATE",
   "score": 2.648,
-  "close": 0.67987
+  "close": 0.67987,
+  "data_source": "synthetic"
+ },
+ {
+  "date": "2026-09-16",
+  "symbol": "NASDAQ",
+  "action": "BUY",
+  "strength": "STRONG",
+  "score": 4.673,
+  "close": 18399.06,
+  "data_source": "synthetic"
+ },
+ {
+  "date": "2026-09-16",
+  "symbol": "XAUUSD",
+  "action": "BUY",
+  "strength": "STRONG",
+  "score": 5.209,
+  "close": 4514.92,
+  "data_source": "synthetic"
  }
 ]
