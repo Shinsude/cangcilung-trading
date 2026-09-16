@@ -24,6 +24,8 @@ def load() -> list:
 def fetch(symbol: str) -> dict:
     with urllib.request.urlopen(BASE + symbol, timeout=180) as r:
         d = json.load(r)
+    if (d.get("data_source") or "").lower() != "live":
+        raise ValueError(f"data_source={d.get('data_source')!r}, bukan live -> sinyal tidak dicatat")
     sig = d["signal"]
     return {
         "date": datetime.datetime.utcnow().strftime("%Y-%m-%d"),
@@ -32,6 +34,7 @@ def fetch(symbol: str) -> dict:
         "strength": sig["strength"],
         "score": sig["score"],
         "close": d["current_price"],
+        "data_source": "live",
     }
 
 
