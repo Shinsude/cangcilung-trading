@@ -27,55 +27,46 @@ class _SignalPage extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
-          if (!minimal && digest != null) ...[
-            _DigestCard(digest: digest!, onSelect: onSelectSymbol),
-            const SizedBox(height: 14),
-          ],
           _PriceHero(data: data),
           if (data.dataSource != 'live') ...[
             const SizedBox(height: 8),
             _DataSourceWarning(source: data.dataSource),
-          ],
-          if (!minimal) ...[
-            const SizedBox(height: 10),
-            const _CandleTimer(),
-            const SizedBox(height: 8),
-            const _SessionTimeline(),
           ],
           const SizedBox(height: 14),
           _Tilt3D(
             maxTilt: 6,
             child: _SignalHero(signal: data.signal, prediction: data.prediction, price: data.currentPrice, decimals: data.decimals, pulse: pulse, advanced: data.advanced, confHistory: confHistory),
           ),
-          if (!minimal) ...[
+          const SizedBox(height: 14),
+          _RiskPlanCard(risk: data.risk, decimals: data.decimals),
+          if (data.position.open) ...[
             const SizedBox(height: 14),
-            _RiskPlanCard(risk: data.risk, decimals: data.decimals),
-            if (data.position.open) ...[
-              const SizedBox(height: 14),
-              _PositionCard(position: data.position, decimals: data.decimals),
-            ],
+            _PositionCard(position: data.position, decimals: data.decimals),
           ],
+          const SizedBox(height: 14),
+          _AlertBar(target: alertTarget, price: data.currentPrice, decimals: data.decimals, onSet: onSetAlert, onClear: onClearAlert),
           if (data.market != null) ...[
             const SizedBox(height: 14),
             _MarketCard(market: data.market!),
           ],
-          const SizedBox(height: 14),
-          _AlertBar(target: alertTarget, price: data.currentPrice, decimals: data.decimals, onSet: onSetAlert, onClear: onClearAlert),
           if (!minimal) ...[
-            const SizedBox(height: 14),
-            _MiniScoreboard(loading: historyLoading, entries: history, hasError: historyError, onRetry: onRetryHistory),
-            const SizedBox(height: 14),
-            _QuickIndicators(ind: data.indicators),
-            const SizedBox(height: 14),
-            _AdvancedScores(adv: data.advanced),
-            if (data.pipeline.tracked > 0) ...[
+            if (digest != null) ...[
               const SizedBox(height: 14),
-              _PipelineCard(pipeline: data.pipeline),
+              _DigestCard(digest: digest!, onSelect: onSelectSymbol),
             ],
             const SizedBox(height: 14),
-            _SystemHealthCard(system: data.system ?? const SystemHealth()),
-            const SizedBox(height: 14),
-            const _EducationPanel(),
+            _DetailSection(
+              children: [
+                const _CandleTimer(),
+                const _SessionTimeline(),
+                _MiniScoreboard(loading: historyLoading, entries: history, hasError: historyError, onRetry: onRetryHistory),
+                _QuickIndicators(ind: data.indicators),
+                _AdvancedScores(adv: data.advanced),
+                if (data.pipeline.tracked > 0) _PipelineCard(pipeline: data.pipeline),
+                _SystemHealthCard(system: data.system ?? const SystemHealth()),
+                const _EducationPanel(),
+              ],
+            ),
           ],
         ],
       ),
@@ -111,6 +102,70 @@ class _DataSourceWarning extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DetailSection extends StatefulWidget {
+  const _DetailSection({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  State<_DetailSection> createState() => _DetailSectionState();
+}
+
+class _DetailSectionState extends State<_DetailSection> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = <Widget>[];
+    for (var i = 0; i < widget.children.length; i++) {
+      if (i > 0) items.add(const SizedBox(height: 14));
+      items.add(widget.children[i]);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: () => setState(() => _open = !_open),
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+            child: Row(
+              children: [
+                const Icon(Icons.tune_rounded, size: 15, color: AppColors.textSecondary),
+                const SizedBox(width: 8),
+                const Text('DETAIL & KONTEKS',
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1)),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(color: AppColors.surfaceAlt, borderRadius: BorderRadius.circular(7)),
+                  child: Text('${widget.children.length} item',
+                      style: const TextStyle(color: AppColors.textTertiary, fontSize: 8.5, fontWeight: FontWeight.w800)),
+                ),
+                const Spacer(),
+                AnimatedRotation(
+                  turns: _open ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  child: const Icon(Icons.expand_more_rounded, size: 20, color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeInOut,
+          alignment: Alignment.topCenter,
+          child: _open
+              ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: items)
+              : const SizedBox.shrink(),
+        ),
+      ],
     );
   }
 }
