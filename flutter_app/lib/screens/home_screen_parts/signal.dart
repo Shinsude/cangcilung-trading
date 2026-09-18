@@ -1395,7 +1395,7 @@ class _MarketCard extends StatelessWidget {
           ],
           if (curRow != null) ...[
             const SizedBox(height: 10),
-            _histBox(regimeLabel, regCol, curRow!),
+            _histBox(regimeLabel, regCol, curRow),
           ],
           if (divNote.isNotEmpty) ...[
             const SizedBox(height: 10),
