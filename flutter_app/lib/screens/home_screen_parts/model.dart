@@ -24,6 +24,7 @@ class _ModelPageState extends State<_ModelPage> {
   BacktestResponse? _btResult;
   List<Map<String, dynamic>> _history = [];
   bool _historyLoading = false;
+  bool _historyError = false;
 
   @override
   void initState() {
@@ -49,14 +50,20 @@ class _ModelPageState extends State<_ModelPage> {
   }
 
   Future<void> _loadHistory() async {
-    setState(() => _historyLoading = true);
+    setState(() {
+      _historyLoading = true;
+      _historyError = false;
+    });
     try {
       final data = await widget.api.fetchHistory(_btSymbol, limit: 30);
       if (!mounted) return;
       setState(() => _history = data);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _history = []);
+      setState(() {
+        _history = [];
+        _historyError = true;
+      });
     } finally {
       if (mounted) setState(() => _historyLoading = false);
     }
@@ -79,13 +86,26 @@ class _ModelPageState extends State<_ModelPage> {
     final m = widget.model;
     if (m == null) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Gagal memuat model', style: TextStyle(color: AppColors.red, fontSize: 13, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 10),
-            _ActionPill(label: 'Coba lagi', icon: Icons.refresh, onTap: widget.onRetry),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Gagal memuat model', style: TextStyle(color: AppColors.red, fontSize: 13, fontWeight: FontWeight.w700)),
+              if ((widget.error ?? '').isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  widget.error!,
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                ),
+              ],
+              const SizedBox(height: 12),
+              _ActionPill(label: 'Coba lagi', icon: Icons.refresh, onTap: widget.onRetry),
+            ],
+          ),
         ),
       );
     }
@@ -117,9 +137,14 @@ class _ModelPageState extends State<_ModelPage> {
             unawaited(_loadHistory());
           },
         ),
-        if (_history.isNotEmpty || _historyLoading) ...[
+        if (_history.isNotEmpty || _historyLoading || _historyError) ...[
           const SizedBox(height: 14),
-          _SignalHistoryCard(loading: _historyLoading, entries: _history),
+          _SignalHistoryCard(
+            loading: _historyLoading,
+            entries: _history,
+            hasError: _historyError,
+            onRetry: _loadHistory,
+          ),
         ],
         const SizedBox(height: 14),
         for (final e in entries) ...[
@@ -163,23 +188,21 @@ class _BacktestExplorer extends StatelessWidget {
           const SizedBox(height: 12),
           const Text('SINYAL', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
           const SizedBox(height: 6),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              for (final s in symbols) ...[
-                _ChoiceChip(label: s, selected: symbol == s, onTap: () => onSymbol(s)),
-                const SizedBox(width: 8),
-              ],
+              for (final s in symbols) _ChoiceChip(label: s, selected: symbol == s, onTap: () => onSymbol(s)),
             ],
           ),
           const SizedBox(height: 10),
           const Text('RENTANG', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
           const SizedBox(height: 6),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              for (final r in ranges) ...[
-                _ChoiceChip(label: labels[r]!, selected: days == r, onTap: () => onDays(r)),
-                const SizedBox(width: 8),
-              ],
+              for (final r in ranges) _ChoiceChip(label: labels[r]!, selected: days == r, onTap: () => onDays(r)),
             ],
           ),
           const SizedBox(height: 12),
@@ -555,24 +578,29 @@ class _ActionPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final enabled = onTap != null;
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-        decoration: BoxDecoration(
-          color: AppColors.blue.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.blue.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 15, color: AppColors.blue),
-              const SizedBox(width: 6),
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: enabled ? 1 : 0.4,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+          decoration: BoxDecoration(
+            color: AppColors.blue.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.blue.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 15, color: AppColors.blue),
+                const SizedBox(width: 6),
+              ],
+              Text(label, style: const TextStyle(color: AppColors.blue, fontSize: 12, fontWeight: FontWeight.w800)),
             ],
-            Text(label, style: const TextStyle(color: AppColors.blue, fontSize: 12, fontWeight: FontWeight.w800)),
-          ],
+          ),
         ),
       ),
     );

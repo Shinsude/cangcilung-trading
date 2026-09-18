@@ -1,9 +1,11 @@
 part of 'package:cangcilung_trading/screens/home_screen.dart';
 
 class _MiniScoreboard extends StatelessWidget {
-  const _MiniScoreboard({required this.loading, required this.entries});
+  const _MiniScoreboard({required this.loading, required this.entries, this.hasError = false, this.onRetry});
   final bool loading;
   final List<Map<String, dynamic>> entries;
+  final bool hasError;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +43,16 @@ class _MiniScoreboard extends StatelessWidget {
           const SizedBox(height: 10),
           if (loading)
             const Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.purple)))
+          else if (hasError)
+            Row(
+              children: [
+                const Expanded(
+                  child: Text('Gagal memuat riwayat.', style: TextStyle(color: AppColors.red, fontSize: 11)),
+                ),
+                if (onRetry != null)
+                  TextButton(onPressed: onRetry, child: const Text('Coba lagi', style: TextStyle(fontSize: 11))),
+              ],
+            )
           else if (entries.isEmpty)
             const Text('Belum ada data riwayat untuk simbol ini.', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontStyle: FontStyle.italic))
           else ...[
@@ -118,9 +130,11 @@ class _MiniScoreboard extends StatelessWidget {
 }
 
 class _SignalHistoryCard extends StatelessWidget {
-  const _SignalHistoryCard({required this.loading, required this.entries});
+  const _SignalHistoryCard({required this.loading, required this.entries, this.hasError = false, this.onRetry});
   final bool loading;
   final List<Map<String, dynamic>> entries;
+  final bool hasError;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -140,6 +154,16 @@ class _SignalHistoryCard extends StatelessWidget {
           const SizedBox(height: 10),
           if (loading)
             const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.purple)))
+          else if (hasError)
+            Row(
+              children: [
+                const Expanded(
+                  child: Text('Gagal memuat riwayat.', style: TextStyle(color: AppColors.red, fontSize: 12)),
+                ),
+                if (onRetry != null)
+                  TextButton(onPressed: onRetry, child: const Text('Coba lagi', style: TextStyle(fontSize: 12))),
+              ],
+            )
           else if (entries.isEmpty)
             const Text('Belum ada data riwayat. Log dimulai besok.', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontStyle: FontStyle.italic))
           else

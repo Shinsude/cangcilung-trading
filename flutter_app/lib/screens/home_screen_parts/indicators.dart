@@ -138,9 +138,10 @@ class _IndicatorTile extends StatelessWidget {
           Text(
             value,
             style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 18, fontFeatures: const [FontFeature.tabularFigures()]),
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          Text(sub, style: const TextStyle(fontSize: 10, color: AppColors.textTertiary), overflow: TextOverflow.ellipsis),
+          Text(sub, style: const TextStyle(fontSize: 10, color: AppColors.textTertiary), maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );

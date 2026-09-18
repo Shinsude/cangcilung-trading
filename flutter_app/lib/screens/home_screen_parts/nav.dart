@@ -1,12 +1,13 @@
 part of 'package:cangcilung_trading/screens/home_screen.dart';
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.symbols, required this.selected, required this.onSelect, required this.live, required this.notifyOn, required this.onToggleNotify, required this.minimal, required this.onToggleMinimal});
+  const _TopBar({required this.symbols, required this.selected, required this.onSelect, required this.live, this.simulated = false, required this.notifyOn, required this.onToggleNotify, required this.minimal, required this.onToggleMinimal});
 
   final List<String> symbols;
   final String selected;
   final ValueChanged<String> onSelect;
   final bool live;
+  final bool simulated;
   final bool notifyOn;
   final ValueChanged<bool> onToggleNotify;
   final bool minimal;
@@ -34,12 +35,14 @@ class _TopBar extends StatelessWidget {
                 child: const Icon(Icons.candlestick_chart, size: 18, color: Colors.white),
               ),
               const SizedBox(width: 10),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Cangcilung', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, letterSpacing: -0.3)),
-                  Text('TRADING AI', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 9, color: AppColors.textSecondary, letterSpacing: 1.5)),
-                ],
+              const Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Cangcilung', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, letterSpacing: -0.3), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text('TRADING AI', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 9, color: AppColors.textSecondary, letterSpacing: 1.5), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
               ),
               const Spacer(),
               IconButton(
@@ -54,8 +57,7 @@ class _TopBar extends StatelessWidget {
               ),
               _NotifButton(on: notifyOn, onToggle: onToggleNotify),
               _MinimalButton(minimal: minimal, onToggle: onToggleMinimal),
-              const SizedBox(width: 10),
-              _LiveIndicator(live: live),
+              _LiveIndicator(live: live, simulated: simulated),
             ],
           ),
           const SizedBox(height: 12),
@@ -74,17 +76,20 @@ class _NotifButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = on ? AppColors.blue : AppColors.textTertiary;
-    return GestureDetector(
-      onTap: () => onToggle(!on),
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-        decoration: BoxDecoration(
-          color: c.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: c.withValues(alpha: 0.25)),
+    return Tooltip(
+      message: on ? 'Nonaktifkan notifikasi sinyal' : 'Aktifkan notifikasi sinyal',
+      child: GestureDetector(
+        onTap: () => onToggle(!on),
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+          decoration: BoxDecoration(
+            color: c.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: c.withValues(alpha: 0.25)),
+          ),
+          child: Icon(on ? Icons.notifications_active_rounded : Icons.notifications_none_rounded, size: 18, color: c),
         ),
-        child: Icon(on ? Icons.notifications_active_rounded : Icons.notifications_none_rounded, size: 18, color: c),
       ),
     );
   }
@@ -98,53 +103,103 @@ class _MinimalButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = minimal ? AppColors.amber : AppColors.textTertiary;
-    return GestureDetector(
-      onTap: () => onToggle(!minimal),
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-        decoration: BoxDecoration(
-          color: c.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: c.withValues(alpha: 0.25)),
+    return Tooltip(
+      message: minimal ? 'Kembali ke mode normal' : 'Mode ringkas (sembunyikan detail)',
+      child: GestureDetector(
+        onTap: () => onToggle(!minimal),
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+          decoration: BoxDecoration(
+            color: c.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: c.withValues(alpha: 0.25)),
+          ),
+          child: Icon(minimal ? Icons.visibility_rounded : Icons.visibility_off_rounded, size: 18, color: c),
         ),
-        child: Icon(minimal ? Icons.visibility_rounded : Icons.visibility_off_rounded, size: 18, color: c),
       ),
     );
   }
 }
 
 class _LiveIndicator extends StatelessWidget {
-  const _LiveIndicator({required this.live});
+  const _LiveIndicator({required this.live, this.simulated = false});
   final bool live;
+  final bool simulated;
 
   @override
   Widget build(BuildContext context) {
-    final c = live ? AppColors.green : AppColors.textTertiary;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    final label = live ? 'LIVE' : (simulated ? 'SIMULASI' : 'OFFLINE');
+    final c = live ? AppColors.green : (simulated ? AppColors.amber : AppColors.textTertiary);
+    return Tooltip(
+      message: live
+          ? 'Data langsung dari pasar'
+          : (simulated ? 'Data simulasi — bukan untuk trading nyata' : 'Tidak ada data live'),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 400),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: c.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: c.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: c,
+                boxShadow: live ? [const BoxShadow(color: AppColors.green, blurRadius: 8, spreadRadius: 1)] : null,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(color: c, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NoticeBar extends StatelessWidget {
+  const _NoticeBar({required this.message, required this.onClose});
+  final String message;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.fromLTRB(10, 4, 4, 4),
       decoration: BoxDecoration(
-        color: c.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: c.withValues(alpha: 0.3)),
+        color: AppColors.amber.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.amber.withValues(alpha: 0.3)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: c,
-              boxShadow: live ? [const BoxShadow(color: AppColors.green, blurRadius: 8, spreadRadius: 1)] : null,
+          const Icon(Icons.info_outline_rounded, size: 14, color: AppColors.amber),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: AppColors.amber, fontSize: 11),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 6),
-          Text(
-            live ? 'LIVE' : 'OFFLINE',
-            style: TextStyle(color: c, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8),
+          IconButton(
+            onPressed: onClose,
+            iconSize: 16,
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.close_rounded, color: AppColors.amber),
+            tooltip: 'Tutup',
           ),
         ],
       ),

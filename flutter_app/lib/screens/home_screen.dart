@@ -34,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String? _error;
   bool _loading = true;
   bool _fetching = false;
-  bool _live = false;
+  String? _notice;
   int _tab = 0;
   ModelInfo? _model;
   bool _modelLoading = false;
@@ -47,6 +47,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final Map<String, List<double>> _confHistory = {};
   List<Map<String, dynamic>> _history = const [];
   bool _historyLoading = false;
+  bool _historyError = false;
   MorningDigest? _digest;
   bool _digestLoaded = false;
 
@@ -138,6 +139,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Future<void> _loadHistory(String symbol) async {
     setState(() {
       _historyLoading = true;
+      _historyError = false;
       _history = const [];
     });
     try {
@@ -149,26 +151,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       });
     } on Exception {
       if (!mounted) return;
-      setState(() => _historyLoading = false);
+      setState(() {
+        _historyError = true;
+        _historyLoading = false;
+      });
     }
   }
 
-  Future<void> _loadDigest() async {
-    if (_digestLoaded) return;
-    final d = await _api.fetchDigest();
-    if (d == null || !mounted) return;
-    _digestLoaded = true;
-    setState(() => _digest = d);
-    if (_notifOn && !kIsWeb) {
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        final seenKey = 'digest_seen_${d.date}';
-        final seen = prefs.getBool(seenKey) ?? false;
-        if (!seen) {
-          await prefs.setBool(seenKey, true);
-          unawaited(NotificationService.instance.showMorningDigest(d.date, d.text));
-        }
-      } catch (_) {}
+  Future<void> _loadDigest({bool refresh = false}) async {
+    if (_digestLoaded && !refresh) return;
+    _digestLoaded = false;
+    try {
+      final d = await _api.fetchDigest();
+      if (d == null || !mounted) return;
+      _digestLoaded = true;
+      setState(() => _digest = d);
+      if (_notifOn && !kIsWeb) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final seenKey = 'digest_seen_${d.date}';
+          final seen = prefs.getBool(seenKey) ?? false;
+          if (!seen) {
+            await prefs.setBool(seenKey, true);
+            unawaited(NotificationService.instance.showMorningDigest(d.date, d.text));
+          }
+        } catch (_) {}
+      }
+    } on Exception catch (_) {
+      _digestLoaded = true;
     }
   }
 
@@ -355,14 +365,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _data = data;
         _loading = false;
         _fetching = false;
-        _live = true;
+        _notice = null;
       });
       unawaited(_warmOthers());
       unawaited(_loadDigest());
       unawaited(_checkPriceAlert(_selected, data.currentPrice));
-      Timer(const Duration(seconds: 4), () {
-        if (mounted) setState(() => _live = false);
-      });
     } on Exception catch (e) {
       if (!mounted) return;
       setState(() => _fetching = false);
@@ -371,8 +378,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           _error = e.toString();
           _loading = false;
         });
+      } else {
+        setState(() => _notice = 'Gagal refresh — menampilkan data tersimpan.');
       }
     }
+  }
+
+  Future<void> _refreshAll() async {
+    await Future.wait([_load(), _loadHistory(_selected), _loadDigest(refresh: true)]);
   }
 
   void _selectSymbol(String s) {
@@ -390,7 +403,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         bottom: false,
         child: Column(
           children: [
-            _TopBar(symbols: _symbols, selected: _selected, onSelect: _selectSymbol, live: _live || _fetching, notifyOn: _notifOn, onToggleNotify: _toggleNotif, minimal: _minimal, onToggleMinimal: _toggleMinimal),
+            _TopBar(symbols: _symbols, selected: _selected, onSelect: _selectSymbol, live: _data?.dataSource == 'live', simulated: _data?.dataSource == 'synthetic', notifyOn: _notifOn, onToggleNotify: _toggleNotif, minimal: _minimal, onToggleMinimal: _toggleMinimal),
             AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               height: _fetching ? 3 : 0,
@@ -402,6 +415,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     )
                   : null,
             ),
+            if (_notice != null)
+              _NoticeBar(message: _notice!, onClose: () => setState(() => _notice = null)),
             Expanded(
               child: _loading
                   ? const _LoadingView()
@@ -441,7 +456,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       child: [
         _SignalPage(
           data: d,
-          onRefresh: _load,
+          onRefresh: _refreshAll,
           pulse: _pulseCtrl,
           alertTarget: _alerts[d.symbol],
           onSetAlert: () => _setAlert(d.symbol),
@@ -450,6 +465,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           confHistory: _confHistory[d.symbol] ?? const [],
           history: _history,
           historyLoading: _historyLoading,
+          historyError: _historyError,
+          onRetryHistory: () => _loadHistory(d.symbol),
           digest: _digest,
           onSelectSymbol: _selectSymbol,
         ),

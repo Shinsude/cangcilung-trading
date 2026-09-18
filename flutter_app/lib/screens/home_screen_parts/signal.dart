@@ -1,7 +1,7 @@
 part of 'package:cangcilung_trading/screens/home_screen.dart';
 
 class _SignalPage extends StatelessWidget {
-  const _SignalPage({required this.data, required this.onRefresh, required this.pulse, required this.alertTarget, required this.onSetAlert, required this.onClearAlert, this.minimal = false, this.confHistory = const [], this.history = const [], this.historyLoading = false, this.digest, this.onSelectSymbol});
+  const _SignalPage({required this.data, required this.onRefresh, required this.pulse, required this.alertTarget, required this.onSetAlert, required this.onClearAlert, this.minimal = false, this.confHistory = const [], this.history = const [], this.historyLoading = false, this.historyError = false, this.onRetryHistory, this.digest, this.onSelectSymbol});
 
   final TradingData data;
   final Future<void> Function() onRefresh;
@@ -13,6 +13,8 @@ class _SignalPage extends StatelessWidget {
   final List<double> confHistory;
   final List<Map<String, dynamic>> history;
   final bool historyLoading;
+  final bool historyError;
+  final VoidCallback? onRetryHistory;
   final MorningDigest? digest;
   final ValueChanged<String>? onSelectSymbol;
 
@@ -57,7 +59,7 @@ class _SignalPage extends StatelessWidget {
           _AlertBar(target: alertTarget, price: data.currentPrice, decimals: data.decimals, onSet: onSetAlert, onClear: onClearAlert),
           if (!minimal) ...[
             const SizedBox(height: 14),
-            _MiniScoreboard(loading: historyLoading, entries: history),
+            _MiniScoreboard(loading: historyLoading, entries: history, hasError: historyError, onRetry: onRetryHistory),
             const SizedBox(height: 14),
             _QuickIndicators(ind: data.indicators),
             const SizedBox(height: 14),
@@ -1002,11 +1004,12 @@ class _MiniIndicator extends StatelessWidget {
           Text(
             value,
             style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 14),
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           if (sub.isNotEmpty) ...[
             const SizedBox(height: 2),
-            Text(sub, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10), overflow: TextOverflow.ellipsis),
+            Text(sub, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10), maxLines: 1, overflow: TextOverflow.ellipsis),
           ],
         ],
       ),
