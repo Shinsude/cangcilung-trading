@@ -326,8 +326,11 @@ def _build_explain(market: dict, levels: dict, momentum: dict, divergence: dict,
 
 # ── API utama ───────────────────────────────────────────────────────────────
 
-def analyze_market(df: pd.DataFrame, ind: dict, signal: dict, decimals: int = 2, window: int = 20) -> dict:
-    """Analisis struktur pasar untuk payload /signal (field `market`)."""
+def analyze_market(df: pd.DataFrame, ind: dict, signal: dict, decimals: int = 2, window: int = 30) -> dict:
+    """Analisis struktur pasar untuk payload /signal (field `market`).
+    window default 30: disamakan dengan riset (research.py) agar label regime
+    di /signal selalu identik dengan current_regime di /research.
+    """
     if df is None or len(df) < 30:
         return {
             "available": False,
