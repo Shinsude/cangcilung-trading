@@ -63,6 +63,23 @@ def test_sensitivity_rows():
 def test_summary_contract():
     df = _make_df()
     out = research.summary(df)
-    for key in ("data_points", "cost_model", "relaxed", "strict", "difference", "by_regime", "sensitivity"):
+    for key in ("data_points", "current_regime", "cost_model", "relaxed", "strict", "difference", "by_regime", "sensitivity"):
         assert key in out
     assert out["difference"]["trades"] == out["strict"]["trades"] - out["relaxed"]["trades"]
+    for row in out["by_regime"]:
+        assert "is_current" in row
+    assert any(row["is_current"] for row in out["by_regime"])
+
+
+def test_current_regime_direct():
+    df = _make_df()  # profil naik dominan
+    regime = research.current_regime(df)
+    assert regime["label"] in ("TRENDING_UP", "TRENDING_DOWN", "TEKANAN", "PELEMAHAN", "CHOPPY")
+    assert isinstance(regime["efficiency"], float)
+
+
+def test_summary_on_sliced_days():
+    df = _make_df(n=130)
+    out = research.summary(df.tail(45))
+    assert out["data_points"] <= 45
+    assert out["current_regime"]["label"] in ("TRENDING_UP", "TRENDING_DOWN", "TEKANAN", "PELEMAHAN", "CHOPPY")

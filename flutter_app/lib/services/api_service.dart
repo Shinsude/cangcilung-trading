@@ -81,8 +81,11 @@ class ApiService {
     throw ApiException('Server error (${response.statusCode})');
   }
 
-  Future<Map<String, dynamic>> fetchResearch(String symbol) async {
-    final uri = Uri.parse('$baseUrl/research/$symbol');
+  Future<Map<String, dynamic>> fetchResearch(String symbol, {int? days}) async {
+    var uri = Uri.parse('$baseUrl/research/$symbol');
+    if (days != null && days > 0) {
+      uri = uri.replace(queryParameters: {'days': '$days'});
+    }
     final response = await http.get(uri).timeout(const Duration(seconds: 90));
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;

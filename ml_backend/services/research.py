@@ -90,6 +90,15 @@ def regime_breakdown(df: pd.DataFrame, weights: dict | None = None, buy_th: floa
     return out
 
 
+def current_regime(df: pd.DataFrame, window: int = REGIME_WINDOW) -> dict:
+    """Rezim label untuk bar terakhir — merekatkan riset historis ke kondisi pasar sekarang."""
+    close = np.asarray(df["Close"], dtype=float)
+    i = len(close) - 1
+    eff = _rolling_efficiency(close, i, window)
+    net = float(close[i] - close[i - window]) if i >= window else 0.0
+    return {"label": _regime_label(eff, net), "efficiency": round(eff, 3)}
+
+
 def sensitivity(df: pd.DataFrame, weights: dict | None = None, thresholds=(1.2, 1.5, 1.8, 2.1, 2.4)) -> list[dict]:
     """Uji sensitivitas ambang sinyal terhadap performa (tanpa biaya)."""
     out = []
@@ -115,8 +124,14 @@ def summary(df: pd.DataFrame, weights: dict | None = None, cost_pct: float = COS
     win_delta = round(strict["win_rate"], 4) - round(relaxed["win_rate"], 4)
     trade_delta = strict["trades"] - relaxed["trades"]
 
+    regime = current_regime(df)
+    rows = regime_breakdown(df, weights=weights, cost_pct=cost_pct)
+    for row in rows:
+        row["is_current"] = row["regime"] == regime["label"] and row["samples"] > 0
+
     return {
         "data_points": int(len(df)),
+        "current_regime": regime,
         "cost_model": {
             "cost_pct": cost_pct,
             "rule": "Setiap sinyal baru menyilang ambang (fresh-cross) dikenai biaya 0,05% sekali jalan.",
@@ -135,6 +150,6 @@ def summary(df: pd.DataFrame, weights: dict | None = None, cost_pct: float = COS
             "trades": trade_delta,
             "note": "Selisih negatif = disiplin ketat (fresh-cross + biaya) lebih realistis, angka relaxed cenderung optimistis.",
         },
-        "by_regime": regime_breakdown(df, weights=weights, cost_pct=cost_pct),
+        "by_regime": rows,
         "sensitivity": sensitivity(df, weights=weights),
     }

@@ -1337,8 +1337,15 @@ class _MarketCard extends StatelessWidget {
     final items = (conf['items'] as List?)?.whereType<Map<String, dynamic>>().toList() ?? const [];
     final supports = (levels['support'] as List?)?.whereType<num>().toList() ?? const [];
     final resistances = (levels['resistance'] as List?)?.whereType<num>().toList() ?? const [];
-
+    final regimeHistory = (market['regime_history'] as List?)?.whereType<Map<String, dynamic>>().toList() ?? const [];
     final regimeLabel = regime['label'] as String? ?? 'CHOPPY';
+    Map<String, dynamic>? curRow;
+    for (final row in regimeHistory) {
+      if ((row['regime'] as String?) == regimeLabel && (row['samples'] as num? ?? 0) > 0) {
+        curRow = row;
+        break;
+      }
+    }
     final regCol = _regimeColor(regimeLabel);
     final volState = vol['state'] as String? ?? 'NORMAL';
     final volCol = volState == 'HIGH' ? Colors.orange : volState == 'LOW' ? Colors.cyan : AppColors.textSecondary;
@@ -1385,6 +1392,10 @@ class _MarketCard extends StatelessWidget {
           if ((regime['note'] as String?)?.isNotEmpty ?? false) ...[
             const SizedBox(height: 10),
             Text(regime['note'] as String, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, height: 1.45)),
+          ],
+          if (curRow != null) ...[
+            const SizedBox(height: 10),
+            _histBox(regimeLabel, regCol, curRow!),
           ],
           if (divNote.isNotEmpty) ...[
             const SizedBox(height: 10),
@@ -1549,6 +1560,42 @@ class _MarketCard extends StatelessWidget {
           Text(label, style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w700)),
           const SizedBox(height: 2),
           Text(value, style: TextStyle(color: c, fontSize: 13, fontWeight: FontWeight.w900, fontFeatures: const [FontFeature.tabularFigures()])),
+        ],
+      ),
+    );
+  }
+
+  Widget _histBox(String label, Color col, Map<String, dynamic> row) {
+    final wr = (row['win_rate'] as num?)?.toDouble() ?? 0;
+    final tr = (row['total_return'] as num?)?.toDouble() ?? 0;
+    final dd = (row['max_drawdown'] as num?)?.toDouble() ?? 0;
+    final trades = (row['trades'] as num?)?.toInt() ?? 0;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: col.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: col.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.leaderboard_rounded, size: 14, color: AppColors.textSecondary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('PERFORMA HISTORIS REZIM $label', style: TextStyle(color: col, fontSize: 8.5, fontWeight: FontWeight.w800, letterSpacing: 0.6)),
+                const SizedBox(height: 2),
+                Text(
+                  'WR ${_pct(wr)} \u2022 $trades trade \u2022 return ${_pct(tr)} \u2022 DD ${(dd * 100).toStringAsFixed(1)}%',
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 10, fontWeight: FontWeight.w700),
+                ),
+                const Text('Hasil historis sinyal pada kondisi pasar seperti sekarang.', style: TextStyle(color: AppColors.textTertiary, fontSize: 8.5)),
+              ],
+            ),
+          ),
         ],
       ),
     );

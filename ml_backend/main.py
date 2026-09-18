@@ -426,6 +426,8 @@ def _build_payload(symbol: str) -> dict:
     meta = SYMBOLS[symbol]
     plan = _profit_plan(ind, signal["action"], last_close, meta["decimals"])
     market = analyze_market(df, ind, signal, decimals=meta["decimals"])
+    market["current_regime"] = research.current_regime(df)["label"]
+    market["regime_history"] = research.regime_breakdown(df, weights=tuning["weights"])
 
     return {
         "symbol": symbol,
@@ -499,13 +501,16 @@ def get_backtest(symbol: str, days: int | None = None):
 
 
 @app.get("/research/{symbol}")
-def get_research(symbol: str):
+def get_research(symbol: str, days: int | None = None):
     symbol = symbol.upper()
     if symbol not in SYMBOLS:
         raise HTTPException(status_code=404, detail=f"Symbol tidak didukung. Gunakan: {', '.join(SYMBOLS)}")
 
     df = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
     tuning = tuner.tuned(df, symbol)
+
+    if days and days > 0:
+        df = df.tail(days)
 
     body = research.summary(df, weights=tuning["weights"])
     body["symbol"] = symbol

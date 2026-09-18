@@ -58,7 +58,7 @@ class _ModelPageState extends State<_ModelPage> {
       _rsError = null;
     });
     try {
-      final data = await widget.api.fetchResearch(_btSymbol);
+      final data = await widget.api.fetchResearch(_btSymbol, days: _btDays);
       if (!mounted) return;
       setState(() => _rsResult = data);
     } catch (e) {
@@ -732,17 +732,42 @@ class _ResearchCard extends StatelessWidget {
           if (byRegime.isNotEmpty) ...[
             const SizedBox(height: 14),
             const Text('PER REZIM PASAR', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+            if (((r['current_regime'] as Map<String, dynamic>?)?['label'] as String?)?.isNotEmpty ?? false) ...[
+              const SizedBox(height: 4),
+              Text('Rezim sekarang: ${(r['current_regime'] as Map<String, dynamic>)['label']}', style: const TextStyle(color: AppColors.blue, fontSize: 9.5, fontWeight: FontWeight.w800)),
+            ],
             const SizedBox(height: 8),
             for (final row in byRegime)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 3),
-                child: Row(
-                  children: [
-                    SizedBox(width: 96, child: Text(row['regime'] as String? ?? '-', style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w700))),
-                    Expanded(child: Text('${(row['trades'] as num?)?.toInt() ?? 0} trade', style: const TextStyle(color: AppColors.textTertiary, fontSize: 10))),
-                    Expanded(child: Text('WR ${((_n(row, 'win_rate')) * 100).toStringAsFixed(0)}%', textAlign: TextAlign.right, style: TextStyle(color: _n(row, 'win_rate') >= 0.5 ? AppColors.green : AppColors.red, fontSize: 10, fontWeight: FontWeight.w700))),
-                    Expanded(child: Text('${((_n(row, 'total_return')) * 100).toStringAsFixed(1)}%', textAlign: TextAlign.right, style: TextStyle(color: _n(row, 'total_return') >= 0 ? AppColors.green : AppColors.red, fontSize: 10, fontWeight: FontWeight.w700))),
-                  ],
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: row['is_current'] == true ? 8 : 0, vertical: row['is_current'] == true ? 5 : 0),
+                  decoration: row['is_current'] == true
+                      ? BoxDecoration(
+                          color: AppColors.green.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.green.withValues(alpha: 0.35)),
+                        )
+                      : null,
+                  child: Row(
+                    children: [
+                      SizedBox(width: 96, child: Text(row['regime'] as String? ?? '-', style: TextStyle(color: row['is_current'] == true ? AppColors.green : AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w700))),
+                      Expanded(child: Text('${(row['trades'] as num?)?.toInt() ?? 0} trade', style: const TextStyle(color: AppColors.textTertiary, fontSize: 10))),
+                      Expanded(child: Text('WR ${((_n(row, 'win_rate')) * 100).toStringAsFixed(0)}%', textAlign: TextAlign.right, style: TextStyle(color: _n(row, 'win_rate') >= 0.5 ? AppColors.green : AppColors.red, fontSize: 10, fontWeight: FontWeight.w700))),
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text('${((_n(row, 'total_return')) * 100).toStringAsFixed(1)}%', style: TextStyle(color: _n(row, 'total_return') >= 0 ? AppColors.green : AppColors.red, fontSize: 10, fontWeight: FontWeight.w700)),
+                            if (row['is_current'] == true) ...[
+                              const SizedBox(width: 4),
+                              const Text('SAAT INI', style: TextStyle(color: AppColors.green, fontSize: 7.5, fontWeight: FontWeight.w900, letterSpacing: 0.4)),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
           ],
