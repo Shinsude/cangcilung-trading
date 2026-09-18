@@ -25,6 +25,9 @@ class _ModelPageState extends State<_ModelPage> {
   List<Map<String, dynamic>> _history = [];
   bool _historyLoading = false;
   bool _historyError = false;
+  Map<String, dynamic>? _rsResult;
+  bool _rsLoading = false;
+  String? _rsError;
 
   @override
   void initState() {
@@ -46,6 +49,23 @@ class _ModelPageState extends State<_ModelPage> {
       setState(() => _btError = 'Gagal menjalankan backtest: $e');
     } finally {
       if (mounted) setState(() => _btLoading = false);
+    }
+  }
+
+  Future<void> _runResearch() async {
+    setState(() {
+      _rsLoading = true;
+      _rsError = null;
+    });
+    try {
+      final data = await widget.api.fetchResearch(_btSymbol);
+      if (!mounted) return;
+      setState(() => _rsResult = data);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _rsError = 'Gagal menjalankan riset: $e');
+    } finally {
+      if (mounted) setState(() => _rsLoading = false);
     }
   }
 
@@ -128,7 +148,10 @@ class _ModelPageState extends State<_ModelPage> {
           result: _btResult,
           error: _btError,
           onSymbol: (s) {
-            setState(() => _btSymbol = s);
+            setState(() {
+              _btSymbol = s;
+              _rsResult = null;
+            });
             unawaited(_loadHistory());
           },
           onDays: (d) => setState(() => _btDays = d),
@@ -136,6 +159,13 @@ class _ModelPageState extends State<_ModelPage> {
             unawaited(_runBacktest());
             unawaited(_loadHistory());
           },
+        ),
+        const SizedBox(height: 14),
+        _ResearchCard(
+          loading: _rsLoading,
+          result: _rsResult,
+          error: _rsError,
+          onRun: () => unawaited(_runResearch()),
         ),
         if (_history.isNotEmpty || _historyLoading || _historyError) ...[
           const SizedBox(height: 14),
@@ -602,6 +632,168 @@ class _ActionPill extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ResearchCard extends StatelessWidget {
+  const _ResearchCard({required this.loading, required this.result, required this.error, required this.onRun});
+
+  final bool loading;
+  final Map<String, dynamic>? result;
+  final String? error;
+  final VoidCallback onRun;
+
+  double _n(Map<String, dynamic> m, String key) => (m[key] as num?)?.toDouble() ?? 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.science_rounded, size: 15, color: AppColors.green),
+                  SizedBox(width: 6),
+                  Text('RISET BACKTEST KETAT', style: TextStyle(color: AppColors.green, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              const Text('Menyaring sinyal yg baru menyilang ambang + biaya 0,05% per posisi, lalu memecah performa per rezim pasar & ambang.', style: TextStyle(color: AppColors.textTertiary, fontSize: 9.5, height: 1.4)),
+              const SizedBox(height: 10),
+              _ActionPill(label: loading ? 'Menganalisis\u2026' : 'Jalankan Riset Ketat', icon: loading ? null : Icons.biotech_rounded, onTap: loading ? null : onRun),
+              if ((result?['symbol'] as String?) != null) ...[
+                const SizedBox(height: 4),
+                Text('${result!['symbol']} \u2022 ${result!['data_points']} bar', style: const TextStyle(color: AppColors.textTertiary, fontSize: 9, fontStyle: FontStyle.italic)),
+              ],
+              if (error != null) ...[
+                const SizedBox(height: 10),
+                Text(error!, style: const TextStyle(color: AppColors.red, fontSize: 11)),
+              ],
+            ],
+          ),
+        ),
+        if (result != null) ...[
+          const SizedBox(height: 10),
+          _buildResult(),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildResult() {
+    final r = result!;
+    final strict = (r['strict'] as Map<String, dynamic>?) ?? const {};
+    final relaxed = (r['relaxed'] as Map<String, dynamic>?) ?? const {};
+    final diff = (r['difference'] as Map<String, dynamic>?) ?? const {};
+    final byRegime = (r['by_regime'] as List?)?.whereType<Map<String, dynamic>>().toList() ?? const [];
+    final sensitivity = (r['sensitivity'] as List?)?.whereType<Map<String, dynamic>>().toList() ?? const [];
+
+    final strictPct = _n(strict, 'total_return') * 100;
+    final relaxedPct = _n(relaxed, 'total_return') * 100;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Expanded(child: _Metric(label: 'REALISTIS', value: 'Default', color: AppColors.textSecondary)),
+              SizedBox(width: 8),
+              Expanded(child: _Metric(label: 'KETAT', value: 'Fresh + 0.05%', color: AppColors.green)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          _rsRow('Win Rate', '${(_n(relaxed, 'win_rate') * 100).toStringAsFixed(1)}%', '${(_n(strict, 'win_rate') * 100).toStringAsFixed(1)}%', _n(strict, 'win_rate') >= 0.5 ? AppColors.green : AppColors.red),
+          _rsRow('Total Return', '${relaxedPct.toStringAsFixed(1)}%', '${strictPct.toStringAsFixed(1)}%', strictPct >= 0 ? AppColors.green : AppColors.red),
+          _rsRow('Max Drawdown', '${(_n(relaxed, 'max_drawdown') * 100).toStringAsFixed(1)}%', '${(_n(strict, 'max_drawdown') * 100).toStringAsFixed(1)}%', AppColors.red),
+          _rsRow('Trades', '${(_n(relaxed, 'trades')).toInt()}', '${(_n(strict, 'trades')).toInt()}', AppColors.blue),
+          if ((diff['note'] as String?)?.isNotEmpty ?? false) ...[
+            const SizedBox(height: 8),
+            Text(diff['note'] as String, style: const TextStyle(color: AppColors.textTertiary, fontSize: 9.5, height: 1.4)),
+          ],
+          if (byRegime.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            const Text('PER REZIM PASAR', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+            const SizedBox(height: 8),
+            for (final row in byRegime)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  children: [
+                    SizedBox(width: 96, child: Text(row['regime'] as String? ?? '-', style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w700))),
+                    Expanded(child: Text('${(row['trades'] as num?)?.toInt() ?? 0} trade', style: const TextStyle(color: AppColors.textTertiary, fontSize: 10))),
+                    Expanded(child: Text('WR ${((_n(row, 'win_rate')) * 100).toStringAsFixed(0)}%', textAlign: TextAlign.right, style: TextStyle(color: _n(row, 'win_rate') >= 0.5 ? AppColors.green : AppColors.red, fontSize: 10, fontWeight: FontWeight.w700))),
+                    Expanded(child: Text('${((_n(row, 'total_return')) * 100).toStringAsFixed(1)}%', textAlign: TextAlign.right, style: TextStyle(color: _n(row, 'total_return') >= 0 ? AppColors.green : AppColors.red, fontSize: 10, fontWeight: FontWeight.w700))),
+                  ],
+                ),
+              ),
+          ],
+          if (sensitivity.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            const Text('SENSITIVITAS AMBANG', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: sensitivity.map((row) {
+                final th = (row['buy_th'] as num?)?.toDouble() ?? 0;
+                final wr = _n(row, 'win_rate');
+                final pct = _n(row, 'total_return') * 100;
+                final c = pct >= 0 ? (wr >= 0.5 ? AppColors.green : AppColors.amber) : AppColors.red;
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: c.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: c.withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('TH ${th.toStringAsFixed(1)}', style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 2),
+                      Text('${pct.toStringAsFixed(1)}%', style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800)),
+                      Text('WR ${(wr * 100).toStringAsFixed(0)}% \u2022 ${(row['trades'] as num?)?.toInt() ?? 0} tr', style: const TextStyle(color: AppColors.textTertiary, fontSize: 8)),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _rsRow(String label, String relaxed, String strict, Color strictColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5))),
+      child: Row(
+        children: [
+          SizedBox(width: 96, child: Text(label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11))),
+          Expanded(child: Text(relaxed, textAlign: TextAlign.right, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w700))),
+          const SizedBox(width: 8),
+          Expanded(child: Text(strict, textAlign: TextAlign.right, style: TextStyle(color: strictColor, fontSize: 12, fontWeight: FontWeight.w800))),
+        ],
       ),
     );
   }

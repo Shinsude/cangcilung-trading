@@ -81,6 +81,15 @@ class ApiService {
     throw ApiException('Server error (${response.statusCode})');
   }
 
+  Future<Map<String, dynamic>> fetchResearch(String symbol) async {
+    final uri = Uri.parse('$baseUrl/research/$symbol');
+    final response = await http.get(uri).timeout(const Duration(seconds: 90));
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw ApiException('Server error (${response.statusCode})');
+  }
+
   Future<List<EconomicEvent>> fetchCalendar({int hours = 48}) async {
     final uri = Uri.parse('$baseUrl/calendar').replace(queryParameters: {'hours': '$hours'});
     final response = await http.get(uri).timeout(const Duration(seconds: 60));

@@ -144,7 +144,6 @@ def _analyze_divergence(closes: pd.Series, rsi: pd.Series, macd_hist: pd.Series)
     highs_c = _pivot_indices(closes, order=3, top=True)
 
     rsi_div, macd_div = "NONE", "NONE"
-    pts = []
     if len(lows_c) >= 2:
         a, b = lows_c[-2], lows_c[-1]
         if closes.iloc[b] < closes.iloc[a] and rsi.iloc[b] > rsi.iloc[a]:
@@ -157,8 +156,6 @@ def _analyze_divergence(closes: pd.Series, rsi: pd.Series, macd_hist: pd.Series)
             rsi_div = "BEARISH"
         if closes.iloc[b] > closes.iloc[a] and macd_hist.iloc[b] < macd_hist.iloc[a]:
             macd_div = "BEARISH"
-    if len(lows_c) >= 2 or len(highs_c) >= 2:
-        pts.append("terbentuk pola titik balik")
     if rsi_div != "NONE" and rsi_div == macd_div:
         note = (
             f"Divergensi {rsi_div.lower()} ganda (RSI & MACD) terhadap harga — "

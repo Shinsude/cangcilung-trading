@@ -385,6 +385,7 @@ class TradingData {
   final PipelineStats pipeline;
   final Advanced advanced;
   final SystemHealth? system;
+  final Map<String, dynamic>? market;
   final DateTime? updatedAt;
 
   TradingData({
@@ -406,6 +407,7 @@ class TradingData {
     Advanced? advanced,
     this.updatedAt,
     this.system,
+    this.market,
     this.dataSource = 'live',
   })  : risk = risk ?? const Risk(),
         position = position ?? const PositionPlan(),
@@ -432,6 +434,7 @@ class TradingData {
         pipeline: PipelineStats.fromJson(json['pipeline'] as Map<String, dynamic>? ?? {}),
         advanced: Advanced.fromJson(json['advanced'] as Map<String, dynamic>? ?? {}),
         system: SystemHealth.fromJson(json['system'] as Map<String, dynamic>? ?? {}),
+        market: json['market'] as Map<String, dynamic>?,
         updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? ''),
       );
 }

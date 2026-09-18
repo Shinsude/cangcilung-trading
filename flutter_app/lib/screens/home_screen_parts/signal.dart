@@ -55,6 +55,10 @@ class _SignalPage extends StatelessWidget {
               _PositionCard(position: data.position, decimals: data.decimals),
             ],
           ],
+          if (data.market != null) ...[
+            const SizedBox(height: 14),
+            _MarketCard(market: data.market!),
+          ],
           const SizedBox(height: 14),
           _AlertBar(target: alertTarget, price: data.currentPrice, decimals: data.decimals, onSet: onSetAlert, onClear: onClearAlert),
           if (!minimal) ...[
@@ -70,6 +74,8 @@ class _SignalPage extends StatelessWidget {
             ],
             const SizedBox(height: 14),
             _SystemHealthCard(system: data.system ?? const SystemHealth()),
+            const SizedBox(height: 14),
+            _EducationPanel(),
           ],
         ],
       ),
@@ -1265,6 +1271,366 @@ class _PipelineCard extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           SizedBox(width: 30, child: Text('$n', textAlign: TextAlign.right, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w700))),
+        ],
+      ),
+    );
+  }
+}
+
+class _MarketCard extends StatelessWidget {
+  const _MarketCard({required this.market});
+
+  final Map<String, dynamic> market;
+
+  Map<String, dynamic> _m(String key) => (market[key] as Map<String, dynamic>?) ?? const {};
+  List<String> _list(String key) => (market[key] as List?)?.whereType<String>().toList() ?? const [];
+
+  int get _dec => (market['decimals'] as num?)?.toInt() ?? 2;
+  String _f(num v) => v.toStringAsFixed(_dec);
+  String _pct(num v) => '${(v * 100).toStringAsFixed(0)}%';
+
+  Color _regimeColor(String label) {
+    switch (label) {
+      case 'TRENDING_UP':
+        return AppColors.green;
+      case 'TRENDING_DOWN':
+        return AppColors.red;
+      case 'TEKANAN':
+        return Colors.lightGreen;
+      case 'PELEMAHAN':
+        return Colors.orange;
+      default:
+        return AppColors.amber;
+    }
+  }
+
+  Color _dirColor(String d) => d == 'UP' ? AppColors.green : d == 'DOWN' ? AppColors.red : AppColors.textSecondary;
+
+  @override
+  Widget build(BuildContext context) {
+    if (market['available'] != true) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.textSecondary.withValues(alpha: 0.15)),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.hourglass_empty_rounded, size: 16, color: AppColors.textSecondary),
+            SizedBox(width: 8),
+            Expanded(child: Text('Analisis struktur menunggu data historis yang cukup.', style: TextStyle(color: AppColors.textSecondary, fontSize: 12))),
+          ],
+        ),
+      );
+    }
+
+    final regime = _m('regime');
+    final vol = _m('volatility');
+    final mom = _m('momentum');
+    final div = _m('divergence');
+    final conf = _m('confirmations');
+    final levels = _m('levels');
+    final plan = _m('plan');
+    final explain = _list('explain');
+    final items = (conf['items'] as List?)?.whereType<Map<String, dynamic>>().toList() ?? const [];
+    final supports = (levels['support'] as List?)?.whereType<num>().toList() ?? const [];
+    final resistances = (levels['resistance'] as List?)?.whereType<num>().toList() ?? const [];
+
+    final regimeLabel = regime['label'] as String? ?? 'CHOPPY';
+    final regCol = _regimeColor(regimeLabel);
+    final volState = vol['state'] as String? ?? 'NORMAL';
+    final volCol = volState == 'HIGH' ? Colors.orange : volState == 'LOW' ? Colors.cyan : AppColors.textSecondary;
+    final momBulk = mom['bulk'] as String? ?? 'FLAT';
+    final eff = (regime['efficiency'] as num?)?.toDouble() ?? 0.0;
+
+    final agreements = (conf['agreeing'] as num?)?.toInt() ?? 0;
+    final totals = (conf['total'] as num?)?.toInt() ?? 0;
+    final concurrence = (conf['concurrence'] as num?)?.toDouble() ?? 0.0;
+    final confCol = concurrence >= 0.7 ? AppColors.green : concurrence >= 0.5 ? AppColors.amber : AppColors.red;
+
+    final divNote = div['note'] as String? ?? '';
+    final planSide = plan['side'] as String?;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.blue.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.insights_rounded, size: 15, color: AppColors.blue),
+              const SizedBox(width: 6),
+              const Text('ANALISIS MENDALAM', style: TextStyle(color: AppColors.blue, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+              const Spacer(),
+              Text('EFISIENSI ${_pct(eff)}', style: const TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              _mkChip('REGIME', regimeLabel, regCol),
+              _mkChip('VOL', volState, volCol),
+              _mkChip('MOM', momBulk, _dirColor(mom['direction'] as String? ?? 'NEUTRAL')),
+            ],
+          ),
+          if ((regime['note'] as String?)?.isNotEmpty ?? false) ...[
+            const SizedBox(height: 10),
+            Text(regime['note'] as String, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, height: 1.45)),
+          ],
+          if (divNote.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.amber.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.amber.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.warning_amber_rounded, size: 15, color: AppColors.amber),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(divNote, style: const TextStyle(color: AppColors.textPrimary, fontSize: 10.5, height: 1.4))),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              const Text('KONFIRMASI TEKNIS', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+              const Spacer(),
+              Text('$agreements/$totals', style: TextStyle(color: confCol, fontSize: 11, fontWeight: FontWeight.w900)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: LinearProgressIndicator(value: concurrence, minHeight: 6, backgroundColor: AppColors.surfaceAlt, color: confCol),
+          ),
+          if (items.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: items.map((it) {
+                final dir = it['direction'] as String? ?? 'NEUTRAL';
+                final label = it['label'] as String? ?? '';
+                final agree = it['agree'] == true;
+                final c = _dirColor(dir);
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: agree ? c.withValues(alpha: 0.15) : AppColors.surfaceAlt,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: c.withValues(alpha: agree ? 0.5 : 0.15)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(dir == 'UP' ? '\u25B2' : dir == 'DOWN' ? '\u25BC' : '\u25C6', style: TextStyle(color: c, fontSize: 8)),
+                      const SizedBox(width: 3),
+                      Text(label, style: TextStyle(color: agree ? AppColors.textPrimary : AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _mkMetric('PIVOT', _f((levels['pivot'] as num?)?.toDouble() ?? 0), AppColors.textSecondary),
+              _mkMetric('SUPPORT', supports.isEmpty ? '-' : _f(supports.first), AppColors.green),
+              _mkMetric('RESISTANCE', resistances.isEmpty ? '-' : _f(resistances.first), AppColors.red),
+              if ((levels['distance_to_support_pct'] as num?) != null)
+                _mkMetric('JARAK S', '${(levels['distance_to_support_pct'] as num).toStringAsFixed(2)}%', AppColors.green),
+              if ((levels['distance_to_resistance_pct'] as num?) != null)
+                _mkMetric('JARAK R', '${(levels['distance_to_resistance_pct'] as num).toStringAsFixed(2)}%', AppColors.red),
+            ],
+          ),
+          if (planSide != null) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Icon(planSide == 'BUY' ? Icons.north_rounded : Icons.south_rounded, size: 14, color: planSide == 'BUY' ? AppColors.green : AppColors.red),
+                const SizedBox(width: 5),
+                const Text('RENCANA HARI INI', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                const Spacer(),
+                if ((plan['risk_reward'] as num?) != null)
+                  Text('RR ${(plan['risk_reward'] as num).toStringAsFixed(2)}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w800)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(child: _metricCell('SL', _f((plan['sl'] as num?)?.toDouble() ?? 0), AppColors.red)),
+                const SizedBox(width: 8),
+                Expanded(child: _metricCell('TP1', _f((plan['tp1'] as num?)?.toDouble() ?? 0), AppColors.green)),
+                const SizedBox(width: 8),
+                Expanded(child: _metricCell('TP2', _f((plan['tp2'] as num?)?.toDouble() ?? 0), AppColors.green)),
+              ],
+            ),
+          ],
+          if (explain.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            const Text('BACA PASAR', style: TextStyle(color: AppColors.blue, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+            const SizedBox(height: 6),
+            for (final line in explain)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 5),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('\u2022 ', style: TextStyle(color: AppColors.blue, fontSize: 10)),
+                    Expanded(child: Text(line, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10.5, height: 1.45))),
+                  ],
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _mkChip(String label, String value, Color c) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: c.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: c.withValues(alpha: 0.4)),
+      ),
+      child: Text('$label $value', style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w800)),
+    );
+  }
+
+  Widget _mkMetric(String label, String value, Color c) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 8, letterSpacing: 0.5)),
+          const SizedBox(height: 2),
+          Text(value, style: TextStyle(color: c, fontSize: 12, fontWeight: FontWeight.w800, fontFeatures: const [FontFeature.tabularFigures()])),
+        ],
+      ),
+    );
+  }
+
+  Widget _metricCell(String label, String value, Color c) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: c.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: c.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 2),
+          Text(value, style: TextStyle(color: c, fontSize: 13, fontWeight: FontWeight.w900, fontFeatures: const [FontFeature.tabularFigures()])),
+        ],
+      ),
+    );
+  }
+}
+
+class _EducationPanel extends StatefulWidget {
+  const _EducationPanel();
+
+  @override
+  State<_EducationPanel> createState() => _EducationPanelState();
+}
+
+class _EducationPanelState extends State<_EducationPanel> {
+  bool _open = false;
+
+  static const _rows = <(String, String)>[
+    ('Regime', 'Kondisi pasar: trending (bergerak teratur) vs choppy (acak/gorak-gorok). Pahami dulu regime sebelum eksekusi.'),
+    ('Efisiensi', 'Seberapa lurus pergerakan harga. Tinggi = tren konsisten; rendah = pasar sideways.'),
+    ('RSI (14)', 'Ukur kekuatan momentum 0-100. Di atas 70 jenuh beli (overbought), di bawah 30 jenuh jual (oversold).'),
+    ('MACD (12/26/9)', 'Selisih EMA cepat vs lambat. Histogram positif = tekanan naik, negatif = tekanan turun.'),
+    ('EMA 9/21/50', 'Rata-rata bergerak. Harga di atas EMA21 = bias naik; di bawah = bias turun.'),
+    ('Bollinger %B', 'Posisi harga dalam pita volatilitas. Mendekati pita bawah sering jenuh jual.'),
+    ('ATR (14)', 'Rata-rata rentang harga normal per hari. Dasar penentuan stop loss dan take profit.'),
+    ('Divergensi', 'Momentum (RSI/MACD) berlawanan dengan harga. Peringatan awal pembalikan arah.'),
+    ('Konfirmasi teknis', 'Jumlah indikator yang searah dengan sinyal. Semakin banyak, sinyal makin kuat.'),
+    ('SL/TP & RR', 'Stop loss = batas risiko, take profit = target. Rasio risiko-imbalan (RR) minimum 1:2 disarankan.'),
+    ('Volatilitas', 'Aktivitas harga. Tinggi = gerakan besar (SL longgar, posisi kecil); rendah = pasar tenang.'),
+    ('Momentum 20 hari', 'Perubahan harga 20 hari terakhir. Bisa menimbang "mempercepat", "melambat", atau "membalik".'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: () => setState(() => _open = !_open),
+            behavior: HitTestBehavior.opaque,
+            child: Row(
+              children: [
+                const Icon(Icons.menu_book_rounded, size: 16, color: AppColors.blue),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text('PANEL EDUKASI BACA PASAR', style: TextStyle(color: AppColors.blue, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('CARA BACA SINYAL', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700)),
+                    const SizedBox(width: 4),
+                    Icon(_open ? Icons.expand_less : Icons.expand_more, size: 18, color: AppColors.textSecondary),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          if (_open) ...[
+            const SizedBox(height: 12),
+            for (final r in _rows)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 118,
+                      child: Text(r.$1, style: const TextStyle(color: AppColors.textPrimary, fontSize: 10.5, fontWeight: FontWeight.w800)),
+                    ),
+                    Expanded(child: Text(r.$2, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10.5, height: 1.4))),
+                  ],
+                ),
+              ),
+            const Text('Semua angka berasal dari data harian, bukan saran trading. Verifikasi selalu dengan disiplin risiko.', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontStyle: FontStyle.italic)),
+          ],
         ],
       ),
     );
