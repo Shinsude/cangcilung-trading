@@ -75,7 +75,7 @@ class _SignalPage extends StatelessWidget {
             const SizedBox(height: 14),
             _SystemHealthCard(system: data.system ?? const SystemHealth()),
             const SizedBox(height: 14),
-            _EducationPanel(),
+            const _EducationPanel(),
           ],
         ],
       ),
