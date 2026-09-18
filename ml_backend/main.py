@@ -10,9 +10,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import CACHE_TTL_SECONDS, SYMBOLS
-from services import backtest, timeframe, tuner
+from services import backtest, research, timeframe, tuner
 from services.data_service import data_service
 from services.indicators import compute_all
+from services.market_analysis import analyze_market
 from services.predictor import predict, directional_accuracy, hp_validation
 from services.sentiment import analyze as analyze_sentiment
 from services.signal import build_signal
@@ -424,6 +425,7 @@ def _build_payload(symbol: str) -> dict:
 
     meta = SYMBOLS[symbol]
     plan = _profit_plan(ind, signal["action"], last_close, meta["decimals"])
+    market = analyze_market(df, ind, signal, decimals=meta["decimals"])
 
     return {
         "symbol": symbol,
@@ -454,6 +456,7 @@ def _build_payload(symbol: str) -> dict:
         "weights": tuning["weights"],
         "timeframe": {"value": tf_value, "parts": tf_parts},
         "advanced": advanced,
+        "market": market,
         "system": {
             "ts_intrinsic": advanced.get("ts_intrinsic", 0),
             "ts_snr": advanced.get("ts_snr", 0),
@@ -493,6 +496,22 @@ def get_backtest(symbol: str, days: int | None = None):
             "total_return": round(tuned_metrics["total_return"] - default_metrics["total_return"], 4),
         },
     }
+
+
+@app.get("/research/{symbol}")
+def get_research(symbol: str):
+    symbol = symbol.upper()
+    if symbol not in SYMBOLS:
+        raise HTTPException(status_code=404, detail=f"Symbol tidak didukung. Gunakan: {', '.join(SYMBOLS)}")
+
+    df = data_service.fetch(symbol, ttl=CACHE_TTL_SECONDS)
+    tuning = tuner.tuned(df, symbol)
+
+    body = research.summary(df, weights=tuning["weights"])
+    body["symbol"] = symbol
+    body["trained_at"] = dt.datetime.fromtimestamp(tuning["at"]).isoformat() + "Z"
+    body["weights"] = tuning["weights"]
+    return body
 
 
 @app.get("/stats/{symbol}")
