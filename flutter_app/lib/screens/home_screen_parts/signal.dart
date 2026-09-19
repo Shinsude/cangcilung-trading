@@ -48,7 +48,8 @@ class _SignalPage extends StatelessWidget {
               const _CandleTimer(),
               const _SessionTimeline(),
               _MiniScoreboard(loading: historyLoading, entries: history, hasError: historyError, onRetry: onRetryHistory),
-              _IndicatorBlock(ind: data.indicators),
+              _IndicatorBlock(ind: data.indicators, vp: data.institutional?.vp, decimals: data.decimals),
+              if (data.institutional != null) _VolumeProfileCard(inst: data.institutional!, decimals: data.decimals),
               _AdvancedScores(adv: data.advanced),
               const _EducationPanel(),
             ],
@@ -954,8 +955,15 @@ class _AdvancedScores extends StatelessWidget {
                 const SizedBox(width: 8),
                 _scoreBadge('DIV', adv.divergence, Colors.red),
               ],
+              if (adv.cvdDivergence != 'NONE') ...[
+                const SizedBox(width: 8),
+                _scoreBadge('FLOW', adv.cvdDivergence, Colors.red),
+              ],
             ],
           ),
+          const SizedBox(height: 6),
+          const Text('CVD & efisiensi = estimasi dari data harga harian (proxy), bukan order-flow riil.',
+              style: TextStyle(color: AppColors.textTertiary, fontSize: 10, height: 1.35)),
           if (adv.isDeadZone || adv.mlRejected) ...[
             const SizedBox(height: 10),
             Row(
@@ -1046,6 +1054,133 @@ class _AdvancedScores extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(4)),
       child: Text('$label $value', style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w700)),
+    );
+  }
+}
+
+class _VolumeProfileCard extends StatelessWidget {
+  const _VolumeProfileCard({required this.inst, required this.decimals});
+
+  final InstitutionalContext inst;
+  final int decimals;
+
+  @override
+  Widget build(BuildContext context) {
+    final vp = inst.vp;
+    final basis = inst.basis;
+    final posColor = vp != null && vp.pricePos == 'ABOVE'
+        ? Colors.deepOrange
+        : vp != null && vp.pricePos == 'BELOW'
+            ? Colors.cyan
+            : AppColors.amber;
+    final posLabel = vp == null
+        ? '\u2014'
+        : vp.pricePos == 'ABOVE'
+            ? 'DI ATAS'
+            : vp.pricePos == 'BELOW'
+                ? 'DI BAWAH'
+                : 'DI DALAM';
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('VOLUME PROFILE', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+          const SizedBox(height: 12),
+          if (vp == null || !vp.available)
+            const Text('Belum ada data cukup untuk membangun profile.',
+                style: TextStyle(color: AppColors.textTertiary, fontSize: 11))
+          else ...[
+            Row(
+              children: [
+                _vpCell('POC', vp.poc!.toStringAsFixed(decimals), AppColors.purple),
+                const SizedBox(width: 10),
+                _vpCell('VAH', vp.vah!.toStringAsFixed(decimals), AppColors.blue),
+                const SizedBox(width: 10),
+                _vpCell('VAL', vp.val!.toStringAsFixed(decimals), AppColors.blue),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _vpCell('POSISI HARGA', posLabel, posColor),
+                const SizedBox(width: 10),
+                _vpCell('LBR AREA', '${(vp.vaWidthPct ?? 0).toStringAsFixed(1)}%', AppColors.amber),
+                const SizedBox(width: 10),
+                _vpCell('JARAK POC', '${(vp.pocDistPct ?? 0).toStringAsFixed(1)}%', AppColors.textSecondary),
+              ],
+            ),
+            const SizedBox(height: 9),
+            LinearProgressIndicator(
+              value: ((vp.rangePosPct ?? 0) / 100).clamp(0.0, 1.0),
+              minHeight: 5,
+              backgroundColor: AppColors.surfaceAlt,
+              color: posColor,
+            ),
+            const SizedBox(height: 4),
+            Text('posisi harga dalam rentang ${vp.lookback ?? 126} hari',
+                style: const TextStyle(color: AppColors.textTertiary, fontSize: 10)),
+          ],
+          if (basis != null) ...[
+            const SizedBox(height: 12),
+            Container(height: 1, color: AppColors.border),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Icon(Icons.straighten_rounded, size: 14, color: AppColors.textSecondary),
+                const SizedBox(width: 6),
+                const Text('BASIS FUTUR\u2013SPOT', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+                const Spacer(),
+                Text(
+                  basis.state,
+                  style: TextStyle(
+                    color: basis.state == 'CONTANGO' ? AppColors.green : AppColors.red,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text('${basis.lastPct?.toStringAsFixed(3)}%',
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800)),
+              ],
+            ),
+            if ((basis.avg20Pct ?? 0) != 0) ...[
+              const SizedBox(height: 3),
+              Text('rata-rata 20 hari: ${basis.avg20Pct!.toStringAsFixed(3)}% \u00B7 hanya untuk konteks, bukan sinyal.',
+                  style: const TextStyle(color: AppColors.textTertiary, fontSize: 10)),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _vpCell(String label, String value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceAlt.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 3),
+            Text(value,
+                style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w800, fontFeatures: const [FontFeature.tabularFigures()]),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+          ],
+        ),
+      ),
     );
   }
 }

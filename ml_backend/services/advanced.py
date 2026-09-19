@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from services.indicators import ema, rsi as compute_rsi, macd as compute_macd, bollinger as compute_bollinger
+from services.institutional import cvd_divergence as compute_cvd_divergence
 
 
 # ── Session Detection ──────────────────────────────────────────────────────
@@ -424,10 +425,13 @@ def compute_regime(mtf: dict, ind: dict, df: pd.DataFrame, trend_consistency: fl
 # ── Weaknesses (Devil's Advocate) ──────────────────────────────────────────
 
 def compute_weaknesses(ind: dict, divergence: str, bar_level: str, stability: str,
-                       cvd_eff: float, alignment: float, trend_consistency: float) -> list[str]:
+                       cvd_eff: float, alignment: float, trend_consistency: float,
+                       cvd_divg: str = "NONE") -> list[str]:
     weaknesses = []
     if divergence != "NONE":
         weaknesses.append(f"{divergence} DIVERGENCE DETECTED")
+    if cvd_divg != "NONE":
+        weaknesses.append(f"{cvd_divg} CVD DIVERGENCE")
     if bar_level in ("WEAK", "DEAD"):
         weaknesses.append(f"BAR LEVEL IS {bar_level}")
     if stability == "LOW":
@@ -457,6 +461,7 @@ def analyze(df_1d: pd.DataFrame, ind: dict, signal: dict, prediction: dict,
     grade = compute_grade(score, confidence, mtf["mtf_alignment"])
     stability = compute_stability(signal_history or [])
     divergence = detect_divergence(df_1d)
+    cvd_divg = compute_cvd_divergence(df_1d)
     bar_level = compute_bar_level(df_1d)
     trend_consistency = compute_trend_consistency(df_1d)
     cvd_eff = compute_cvd_efficiency(df_1d)
@@ -464,7 +469,7 @@ def analyze(df_1d: pd.DataFrame, ind: dict, signal: dict, prediction: dict,
     tech_scores = compute_tech_scores(ind, score, prediction, mtf["mtf_alignment"])
     risk_level = compute_risk_level(confidence, stability, divergence, bar_level)
     alignment = compute_weighted_alignment(score, mtf["mtf_alignment"], cvd_eff, bar_level)
-    weaknesses = compute_weaknesses(ind, divergence, bar_level, stability, cvd_eff, alignment, trend_consistency)
+    weaknesses = compute_weaknesses(ind, divergence, bar_level, stability, cvd_eff, alignment, trend_consistency, cvd_divg)
     rollunder = compute_rollunder(action, stability, risk_level)
     regime = compute_regime(mtf, ind, df_1d, trend_consistency)
     sys_health = compute_system_health(df_1d, mtf, signal, stability, bar_level,
@@ -481,6 +486,7 @@ def analyze(df_1d: pd.DataFrame, ind: dict, signal: dict, prediction: dict,
         "grade": grade,
         "stability": stability,
         "divergence": divergence,
+        "cvd_divergence": cvd_divg,
         "bar_level": bar_level,
         "trend_consistency_pct": round(trend_consistency * 100, 1),
         "cvd_efficiency": cvd_eff,

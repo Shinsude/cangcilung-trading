@@ -1,9 +1,11 @@
 part of 'package:cangcilung_trading/screens/home_screen.dart';
 
 class _IndicatorBlock extends StatelessWidget {
-  const _IndicatorBlock({required this.ind});
+  const _IndicatorBlock({required this.ind, this.vp, this.decimals});
 
   final Indicators ind;
+  final VolumeProfile? vp;
+  final int? decimals;
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +18,11 @@ class _IndicatorBlock extends StatelessWidget {
     final bbPosColor = bbPos < 0.3 ? AppColors.green : bbPos > 0.7 ? AppColors.red : AppColors.amber;
     final macdColor = ind.macd.histogram >= 0 ? AppColors.green : AppColors.red;
     final emaColor = ind.ema.trend == 'bullish' ? AppColors.green : AppColors.red;
+    final vpPosColor = vp != null && vp!.pricePos == 'ABOVE'
+        ? Colors.deepOrange
+        : vp != null && vp!.pricePos == 'BELOW'
+            ? Colors.cyan
+            : AppColors.amber;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -44,6 +51,10 @@ class _IndicatorBlock extends StatelessWidget {
               _IndicatorTile(icon: Icons.waves_rounded, label: 'Volatilitas', value: '${(ind.volatility20 * 100).toStringAsFixed(2)}%', color: AppColors.purple),
               _IndicatorTile(icon: Icons.straighten_rounded, label: 'ATR (14)', value: ind.atr != null ? ind.atr!.toStringAsFixed(ind.atr! < 1 ? 5 : 2) : '\u2014', color: AppColors.amber),
               _IndicatorTile(icon: Icons.speed_rounded, label: 'SMA 20', value: ind.sma20.toStringAsFixed(2), color: AppColors.blue),
+              if (vp != null && vp!.available) ...[
+                _IndicatorTile(icon: Icons.bar_chart_rounded, label: 'POC', value: vp!.poc!.toStringAsFixed(decimals ?? 2), color: AppColors.purple),
+                _IndicatorTile(icon: Icons.gradient_rounded, label: 'VA WIDTH', value: '${(vp!.vaWidthPct ?? 0).toStringAsFixed(1)}%', color: vpPosColor),
+              ],
             ],
           ),
         ],

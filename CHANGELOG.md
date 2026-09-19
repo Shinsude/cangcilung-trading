@@ -2,6 +2,17 @@
 
 Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] - 2026-09-19
+
+### Ditambahkan
+- **Kartu Volume Profile di tab Sinyal** (DETAIL & KONTEKS): menampilkan POC, VAH, VAL, lebar Value Area, posisi harga (di atas / di dalam / di bawah area nilai), dan jarak ke POC — distribusi volume-at-price ~6 bulan terakhir sebagai proxy di mana likuiditas institusional tertanam.
+- **Tile POC & VA WIDTH di grid Indikator Teknikal** saat data volume profile tersedia.
+- **CVD Divergence (chip FLOW)**: membandingkan arah harga vs kumulatif delta volume (proxy) — bila harga bullish tapi aliran volume mengecewakan, muncul chip `FLOW BULLISH/BEARISH` merah dan masuk daftar kelemahan sinyal.
+- **Basis Futur–Spot untuk Emas (XAUUSD)**: status kontango/backwardation antara `GC=F` dan `XAUUSD=X` beserta rata-rata 20 hari (konteks, bukan sinyal).
+
+### Diperbaiki
+- **Disclaimer kejujuran data**: "CVD & efisiensi = estimasi dari data harga harian (proxy), bukan order-flow riil" — ditampilkan permanen di ANALISIS LANJUTAN agar pengguna tahu batas data ritel.
+
 ## [1.3.6] - 2026-09-19
 
 ### Diubah

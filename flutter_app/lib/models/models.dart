@@ -176,6 +176,7 @@ class Advanced {
   final String grade;
   final String stability;
   final String divergence;
+  final String cvdDivergence;
   final String barLevel;
   final double trendConsistencyPct;
   final double cvdEfficiency;
@@ -214,6 +215,7 @@ class Advanced {
     this.grade = 'C',
     this.stability = 'UNKNOWN',
     this.divergence = 'NONE',
+    this.cvdDivergence = 'NONE',
     this.barLevel = 'UNKNOWN',
     this.trendConsistencyPct = 50,
     this.cvdEfficiency = 0.5,
@@ -253,6 +255,7 @@ class Advanced {
         grade: (json['grade'] as String? ?? 'C').toUpperCase(),
         stability: (json['stability'] as String? ?? 'UNKNOWN').toUpperCase(),
         divergence: (json['divergence'] as String? ?? 'NONE').toUpperCase(),
+        cvdDivergence: (json['cvd_divergence'] as String? ?? 'NONE').toUpperCase(),
         barLevel: (json['bar_level'] as String? ?? 'UNKNOWN').toUpperCase(),
         trendConsistencyPct: (json['trend_consistency_pct'] as num?)?.toDouble() ?? 50,
         cvdEfficiency: (json['cvd_efficiency'] as num?)?.toDouble() ?? 0.5,
@@ -366,6 +369,83 @@ class PipelineStats {
   }
 }
 
+class VolumeProfile {
+  final double? poc;
+  final double? vah;
+  final double? val;
+  final double? price;
+  final String pricePos;
+  final double? vaWidthPct;
+  final double? pocDistPct;
+  final double? rangePosPct;
+  final int? lookback;
+
+  const VolumeProfile({
+    this.poc,
+    this.vah,
+    this.val,
+    this.price,
+    this.pricePos = 'INSIDE',
+    this.vaWidthPct,
+    this.pocDistPct,
+    this.rangePosPct,
+    this.lookback,
+  });
+
+  bool get available => poc != null && vah != null && val != null;
+
+  factory VolumeProfile.fromJson(Map<String, dynamic>? json) => VolumeProfile(
+        poc: (json?['poc'] as num?)?.toDouble(),
+        vah: (json?['vah'] as num?)?.toDouble(),
+        val: (json?['val'] as num?)?.toDouble(),
+        price: (json?['price'] as num?)?.toDouble(),
+        pricePos: (json?['price_pos'] as String? ?? 'INSIDE').toUpperCase(),
+        vaWidthPct: (json?['va_width_pct'] as num?)?.toDouble(),
+        pocDistPct: (json?['poc_dist_pct'] as num?)?.toDouble(),
+        rangePosPct: (json?['range_pos_pct'] as num?)?.toDouble(),
+        lookback: (json?['lookback'] as num?)?.toInt(),
+      );
+}
+
+class FuturesBasis {
+  final double? lastPct;
+  final double? avg20Pct;
+  final String state;
+  final double? spot;
+  final double? future;
+  final int? lookbackDays;
+
+  const FuturesBasis({
+    this.lastPct,
+    this.avg20Pct,
+    this.state = 'CONTANGO',
+    this.spot,
+    this.future,
+    this.lookbackDays,
+  });
+
+  factory FuturesBasis.fromJson(Map<String, dynamic>? json) => FuturesBasis(
+        lastPct: (json?['last_pct'] as num?)?.toDouble(),
+        avg20Pct: (json?['avg20_pct'] as num?)?.toDouble(),
+        state: (json?['state'] as String? ?? 'CONTANGO').toUpperCase(),
+        spot: (json?['spot'] as num?)?.toDouble(),
+        future: (json?['future'] as num?)?.toDouble(),
+        lookbackDays: (json?['lookback_days'] as num?)?.toInt(),
+      );
+}
+
+class InstitutionalContext {
+  final VolumeProfile? vp;
+  final FuturesBasis? basis;
+
+  const InstitutionalContext({this.vp, this.basis});
+
+  factory InstitutionalContext.fromJson(Map<String, dynamic>? json) => InstitutionalContext(
+        vp: VolumeProfile.fromJson(json?['volume_profile'] as Map<String, dynamic>?),
+        basis: FuturesBasis.fromJson(json?['basis'] as Map<String, dynamic>?),
+      );
+}
+
 class TradingData {
   final String symbol;
   final String name;
@@ -386,6 +466,7 @@ class TradingData {
   final Advanced advanced;
   final SystemHealth? system;
   final Map<String, dynamic>? market;
+  final InstitutionalContext? institutional;
   final DateTime? updatedAt;
 
   TradingData({
@@ -408,6 +489,7 @@ class TradingData {
     this.updatedAt,
     this.system,
     this.market,
+    this.institutional,
     this.dataSource = 'live',
   })  : risk = risk ?? const Risk(),
         position = position ?? const PositionPlan(),
@@ -435,6 +517,7 @@ class TradingData {
         advanced: Advanced.fromJson(json['advanced'] as Map<String, dynamic>? ?? {}),
         system: SystemHealth.fromJson(json['system'] as Map<String, dynamic>? ?? {}),
         market: json['market'] as Map<String, dynamic>?,
+        institutional: InstitutionalContext.fromJson(json['institutional'] as Map<String, dynamic>?),
         updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? ''),
       );
 }

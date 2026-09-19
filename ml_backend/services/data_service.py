@@ -54,6 +54,28 @@ class DataService:
         self._put(cache_key, df, ttl)
         return df.copy()
 
+    def fetch_ticker(self, yahoo: str, ttl: int = 180, period: str | None = None,
+                     interval: str | None = None) -> pd.DataFrame | None:
+        """Fetch an arbitrary yahoo ticker (not in SYMBOLS) with caching.
+
+        Unlike fetch(), this never falls back to synthetic data — returns None
+        on failure so optional context (e.g. spot-for-basis) can degrade.
+        """
+        interval = interval or INTERVAL
+        period = period or PERIOD
+        cache_key = f"tkr|{yahoo}|{period}|{interval}"
+        cached = self._get(cache_key)
+        if cached is not None:
+            return cached.copy()
+        df = self._download(yahoo, period=period, interval=interval)
+        if df is None or df.empty:
+            return None
+        df = self._clean(df)
+        if df.empty:
+            return None
+        self._put(cache_key, df, ttl)
+        return df.copy()
+
     def _download(self, yahoo: str, period: str = PERIOD, interval: str = INTERVAL) -> pd.DataFrame:
         import time as _time
         from concurrent.futures import ThreadPoolExecutor
