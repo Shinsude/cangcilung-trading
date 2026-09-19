@@ -19,8 +19,8 @@ class AppColors {
   static const Color blue = Color(0xFF3B82F6);
   static const Color purple = Color(0xFF8B5CF6);
   static const Color textPrimary = Color(0xFFF8FAFC);
-  static const Color textSecondary = Color(0xFF64748B);
-  static const Color textTertiary = Color(0xFF475569);
+  static const Color textSecondary = Color(0xFF94A3B8);
+  static const Color textTertiary = Color(0xFF7B8AA5);
   static const Color glass = Color(0x0DFFFFFF);
   static const Color glassBorder = Color(0x1AFFFFFF);
 }

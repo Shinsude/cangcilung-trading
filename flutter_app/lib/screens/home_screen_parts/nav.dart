@@ -82,7 +82,7 @@ class _NotifButton extends StatelessWidget {
         onTap: () => onToggle(!on),
         behavior: HitTestBehavior.opaque,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           decoration: BoxDecoration(
             color: c.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(14),
@@ -109,7 +109,7 @@ class _MinimalButton extends StatelessWidget {
         onTap: () => onToggle(!minimal),
         behavior: HitTestBehavior.opaque,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           decoration: BoxDecoration(
             color: c.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(14),

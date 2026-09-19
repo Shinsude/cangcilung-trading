@@ -1,7 +1,7 @@
 part of 'package:cangcilung_trading/screens/home_screen.dart';
 
 class _ModelPage extends StatefulWidget {
-  const _ModelPage({required this.model, required this.loading, required this.error, required this.onRetry, required this.notifyOn, required this.onToggleNotify, required this.api});
+  const _ModelPage({required this.model, required this.loading, required this.error, required this.onRetry, required this.notifyOn, required this.onToggleNotify, required this.api, this.system, this.pipeline});
 
   final ModelInfo? model;
   final bool loading;
@@ -10,6 +10,8 @@ class _ModelPage extends StatefulWidget {
   final bool notifyOn;
   final ValueChanged<bool> onToggleNotify;
   final ApiService api;
+  final SystemHealth? system;
+  final PipelineStats? pipeline;
 
   @override
   State<_ModelPage> createState() => _ModelPageState();
@@ -180,6 +182,14 @@ class _ModelPageState extends State<_ModelPage> {
         for (final e in entries) ...[
           _ModelCard(symbol: e.key, stats: e.value),
           const SizedBox(height: 12),
+        ],
+        if ((widget.pipeline?.tracked ?? 0) > 0) ...[
+          const SizedBox(height: 14),
+          _PipelineCard(pipeline: widget.pipeline!),
+        ],
+        if (widget.system != null) ...[
+          const SizedBox(height: 14),
+          _SystemHealthCard(system: widget.system!),
         ],
       ],
     );

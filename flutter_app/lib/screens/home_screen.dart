@@ -422,7 +422,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ? const _LoadingView()
                   : _error != null
                       ? _ErrorView(message: _error!, onRetry: _load)
-                      : _buildBody(),
+                      : Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 720),
+                            child: _buildBody(),
+                          ),
+                        ),
             ),
           ],
         ),
@@ -481,6 +486,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           notifyOn: _notifOn,
           onToggleNotify: _toggleNotif,
           api: _api,
+          system: d.system,
+          pipeline: d.pipeline,
         ),
       ][_tab],
     );

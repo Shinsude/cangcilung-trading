@@ -60,10 +60,7 @@ class _SignalPage extends StatelessWidget {
                 const _CandleTimer(),
                 const _SessionTimeline(),
                 _MiniScoreboard(loading: historyLoading, entries: history, hasError: historyError, onRetry: onRetryHistory),
-                _QuickIndicators(ind: data.indicators),
                 _AdvancedScores(adv: data.advanced),
-                if (data.pipeline.tracked > 0) _PipelineCard(pipeline: data.pipeline),
-                _SystemHealthCard(system: data.system ?? const SystemHealth()),
                 const _EducationPanel(),
               ],
             ),
@@ -626,8 +623,8 @@ class _SignalHero extends StatelessWidget {
                   onTap: () => _copySignal(context),
                   behavior: HitTestBehavior.opaque,
                   child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                    child: Icon(Icons.copy_rounded, color: AppColors.textSecondary, size: 15),
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    child: Icon(Icons.copy_rounded, color: AppColors.textSecondary, size: 16),
                   ),
                 ),
               ],
@@ -1011,69 +1008,6 @@ class _PositionCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(4)),
       child: Text(text, style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w800)),
-    );
-  }
-}
-
-class _QuickIndicators extends StatelessWidget {
-  const _QuickIndicators({required this.ind});
-  final Indicators ind;
-
-  @override
-  Widget build(BuildContext context) {
-    final rsiColor = ind.rsi.value < 30
-        ? AppColors.green
-        : ind.rsi.value > 70
-            ? AppColors.red
-            : AppColors.amber;
-    final macdColor = ind.macd.histogram >= 0 ? AppColors.green : AppColors.red;
-    final emaColor = ind.ema.trend == 'bullish' ? AppColors.green : AppColors.red;
-
-    return Row(
-      children: [
-        Expanded(child: _MiniIndicator(label: 'RSI', value: ind.rsi.value.toStringAsFixed(1), sub: ind.rsi.region, color: rsiColor)),
-        const SizedBox(width: 8),
-        Expanded(child: _MiniIndicator(label: 'MACD', value: ind.macd.histogram.toStringAsFixed(4), sub: ind.macd.cross ?? 'neutral', color: macdColor)),
-        const SizedBox(width: 8),
-        Expanded(child: _MiniIndicator(label: 'EMA', value: ind.ema.trend, sub: '', color: emaColor)),
-      ],
-    );
-  }
-}
-
-class _MiniIndicator extends StatelessWidget {
-  const _MiniIndicator({required this.label, required this.value, required this.sub, required this.color});
-
-  final String label;
-  final String value;
-  final String sub;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        children: [
-          Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 14),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          if (sub.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(sub, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10), maxLines: 1, overflow: TextOverflow.ellipsis),
-          ],
-        ],
-      ),
     );
   }
 }

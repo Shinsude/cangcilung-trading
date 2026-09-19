@@ -21,6 +21,10 @@ class CangcilungApp extends StatelessWidget {
       title: 'Cangcilung Trading AI',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
+      builder: (context, child) => MediaQuery.withClampedTextScaling(
+        maxScaleFactor: 1.4,
+        child: child!,
+      ),
       home: const HomeScreen(),
     );
   }
