@@ -257,9 +257,9 @@ class _SystemHealthCard extends StatelessWidget {
           const Divider(color: AppColors.border, height: 14),
           Row(
             children: [
-              Tooltip(
+              const Tooltip(
                 message: 'Keselarasan arah AI vs aturan (RULES) pada kerangka theta.',
-                child: const Text('THETA', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.7)),
+                child: Text('THETA', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.7)),
               ),
               const SizedBox(width: 6),
               Expanded(
