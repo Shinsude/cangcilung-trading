@@ -1,7 +1,7 @@
 part of 'package:cangcilung_trading/screens/home_screen.dart';
 
 class _NewsPage extends StatefulWidget {
-  const _NewsPage({super.key, required this.sentiment, required this.api, required this.onRefresh});
+  const _NewsPage({required this.sentiment, required this.api, required this.onRefresh});
 
   final Sentiment sentiment;
   final ApiService api;
