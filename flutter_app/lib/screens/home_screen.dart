@@ -456,9 +456,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildBody() {
     final d = _data!;
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
-      child: [
+    return _TabStack(
+      index: _tab,
+      children: [
         _SignalPage(
           data: d,
           onRefresh: _refreshAll,
@@ -489,7 +489,40 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           system: d.system,
           pipeline: d.pipeline,
         ),
-      ][_tab],
+      ],
+    );
+  }
+}
+
+class _TabStack extends StatefulWidget {
+  const _TabStack({required this.index, required this.children});
+
+  final int index;
+  final List<Widget> children;
+
+  @override
+  State<_TabStack> createState() => _TabStackState();
+}
+
+class _TabStackState extends State<_TabStack> {
+  late final Set<int> _built = {widget.index};
+
+  @override
+  void didUpdateWidget(covariant _TabStack oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.index != widget.index && !_built.contains(widget.index)) {
+      setState(() => _built.add(widget.index));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IndexedStack(
+      index: widget.index,
+      children: [
+        for (var i = 0; i < widget.children.length; i++)
+          _built.contains(i) ? widget.children[i] : const SizedBox.shrink(),
+      ],
     );
   }
 }

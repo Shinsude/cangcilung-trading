@@ -83,7 +83,7 @@ class _CalendarPageState extends State<_CalendarPage> {
           const SizedBox(height: 4),
           const Text(
             'Event high & medium impact dari kalender ForexFactory untuk 48 jam ke depan (waktu WIB).',
-            style: TextStyle(color: AppColors.textTertiary, fontSize: 10, height: 1.4),
+            style: TextStyle(color: AppColors.textTertiary, fontSize: 11, height: 1.4),
           ),
           const SizedBox(height: 12),
           Container(
@@ -166,7 +166,7 @@ class _EventTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_CalendarPageState._dayLabel(now, event.ts), style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w600)),
+                Text(_CalendarPageState._dayLabel(now, event.ts), style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
                 Text(event.timeWib, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, fontFeatures: [FontFeature.tabularFigures()])),
               ],
@@ -182,14 +182,14 @@ class _EventTile extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(color: AppColors.surfaceAlt, borderRadius: BorderRadius.circular(6)),
-                      child: Text(event.country, style: const TextStyle(color: AppColors.textSecondary, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                      child: Text(event.country, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
                     ),
                     if (impact) ...[
                       const SizedBox(width: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(color: AppColors.red.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-                        child: const Text('HIGH', style: TextStyle(color: AppColors.red, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                        child: const Text('HIGH', style: TextStyle(color: AppColors.red, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                       ),
                     ],
                   ],

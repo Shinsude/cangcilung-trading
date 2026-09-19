@@ -141,7 +141,7 @@ class _DetailSectionState extends State<_DetailSection> {
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(color: AppColors.surfaceAlt, borderRadius: BorderRadius.circular(7)),
                   child: Text('${widget.children.length} item',
-                      style: const TextStyle(color: AppColors.textTertiary, fontSize: 8.5, fontWeight: FontWeight.w800)),
+                      style: const TextStyle(color: AppColors.textTertiary, fontSize: 10.5, fontWeight: FontWeight.w800)),
                 ),
                 const Spacer(),
                 AnimatedRotation(
@@ -206,7 +206,7 @@ class _DigestCard extends StatelessWidget {
               const SizedBox(width: 8),
               const Text('REKAP HARIAN', style: TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1)),
               const SizedBox(width: 8),
-              Text(digest.date, style: const TextStyle(color: AppColors.textSecondary, fontSize: 9)),
+              Text(digest.date, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
               const Spacer(),
               const Icon(Icons.auto_awesome, size: 13, color: AppColors.blue),
             ],
@@ -230,7 +230,7 @@ class _DigestCard extends StatelessWidget {
                         color: _actionColor(s.action).withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(7),
                       ),
-                      child: Text('${s.action}${s.strength.isNotEmpty ? '\u00B7${s.strength}' : ''}', style: TextStyle(color: _actionColor(s.action), fontSize: 9, fontWeight: FontWeight.w800)),
+                      child: Text('${s.action}${s.strength.isNotEmpty ? '\u00B7${s.strength}' : ''}', style: TextStyle(color: _actionColor(s.action), fontSize: 11, fontWeight: FontWeight.w800)),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -238,7 +238,7 @@ class _DigestCard extends StatelessWidget {
                         _predictionText(s),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
                       ),
                     ),
                     if (s.price != null)
@@ -303,7 +303,7 @@ class _AlertBar extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(color: AppColors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                child: const Text('HAPUS', style: TextStyle(color: AppColors.red, fontSize: 10, fontWeight: FontWeight.w800)),
+                child: const Text('HAPUS', style: TextStyle(color: AppColors.red, fontSize: 11, fontWeight: FontWeight.w800)),
               ),
             )
           else
@@ -312,7 +312,7 @@ class _AlertBar extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(color: AppColors.amber.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-                child: const Text('SETEL', style: TextStyle(color: AppColors.amber, fontSize: 10, fontWeight: FontWeight.w800)),
+                child: const Text('SETEL', style: TextStyle(color: AppColors.amber, fontSize: 11, fontWeight: FontWeight.w800)),
               ),
             ),
         ],
@@ -361,7 +361,7 @@ class _PriceHero extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: AppColors.blue.withValues(alpha: 0.25)),
                 ),
-                child: Text(data.category.toUpperCase(), style: const TextStyle(color: AppColors.blue, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1)),
+                child: Text(data.category.toUpperCase(), style: const TextStyle(color: AppColors.blue, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1)),
               ),
               const SizedBox(width: 8),
               Text(data.symbol, style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600, fontSize: 13, letterSpacing: 0.3)),
@@ -429,7 +429,7 @@ class _PriceHero extends StatelessWidget {
           if (data.updatedAt != null)
             Padding(
               padding: const EdgeInsets.only(top: 10),
-              child: Text('Diperbarui ${_relativeTime(data.updatedAt!)}', style: const TextStyle(color: AppColors.textTertiary, fontSize: 10, letterSpacing: 0.3)),
+              child: Text('Diperbarui ${_relativeTime(data.updatedAt!)}', style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, letterSpacing: 0.3)),
             ),
         ],
       ),
@@ -461,9 +461,9 @@ class _ConfidenceSparkline extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Text('KEYAKINAN TERAKHIR', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+            const Text('KEYAKINAN TERAKHIR', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
             const Spacer(),
-            Text(values.last.toStringAsFixed(3), style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w700)),
+            Text(values.last.toStringAsFixed(3), style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700)),
           ],
         ),
         const SizedBox(height: 4),
@@ -617,7 +617,7 @@ class _SignalHero extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(color: sigColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
-                  child: Text(signal.strength.toUpperCase(), style: TextStyle(color: sigColor, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1)),
+                  child: Text(signal.strength.toUpperCase(), style: TextStyle(color: sigColor, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1)),
                 ),
                 GestureDetector(
                   onTap: () => _copySignal(context),
@@ -779,7 +779,7 @@ class _AdvancedBadges extends StatelessWidget {
             children: adv.weaknesses.take(3).map((w) => Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
-              child: Text(w, style: const TextStyle(color: Colors.red, fontSize: 9, fontWeight: FontWeight.w700)),
+              child: Text(w, style: const TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.w700)),
             )).toList(),
           ),
         ],
@@ -792,7 +792,7 @@ class _AdvancedBadges extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(color: c.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
-      child: Text('$tf $dir', style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w700)),
+      child: Text('$tf $dir', style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w700)),
     );
   }
 
@@ -801,7 +801,7 @@ class _AdvancedBadges extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(color: c.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
-      child: Text(session, style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w700)),
+      child: Text(session, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w700)),
     );
   }
 
@@ -809,7 +809,7 @@ class _AdvancedBadges extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(4)),
-      child: Text('$label $value', style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w700)),
+      child: Text('$label $value', style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w700)),
     );
   }
 
@@ -886,7 +886,7 @@ class _RiskPlanCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             'Rekomendasi: risk maksimal 1-2% saldo. SL/TP dihitung dari ATR (${risk.atr.toStringAsFixed(decimals >= 3 ? 5 : 2)}).',
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 10.5, height: 1.4),
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, height: 1.4),
           ),
         ],
       ),
@@ -906,7 +906,7 @@ class _PlanCell extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
+        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
         const SizedBox(height: 4),
         Text(value, style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w800)),
       ],
@@ -948,7 +948,7 @@ class _PositionCard extends StatelessWidget {
               const Spacer(),
               _chip(position.status == 'OPEN' ? 'OPEN' : position.status, position.status == 'OPEN' ? (closed ? AppColors.amber : AppColors.green) : position.status == 'TARGET' ? AppColors.green : AppColors.red),
               const SizedBox(width: 6),
-              Text(_fmtOpened, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700)),
+              Text(_fmtOpened, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 12),
@@ -988,7 +988,7 @@ class _PositionCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          const Text('Simulasi dari sinyal terakhir \u2014 bukan akun MT5 live.', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, height: 1.4)),
+          const Text('Simulasi dari sinyal terakhir \u2014 bukan akun MT5 live.', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, height: 1.4)),
         ],
       ),
     );
@@ -1007,7 +1007,7 @@ class _PositionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(4)),
-      child: Text(text, style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w800)),
+      child: Text(text, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w800)),
     );
   }
 }
@@ -1032,11 +1032,11 @@ class _AdvancedScores extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Text('MTF STACK', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+              const Text('MTF STACK', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
               const SizedBox(width: 8),
-              Text(adv.decompRegime, style: TextStyle(color: adv.decompRegime == 'TRENDING' ? Colors.green : Colors.amber, fontSize: 10, fontWeight: FontWeight.w800)),
+              Text(adv.decompRegime, style: TextStyle(color: adv.decompRegime == 'TRENDING' ? Colors.green : Colors.amber, fontSize: 11, fontWeight: FontWeight.w800)),
               const Spacer(),
-              Text('${adv.regimeAlignment >= 0 ? '+' : ''}${(adv.regimeAlignment * 100).toInt()}%', style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w700)),
+              Text('${adv.regimeAlignment >= 0 ? '+' : ''}${(adv.regimeAlignment * 100).toInt()}%', style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 6),
@@ -1090,7 +1090,7 @@ class _AdvancedScores extends StatelessWidget {
       child: Row(
         children: [
           SizedBox(width: 36, child: Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700))),
-          Expanded(child: Text(sub, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10))),
+          Expanded(child: Text(sub, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11))),
           SizedBox(
             width: 60,
             child: ClipRRect(
@@ -1155,7 +1155,7 @@ class _AdvancedScores extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(4)),
-      child: Text('$label $value', style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w700)),
+      child: Text('$label $value', style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w700)),
     );
   }
 }
@@ -1184,7 +1184,7 @@ class _PipelineCard extends StatelessWidget {
             children: [
               const Text('PIPELINE', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
               const SizedBox(width: 8),
-              Text('$total sinyal', style: const TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700)),
+              Text('$total sinyal', style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 10),
@@ -1220,7 +1220,7 @@ class _PipelineCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6)),
-      child: Text('$label $value', style: TextStyle(color: c, fontSize: 10, fontWeight: FontWeight.w800)),
+      child: Text('$label $value', style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w800)),
     );
   }
 
@@ -1230,7 +1230,7 @@ class _PipelineCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          SizedBox(width: 30, child: Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w700))),
+          SizedBox(width: 30, child: Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700))),
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(3),
@@ -1238,7 +1238,7 @@ class _PipelineCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          SizedBox(width: 30, child: Text('$n', textAlign: TextAlign.right, style: TextStyle(color: c, fontSize: 10, fontWeight: FontWeight.w800))),
+          SizedBox(width: 30, child: Text('$n', textAlign: TextAlign.right, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w800))),
         ],
       ),
     );
@@ -1251,7 +1251,7 @@ class _PipelineCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          SizedBox(width: 42, child: Text(grade, style: TextStyle(color: c, fontSize: 10, fontWeight: FontWeight.w800))),
+          SizedBox(width: 42, child: Text(grade, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w800))),
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(3),
@@ -1259,7 +1259,7 @@ class _PipelineCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          SizedBox(width: 30, child: Text('$n', textAlign: TextAlign.right, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w700))),
+          SizedBox(width: 30, child: Text('$n', textAlign: TextAlign.right, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700))),
         ],
       ),
     );
@@ -1365,7 +1365,7 @@ class _MarketCard extends StatelessWidget {
               const SizedBox(width: 6),
               const Text('ANALISIS MENDALAM', style: TextStyle(color: AppColors.blue, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
               const Spacer(),
-              Text('EFISIENSI ${_pct(eff)}', style: const TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700)),
+              Text('EFISIENSI ${_pct(eff)}', style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 12),
@@ -1400,7 +1400,7 @@ class _MarketCard extends StatelessWidget {
                 children: [
                   const Icon(Icons.warning_amber_rounded, size: 15, color: AppColors.amber),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(divNote, style: const TextStyle(color: AppColors.textPrimary, fontSize: 10.5, height: 1.4))),
+                  Expanded(child: Text(divNote, style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, height: 1.4))),
                 ],
               ),
             ),
@@ -1408,7 +1408,7 @@ class _MarketCard extends StatelessWidget {
           const SizedBox(height: 14),
           Row(
             children: [
-              const Text('KONFIRMASI TEKNIS', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+              const Text('KONFIRMASI TEKNIS', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
               const Spacer(),
               Text('$agreements/$totals', style: TextStyle(color: confCol, fontSize: 11, fontWeight: FontWeight.w900)),
             ],
@@ -1438,9 +1438,9 @@ class _MarketCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(dir == 'UP' ? '\u25B2' : dir == 'DOWN' ? '\u25BC' : '\u25C6', style: TextStyle(color: c, fontSize: 8)),
+                      Text(dir == 'UP' ? '\u25B2' : dir == 'DOWN' ? '\u25BC' : '\u25C6', style: TextStyle(color: c, fontSize: 10)),
                       const SizedBox(width: 3),
-                      Text(label, style: TextStyle(color: agree ? AppColors.textPrimary : AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700)),
+                      Text(label, style: TextStyle(color: agree ? AppColors.textPrimary : AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700)),
                     ],
                   ),
                 );
@@ -1467,7 +1467,7 @@ class _MarketCard extends StatelessWidget {
               children: [
                 Icon(planSide == 'BUY' ? Icons.north_rounded : Icons.south_rounded, size: 14, color: planSide == 'BUY' ? AppColors.green : AppColors.red),
                 const SizedBox(width: 5),
-                const Text('RENCANA HARI INI', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                const Text('RENCANA HARI INI', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
                 const Spacer(),
                 if ((plan['risk_reward'] as num?) != null)
                   Text('RR ${(plan['risk_reward'] as num).toStringAsFixed(2)}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w800)),
@@ -1486,7 +1486,7 @@ class _MarketCard extends StatelessWidget {
           ],
           if (explain.isNotEmpty) ...[
             const SizedBox(height: 14),
-            const Text('BACA PASAR', style: TextStyle(color: AppColors.blue, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+            const Text('BACA PASAR', style: TextStyle(color: AppColors.blue, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
             const SizedBox(height: 6),
             for (final line in explain)
               Padding(
@@ -1494,8 +1494,8 @@ class _MarketCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('\u2022 ', style: TextStyle(color: AppColors.blue, fontSize: 10)),
-                    Expanded(child: Text(line, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10.5, height: 1.45))),
+                    const Text('\u2022 ', style: TextStyle(color: AppColors.blue, fontSize: 11)),
+                    Expanded(child: Text(line, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, height: 1.45))),
                   ],
                 ),
               ),
@@ -1513,7 +1513,7 @@ class _MarketCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: c.withValues(alpha: 0.4)),
       ),
-      child: Text('$label $value', style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w800)),
+      child: Text('$label $value', style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w800)),
     );
   }
 
@@ -1527,7 +1527,7 @@ class _MarketCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 8, letterSpacing: 0.5)),
+          Text(label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10, letterSpacing: 0.5)),
           const SizedBox(height: 2),
           Text(value, style: TextStyle(color: c, fontSize: 12, fontWeight: FontWeight.w800, fontFeatures: const [FontFeature.tabularFigures()])),
         ],
@@ -1546,7 +1546,7 @@ class _MarketCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w700)),
+          Text(label, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w700)),
           const SizedBox(height: 2),
           Text(value, style: TextStyle(color: c, fontSize: 13, fontWeight: FontWeight.w900, fontFeatures: const [FontFeature.tabularFigures()])),
         ],
@@ -1575,13 +1575,13 @@ class _MarketCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('PERFORMA HISTORIS REZIM $label', style: TextStyle(color: col, fontSize: 8.5, fontWeight: FontWeight.w800, letterSpacing: 0.6)),
+                Text('PERFORMA HISTORIS REZIM $label', style: TextStyle(color: col, fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: 0.6)),
                 const SizedBox(height: 2),
                 Text(
                   'WR ${_pct(wr)} \u2022 $trades trade \u2022 return ${_pct(tr)} \u2022 DD ${(dd * 100).toStringAsFixed(1)}%',
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 10, fontWeight: FontWeight.w700),
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w700),
                 ),
-                const Text('Hasil historis sinyal pada kondisi pasar seperti sekarang.', style: TextStyle(color: AppColors.textTertiary, fontSize: 8.5)),
+                const Text('Hasil historis sinyal pada kondisi pasar seperti sekarang.', style: TextStyle(color: AppColors.textTertiary, fontSize: 10.5)),
               ],
             ),
           ),
@@ -1641,7 +1641,7 @@ class _EducationPanelState extends State<_EducationPanel> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('CARA BACA SINYAL', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700)),
+                    const Text('CARA BACA SINYAL', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700)),
                     const SizedBox(width: 4),
                     Icon(_open ? Icons.expand_less : Icons.expand_more, size: 18, color: AppColors.textSecondary),
                   ],
@@ -1659,13 +1659,13 @@ class _EducationPanelState extends State<_EducationPanel> {
                   children: [
                     SizedBox(
                       width: 118,
-                      child: Text(r.$1, style: const TextStyle(color: AppColors.textPrimary, fontSize: 10.5, fontWeight: FontWeight.w800)),
+                      child: Text(r.$1, style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800)),
                     ),
-                    Expanded(child: Text(r.$2, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10.5, height: 1.4))),
+                    Expanded(child: Text(r.$2, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, height: 1.4))),
                   ],
                 ),
               ),
-            const Text('Semua angka berasal dari data harian, bukan saran trading. Verifikasi selalu dengan disiplin risiko.', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontStyle: FontStyle.italic)),
+            const Text('Semua angka berasal dari data harian, bukan saran trading. Verifikasi selalu dengan disiplin risiko.', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontStyle: FontStyle.italic)),
           ],
         ],
       ),

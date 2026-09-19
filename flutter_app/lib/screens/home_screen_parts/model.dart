@@ -138,7 +138,7 @@ class _ModelPageState extends State<_ModelPage> {
       children: [
         const Text('MODEL AI', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1)),
         const SizedBox(height: 4),
-        Text(m.strategy, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10, height: 1.4)),
+        Text(m.strategy, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, height: 1.4)),
         const SizedBox(height: 8),
         _NotifSetting(on: widget.notifyOn, onToggle: widget.onToggleNotify),
         const SizedBox(height: 14),
@@ -226,7 +226,7 @@ class _BacktestExplorer extends StatelessWidget {
         children: [
           const Text('UJI BACKTEST', style: TextStyle(color: AppColors.blue, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1)),
           const SizedBox(height: 12),
-          const Text('SINYAL', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+          const Text('SINYAL', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
           const SizedBox(height: 6),
           Wrap(
             spacing: 8,
@@ -236,7 +236,7 @@ class _BacktestExplorer extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          const Text('RENTANG', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+          const Text('RENTANG', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
           const SizedBox(height: 6),
           Wrap(
             spacing: 8,
@@ -268,7 +268,7 @@ class _BacktestExplorer extends StatelessWidget {
             _MetricRow(tuned: result!.tuned, baseline: result!.baseline),
             if (result!.tuned.equityCurve.isNotEmpty) ...[
               const SizedBox(height: 12),
-              const Text('KURVA EQUITY (AUTO-TUNE)', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+              const Text('KURVA EQUITY (AUTO-TUNE)', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
               const SizedBox(height: 6),
               _EquityCurveChart(curve: result!.tuned.equityCurve),
             ],
@@ -439,7 +439,7 @@ class _NotifSetting extends StatelessWidget {
                 children: [
                   Text('Notifikasi Sinyal', style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700)),
                   SizedBox(height: 2),
-                  Text('Cek berkala saat aplikasi terbuka: muncul saat sinyal BUY/SELL baru. Push sejati butuh Firebase.', style: TextStyle(color: AppColors.textTertiary, fontSize: 9.5, height: 1.35)),
+                  Text('Cek berkala saat aplikasi terbuka: muncul saat sinyal BUY/SELL baru. Push sejati butuh Firebase.', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, height: 1.35)),
                 ],
               ),
             ),
@@ -484,12 +484,12 @@ class _ModelCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(color: quality.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-                child: Text(wr30 > 0.55 ? 'AKURAT' : (wr30 > 0.45 ? 'RATA-RATA' : 'LEMAH'), style: TextStyle(color: quality, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.6)),
+                child: Text(wr30 > 0.55 ? 'AKURAT' : (wr30 > 0.45 ? 'RATA-RATA' : 'LEMAH'), style: TextStyle(color: quality, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.6)),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          const Text('AKURASI ROLLING (SINYAL BARU-BARU INI)', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+          const Text('AKURASI ROLLING (SINYAL BARU-BARU INI)', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
           const SizedBox(height: 6),
           Row(
             children: [
@@ -506,7 +506,7 @@ class _ModelCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          const Text('BACKTEST WALK-FORWARD', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+          const Text('BACKTEST WALK-FORWARD', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
           const SizedBox(height: 6),
           Row(
             children: [
@@ -525,7 +525,7 @@ class _ModelCard extends StatelessWidget {
           ),
           if (stats.realSamples > 0) ...[
             const SizedBox(height: 12),
-            const Text('AKURASI NYATA (RIWAYAT SINYAL TERLOG)', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+            const Text('AKURASI NYATA (RIWAYAT SINYAL TERLOG)', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
             const SizedBox(height: 6),
             Row(
               children: [
@@ -543,7 +543,7 @@ class _ModelCard extends StatelessWidget {
           ],
           if (stats.weights.isNotEmpty) ...[
             const SizedBox(height: 12),
-            const Text('BOBOT TER-TUNE', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+            const Text('BOBOT TER-TUNE', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -552,7 +552,7 @@ class _ModelCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 10),
-          Text('Dilatih: ${stats.trainedAt.replaceFirst('T', ' ').replaceFirst('Z', '')}', style: const TextStyle(color: AppColors.textTertiary, fontSize: 9, fontStyle: FontStyle.italic)),
+          Text('Dilatih: ${stats.trainedAt.replaceFirst('T', ' ').replaceFirst('Z', '')}', style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, fontStyle: FontStyle.italic)),
         ],
       ),
     );
@@ -576,7 +576,7 @@ class _AccChip extends StatelessWidget {
       ),
       child: Text.rich(
         TextSpan(children: [
-          TextSpan(text: label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10)),
+          TextSpan(text: label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
           TextSpan(text: value, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w900)),
         ]),
       ),
@@ -601,7 +601,7 @@ class _Metric extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 9)),
+          Text(label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
           const SizedBox(height: 2),
           Text(value, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w900, fontFeatures: const [FontFeature.tabularFigures()])),
         ],
@@ -680,12 +680,12 @@ class _ResearchCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 6),
-              const Text('Menyaring sinyal yg baru menyilang ambang + biaya 0,05% per posisi, lalu memecah performa per rezim pasar & ambang.', style: TextStyle(color: AppColors.textTertiary, fontSize: 9.5, height: 1.4)),
+              const Text('Menyaring sinyal yg baru menyilang ambang + biaya 0,05% per posisi, lalu memecah performa per rezim pasar & ambang.', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, height: 1.4)),
               const SizedBox(height: 10),
               _ActionPill(label: loading ? 'Menganalisis\u2026' : 'Jalankan Riset Ketat', icon: loading ? null : Icons.biotech_rounded, onTap: loading ? null : onRun),
               if ((result?['symbol'] as String?) != null) ...[
                 const SizedBox(height: 4),
-                Text('${result!['symbol']} \u2022 ${result!['data_points']} bar', style: const TextStyle(color: AppColors.textTertiary, fontSize: 9, fontStyle: FontStyle.italic)),
+                Text('${result!['symbol']} \u2022 ${result!['data_points']} bar', style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, fontStyle: FontStyle.italic)),
               ],
               if (error != null) ...[
                 const SizedBox(height: 10),
@@ -737,14 +737,14 @@ class _ResearchCard extends StatelessWidget {
           _rsRow('Trades', '${(_n(relaxed, 'trades')).toInt()}', '${(_n(strict, 'trades')).toInt()}', AppColors.blue),
           if ((diff['note'] as String?)?.isNotEmpty ?? false) ...[
             const SizedBox(height: 8),
-            Text(diff['note'] as String, style: const TextStyle(color: AppColors.textTertiary, fontSize: 9.5, height: 1.4)),
+            Text(diff['note'] as String, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, height: 1.4)),
           ],
           if (byRegime.isNotEmpty) ...[
             const SizedBox(height: 14),
-            const Text('PER REZIM PASAR', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+            const Text('PER REZIM PASAR', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
             if (((r['current_regime'] as Map<String, dynamic>?)?['label'] as String?)?.isNotEmpty ?? false) ...[
               const SizedBox(height: 4),
-              Text('Rezim sekarang: ${(r['current_regime'] as Map<String, dynamic>)['label']}', style: const TextStyle(color: AppColors.blue, fontSize: 9.5, fontWeight: FontWeight.w800)),
+              Text('Rezim sekarang: ${(r['current_regime'] as Map<String, dynamic>)['label']}', style: const TextStyle(color: AppColors.blue, fontSize: 11, fontWeight: FontWeight.w800)),
             ],
             const SizedBox(height: 8),
             for (final row in byRegime)
@@ -761,17 +761,17 @@ class _ResearchCard extends StatelessWidget {
                       : null,
                   child: Row(
                     children: [
-                      SizedBox(width: 96, child: Text(row['regime'] as String? ?? '-', style: TextStyle(color: row['is_current'] == true ? AppColors.green : AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w700))),
-                      Expanded(child: Text('${(row['trades'] as num?)?.toInt() ?? 0} trade', style: const TextStyle(color: AppColors.textTertiary, fontSize: 10))),
-                      Expanded(child: Text('WR ${((_n(row, 'win_rate')) * 100).toStringAsFixed(0)}%', textAlign: TextAlign.right, style: TextStyle(color: _n(row, 'win_rate') >= 0.5 ? AppColors.green : AppColors.red, fontSize: 10, fontWeight: FontWeight.w700))),
+                      SizedBox(width: 96, child: Text(row['regime'] as String? ?? '-', style: TextStyle(color: row['is_current'] == true ? AppColors.green : AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700))),
+                      Expanded(child: Text('${(row['trades'] as num?)?.toInt() ?? 0} trade', style: const TextStyle(color: AppColors.textTertiary, fontSize: 11))),
+                      Expanded(child: Text('WR ${((_n(row, 'win_rate')) * 100).toStringAsFixed(0)}%', textAlign: TextAlign.right, style: TextStyle(color: _n(row, 'win_rate') >= 0.5 ? AppColors.green : AppColors.red, fontSize: 11, fontWeight: FontWeight.w700))),
                       Expanded(
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            Text('${((_n(row, 'total_return')) * 100).toStringAsFixed(1)}%', style: TextStyle(color: _n(row, 'total_return') >= 0 ? AppColors.green : AppColors.red, fontSize: 10, fontWeight: FontWeight.w700)),
+                            Text('${((_n(row, 'total_return')) * 100).toStringAsFixed(1)}%', style: TextStyle(color: _n(row, 'total_return') >= 0 ? AppColors.green : AppColors.red, fontSize: 11, fontWeight: FontWeight.w700)),
                             if (row['is_current'] == true) ...[
                               const SizedBox(width: 4),
-                              const Text('SAAT INI', style: TextStyle(color: AppColors.green, fontSize: 7.5, fontWeight: FontWeight.w900, letterSpacing: 0.4)),
+                              const Text('SAAT INI', style: TextStyle(color: AppColors.green, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.4)),
                             ],
                           ],
                         ),
@@ -783,7 +783,7 @@ class _ResearchCard extends StatelessWidget {
           ],
           if (sensitivity.isNotEmpty) ...[
             const SizedBox(height: 14),
-            const Text('SENSITIVITAS AMBANG', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+            const Text('SENSITIVITAS AMBANG', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 6,
@@ -803,10 +803,10 @@ class _ResearchCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('TH ${th.toStringAsFixed(1)}', style: TextStyle(color: c, fontSize: 9, fontWeight: FontWeight.w800)),
+                      Text('TH ${th.toStringAsFixed(1)}', style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 2),
                       Text('${pct.toStringAsFixed(1)}%', style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800)),
-                      Text('WR ${(wr * 100).toStringAsFixed(0)}% \u2022 ${(row['trades'] as num?)?.toInt() ?? 0} tr', style: const TextStyle(color: AppColors.textTertiary, fontSize: 8)),
+                      Text('WR ${(wr * 100).toStringAsFixed(0)}% \u2022 ${(row['trades'] as num?)?.toInt() ?? 0} tr', style: const TextStyle(color: AppColors.textTertiary, fontSize: 10)),
                     ],
                   ),
                 );

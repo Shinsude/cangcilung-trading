@@ -46,7 +46,7 @@ class _IndicatorsPage extends StatelessWidget {
         const SizedBox(height: 4),
         const Text(
           'Bobot hasil walk-forward backtest per simbol: indikator yang paling akurat diperkuat (hijau), yang paling lemah diredam (biru).',
-          style: TextStyle(color: AppColors.textTertiary, fontSize: 10, height: 1.4),
+          style: TextStyle(color: AppColors.textTertiary, fontSize: 11, height: 1.4),
         ),
         const SizedBox(height: 10),
         if (weights.isNotEmpty)
@@ -87,7 +87,7 @@ class _WeightChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w600)),
+          Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600)),
           const SizedBox(width: 6),
           Text(weight.toStringAsFixed(1), style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w900)),
         ],
@@ -141,7 +141,7 @@ class _IndicatorTile extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          Text(sub, style: const TextStyle(fontSize: 10, color: AppColors.textTertiary), maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(sub, style: const TextStyle(fontSize: 11, color: AppColors.textTertiary), maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );

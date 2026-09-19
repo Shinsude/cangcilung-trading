@@ -40,7 +40,7 @@ class _TopBar extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Cangcilung', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, letterSpacing: -0.3), maxLines: 1, overflow: TextOverflow.ellipsis),
-                    Text('TRADING AI', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 9, color: AppColors.textSecondary, letterSpacing: 1.5), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text('TRADING AI', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: AppColors.textSecondary, letterSpacing: 1.5), maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),
@@ -158,7 +158,7 @@ class _LiveIndicator extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: TextStyle(color: c, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8),
+              style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8),
             ),
           ],
         ),
@@ -297,7 +297,7 @@ class _BottomNav extends StatelessWidget {
                   Text(
                     _labels[i],
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: active ? FontWeight.w800 : FontWeight.w600,
                       color: active ? AppColors.blue : AppColors.textTertiary,
                     ),

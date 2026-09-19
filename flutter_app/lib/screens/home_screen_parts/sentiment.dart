@@ -29,7 +29,7 @@ class _SentimentPage extends StatelessWidget {
               if (isNews) ...[
                 const Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('BERITA TERBARU', style: TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+                  child: Text('BERITA TERBARU', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
                 ),
                 const SizedBox(height: 10),
                 for (final h in sentiment.headlines.take(4)) ...[
@@ -50,12 +50,12 @@ class _SentimentPage extends StatelessWidget {
                       ),
                       child: Text(
                         'Keyakinan ${(sentiment.confidence! * 100).toStringAsFixed(0)}%',
-                        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w800),
+                        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w800),
                       ),
                     ),
                     const SizedBox(width: 8),
                   ],
-                  Text(sentiment.source, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10, fontStyle: FontStyle.italic)),
+                  Text(sentiment.source, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, fontStyle: FontStyle.italic)),
                 ],
               ),
             ],
@@ -101,7 +101,7 @@ class _SentimentGauge extends StatelessWidget {
                     score.toStringAsFixed(2),
                     style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 22),
                   ),
-                  Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 10, letterSpacing: 0.5)),
+                  Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 11, letterSpacing: 0.5)),
                 ],
               ),
             ],

@@ -37,7 +37,7 @@ class _MiniScoreboard extends StatelessWidget {
             children: [
               Icon(Icons.scoreboard_rounded, size: 13, color: AppColors.purple),
               SizedBox(width: 6),
-              Text('SCOREBOARD SINYAL', style: TextStyle(color: AppColors.purple, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
+              Text('SCOREBOARD SINYAL', style: TextStyle(color: AppColors.purple, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
             ],
           ),
           const SizedBox(height: 10),
@@ -68,7 +68,7 @@ class _MiniScoreboard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text('${(winRate * 100).toStringAsFixed(0)}%', style: TextStyle(color: winRate >= 0.55 ? AppColors.green : (winRate >= 0.45 ? AppColors.amber : AppColors.red), fontSize: 18, fontWeight: FontWeight.w900)),
-                    const Text('WIN RATE', style: TextStyle(color: AppColors.textTertiary, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: 0.6)),
+                    const Text('WIN RATE', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.6)),
                   ],
                 ),
               ],
@@ -89,21 +89,21 @@ class _MiniScoreboard extends StatelessWidget {
                   children: [
                     SizedBox(
                       width: 56,
-                      child: Text(date.length > 5 ? date.substring(5) : date, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10)),
+                      child: Text(date.length > 5 ? date.substring(5) : date, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                       decoration: BoxDecoration(color: ac.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                      child: Text(action, style: TextStyle(color: ac, fontSize: 9, fontWeight: FontWeight.w800)),
+                      child: Text(action, style: TextStyle(color: ac, fontSize: 11, fontWeight: FontWeight.w800)),
                     ),
                     const Spacer(),
                     if (cThen != null && cNext != null)
-                      Text('${cThen.toStringAsFixed(cThen > 100 ? 0 : 5)} -> ${cNext.toStringAsFixed(cNext > 100 ? 0 : 5)}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 10)),
+                      Text('${cThen.toStringAsFixed(cThen > 100 ? 0 : 5)} -> ${cNext.toStringAsFixed(cNext > 100 ? 0 : 5)}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                       decoration: BoxDecoration(color: oc.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                      child: Text(outcome.toUpperCase(), style: TextStyle(color: oc, fontSize: 9, fontWeight: FontWeight.w800)),
+                      child: Text(outcome.toUpperCase(), style: TextStyle(color: oc, fontSize: 11, fontWeight: FontWeight.w800)),
                     ),
                   ],
                 ),
@@ -122,7 +122,7 @@ class _MiniScoreboard extends StatelessWidget {
       child: Column(
         children: [
           Text('$value', style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w900)),
-          Text(label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+          Text(label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
         ],
       ),
     );
@@ -150,7 +150,7 @@ class _SignalHistoryCard extends StatelessWidget {
         children: [
           const Text('RIWAYAT SINYAL (LOG AKURASI NYATA)', style: TextStyle(color: AppColors.purple, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1)),
           const SizedBox(height: 4),
-          const Text('Hasil sinyal harian yang tercatat otomatis vs close hari berikutnya.', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, height: 1.4)),
+          const Text('Hasil sinyal harian yang tercatat otomatis vs close hari berikutnya.', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, height: 1.4)),
           const SizedBox(height: 10),
           if (loading)
             const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.purple)))
@@ -187,7 +187,7 @@ class _SignalHistoryCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                       decoration: BoxDecoration(color: ac.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                      child: Text(action, style: TextStyle(color: ac, fontSize: 10, fontWeight: FontWeight.w800)),
+                      child: Text(action, style: TextStyle(color: ac, fontSize: 11, fontWeight: FontWeight.w800)),
                     ),
                     const SizedBox(width: 8),
                     if (cThen != null && cNext != null)
@@ -204,7 +204,7 @@ class _SignalHistoryCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                       decoration: BoxDecoration(color: oc.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                      child: Text(outcome.toUpperCase(), style: TextStyle(color: oc, fontSize: 10, fontWeight: FontWeight.w800)),
+                      child: Text(outcome.toUpperCase(), style: TextStyle(color: oc, fontSize: 11, fontWeight: FontWeight.w800)),
                     ),
                   ],
                 ),

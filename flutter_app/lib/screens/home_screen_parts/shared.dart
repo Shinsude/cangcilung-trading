@@ -192,7 +192,7 @@ class _CandleTimerState extends State<_CandleTimer> {
             children: [
               const Icon(Icons.timer_outlined, size: 14, color: AppColors.textSecondary),
               const SizedBox(width: 6),
-              const Text('M15 CLOSE', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+              const Text('M15 CLOSE', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
               const Spacer(),
               Text(_mmss, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700, fontFeatures: [FontFeature.tabularFigures()])),
             ],
@@ -237,7 +237,7 @@ class _SystemHealthCard extends StatelessWidget {
             children: [
               Icon(Icons.monitor_heart_outlined, size: 14, color: AppColors.textSecondary),
               SizedBox(width: 6),
-              Text('SISTEM HEALTH', style: TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+              Text('SISTEM HEALTH', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
             ],
           ),
           const SizedBox(height: 12),
@@ -253,14 +253,14 @@ class _SystemHealthCard extends StatelessWidget {
           const Divider(color: AppColors.border, height: 14),
           Row(
             children: [
-              const Text('THETA', style: TextStyle(color: AppColors.textSecondary, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.7)),
+              const Text('THETA', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.7)),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   '${system.theta.label} \u00B7 AI ${system.theta.aiDir == 0 ? '\u2013' : system.theta.aiDir > 0 ? '\u25B2' : '\u25BC'} vs RULES ${system.theta.rulesDir == 0 ? '\u2013' : system.theta.rulesDir > 0 ? '\u25B2' : '\u25BC'}',
                   style: TextStyle(
                     color: system.theta.aligned ? AppColors.green : AppColors.amber,
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -274,7 +274,7 @@ class _SystemHealthCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 4, left: 44),
               child: Text('\u26A0 ${system.safety.violations} pelanggaran \u00B7 SL min ${system.safety.minimumStop.toStringAsFixed(0)} \u00B7 RR ${system.safety.riskReward.toStringAsFixed(1)}',
-                  style: const TextStyle(color: AppColors.red, fontSize: 9)),
+                  style: const TextStyle(color: AppColors.red, fontSize: 11)),
             ),
         ],
       ),
@@ -285,7 +285,7 @@ class _SystemHealthCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: Row(
           children: [
-            SizedBox(width: 40, child: Text(k, style: const TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5))),
+            SizedBox(width: 40, child: Text(k, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5))),
             Text(v, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w800)),
           ],
         ),
@@ -411,7 +411,7 @@ class _SessionTimelineState extends State<_SessionTimeline> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(color: _sessionColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-                child: Text(_sessionLabel, style: TextStyle(color: _sessionColor, fontSize: 9, fontWeight: FontWeight.w800)),
+                child: Text(_sessionLabel, style: TextStyle(color: _sessionColor, fontSize: 11, fontWeight: FontWeight.w800)),
               ),
             ],
           ),
@@ -447,19 +447,19 @@ class _SessionTimelineState extends State<_SessionTimeline> {
             children: [
               _legendDot(AppColors.blue),
               const SizedBox(width: 4),
-              const Text('ASIA', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700)),
+              const Text('ASIA', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700)),
               const SizedBox(width: 12),
               _legendDot(AppColors.green),
               const SizedBox(width: 4),
-              const Text('LONDON', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700)),
+              const Text('LONDON', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700)),
               const SizedBox(width: 12),
               _legendDot(AppColors.amber),
               const SizedBox(width: 4),
-              const Text('NEW YORK', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700)),
+              const Text('NEW YORK', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700)),
               const SizedBox(width: 12),
               _legendDot(AppColors.purple),
               const SizedBox(width: 4),
-              const Text('OVERLAP', style: TextStyle(color: AppColors.textTertiary, fontSize: 9, fontWeight: FontWeight.w700)),
+              const Text('OVERLAP', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 10),
@@ -473,7 +473,7 @@ class _SessionTimelineState extends State<_SessionTimeline> {
                 Expanded(
                   child: Text(
                     'MOMEN TERBAIK: $_bestMomentLabel',
-                    style: TextStyle(color: _bestMomentColor, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.3),
+                    style: TextStyle(color: _bestMomentColor, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.3),
                   ),
                 ),
               ],

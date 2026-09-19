@@ -2,6 +2,16 @@
 
 Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://semver.org/).
 
+## [1.3.4] - 2026-09-19
+
+### Diperbaiki
+- **Ukuran font dasar naik global**: tidak ada lagi teks infonya yang lebih kecil dari 10 px; mayoritas teks info kini 11 px (sebelumnya banyak 8–9 px di label, chip, timestamp).
+- **State tab dipertahankan** (IndexedStack lazy): Kalender tidak refetch tiap kali pindah tab, posisi scroll & buku status tiap tab tersimpan; tab lain tetap dibangun malas (lazy) pada kunjungan pertama agar startup tidak bertambah beban.
+- **Membersihkan komponen desain mati**: `GlassCard` & `GlowCard` (tak terpakai) beserta warna `glass`/`glassBorder` dihapus dari tema.
+
+### Housekeeping
+- Workflow CI naik ke runtime Node.js 24: `checkout@v5`, `setup-node@v5`, `setup-python@v6`, `upload-artifact@v6`, `download-artifact@v7` — peringatan "Node 20 deprecated" hilang.
+
 ## [1.3.3] - 2026-09-19
 
 ### Diperbaiki
