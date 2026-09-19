@@ -1,15 +1,13 @@
 part of 'package:cangcilung_trading/screens/home_screen.dart';
 
 class _SignalPage extends StatelessWidget {
-  const _SignalPage({required this.data, required this.onRefresh, required this.pulse, required this.alertTarget, required this.onSetAlert, required this.onClearAlert, this.minimal = false, this.confHistory = const [], this.history = const [], this.historyLoading = false, this.historyError = false, this.onRetryHistory, this.digest, this.onSelectSymbol});
+  const _SignalPage({required this.data, required this.onRefresh, required this.alertTarget, required this.onSetAlert, required this.onClearAlert, this.confHistory = const [], this.history = const [], this.historyLoading = false, this.historyError = false, this.onRetryHistory, this.digest, this.onSelectSymbol});
 
   final TradingData data;
   final Future<void> Function() onRefresh;
-  final AnimationController pulse;
   final double? alertTarget;
   final VoidCallback onSetAlert;
   final VoidCallback onClearAlert;
-  final bool minimal;
   final List<double> confHistory;
   final List<Map<String, dynamic>> history;
   final bool historyLoading;
@@ -33,38 +31,28 @@ class _SignalPage extends StatelessWidget {
             _DataSourceWarning(source: data.dataSource),
           ],
           const SizedBox(height: 14),
-          _Tilt3D(
-            maxTilt: 6,
-            child: _SignalHero(signal: data.signal, prediction: data.prediction, price: data.currentPrice, decimals: data.decimals, pulse: pulse, advanced: data.advanced, confHistory: confHistory),
-          ),
+          _SignalHero(signal: data.signal, prediction: data.prediction, price: data.currentPrice, decimals: data.decimals, advanced: data.advanced, confHistory: confHistory),
           const SizedBox(height: 14),
-          _RiskPlanCard(risk: data.risk, decimals: data.decimals),
-          if (data.position.open) ...[
-            const SizedBox(height: 14),
-            _PositionCard(position: data.position, decimals: data.decimals),
-          ],
-          const SizedBox(height: 14),
-          _AlertBar(target: alertTarget, price: data.currentPrice, decimals: data.decimals, onSet: onSetAlert, onClear: onClearAlert),
+          _LevelCard(risk: data.risk, position: data.position, decimals: data.decimals, alertTarget: alertTarget, price: data.currentPrice, onSetAlert: onSetAlert, onClearAlert: onClearAlert),
           if (data.market != null) ...[
             const SizedBox(height: 14),
             _MarketCard(market: data.market!),
           ],
-          if (!minimal) ...[
-            if (digest != null) ...[
-              const SizedBox(height: 14),
-              _DigestCard(digest: digest!, onSelect: onSelectSymbol),
-            ],
+          if (digest != null) ...[
             const SizedBox(height: 14),
-            _DetailSection(
-              children: [
-                const _CandleTimer(),
-                const _SessionTimeline(),
-                _MiniScoreboard(loading: historyLoading, entries: history, hasError: historyError, onRetry: onRetryHistory),
-                _AdvancedScores(adv: data.advanced),
-                const _EducationPanel(),
-              ],
-            ),
+            _DigestCard(digest: digest!, onSelect: onSelectSymbol),
           ],
+          const SizedBox(height: 14),
+          _DetailSection(
+            children: [
+              const _CandleTimer(),
+              const _SessionTimeline(),
+              _MiniScoreboard(loading: historyLoading, entries: history, hasError: historyError, onRetry: onRetryHistory),
+              _IndicatorBlock(ind: data.indicators),
+              _AdvancedScores(adv: data.advanced),
+              const _EducationPanel(),
+            ],
+          ),
         ],
       ),
     );
@@ -189,13 +177,9 @@ class _DigestCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
       decoration: BoxDecoration(
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF101D29), AppColors.surface],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(color: AppColors.blue.withValues(alpha: 0.35)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,8 +191,6 @@ class _DigestCard extends StatelessWidget {
               const Text('REKAP HARIAN', style: TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1)),
               const SizedBox(width: 8),
               Text(digest.date, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-              const Spacer(),
-              const Icon(Icons.auto_awesome, size: 13, color: AppColors.blue),
             ],
           ),
           const SizedBox(height: 10),
@@ -269,58 +251,6 @@ class _DigestCard extends StatelessWidget {
   }
 }
 
-class _AlertBar extends StatelessWidget {
-  const _AlertBar({required this.target, required this.price, required this.decimals, required this.onSet, required this.onClear});
-  final double? target;
-  final double price;
-  final int decimals;
-  final VoidCallback onSet;
-  final VoidCallback onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    final active = target != null;
-    final c = active ? AppColors.amber : AppColors.textSecondary;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: c.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(active ? Icons.notifications_active_rounded : Icons.low_priority, size: 18, color: c),
-          const SizedBox(width: 10),
-          Expanded(
-            child: active
-                ? Text('Target ${target!.toStringAsFixed(decimals)} \u2022 Harga saat ini ${price.toStringAsFixed(decimals)}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w700))
-                : const Text('Setel alert harga \u2022 dicek tiap 5 menit saat app aktif (best-effort, tanpa push server)', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-          ),
-          if (active)
-            GestureDetector(
-              onTap: onClear,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(color: AppColors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                child: const Text('HAPUS', style: TextStyle(color: AppColors.red, fontSize: 11, fontWeight: FontWeight.w800)),
-              ),
-            )
-          else
-            GestureDetector(
-              onTap: onSet,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(color: AppColors.amber.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-                child: const Text('SETEL', style: TextStyle(color: AppColors.amber, fontSize: 11, fontWeight: FontWeight.w800)),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 class _PriceHero extends StatelessWidget {
   const _PriceHero({required this.data});
   final TradingData data;
@@ -335,19 +265,9 @@ class _PriceHero extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(22),
-        gradient: LinearGradient(
-          colors: [
-            AppColors.surface,
-            accent.withValues(alpha: 0.08),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(color: accent.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(color: accent.withValues(alpha: 0.06), blurRadius: 30, offset: const Offset(0, 10)),
-        ],
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -406,7 +326,6 @@ class _PriceHero extends StatelessWidget {
                 fontFeatures: const [FontFeature.tabularFigures()],
                 letterSpacing: -1,
                 height: 1,
-                shadows: [Shadow(color: accent.withValues(alpha: 0.35), blurRadius: 20)],
               ),
             ),
           ),
@@ -550,55 +469,13 @@ class _SparkPainter extends CustomPainter {
       old.values != values || old.color != color;
 }
 
-class _Tilt3D extends StatefulWidget {
-  const _Tilt3D({required this.child, this.maxTilt = 6});
-  final Widget child;
-  final double maxTilt;
-
-  @override
-  State<_Tilt3D> createState() => _Tilt3DState();
-}
-
-class _Tilt3DState extends State<_Tilt3D> {
-  double _dx = 0;
-  double _dy = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onHover: (e) {
-        final box = context.findRenderObject() as RenderBox?;
-        if (box == null) return;
-        final rel = (e.localPosition - box.size.center(Offset.zero));
-        setState(() {
-          _dx = (rel.dx / box.size.width).clamp(-1.0, 1.0) * widget.maxTilt;
-          _dy = (-rel.dy / box.size.height).clamp(-1.0, 1.0) * widget.maxTilt;
-        });
-      },
-      onExit: (_) => setState(() {
-        _dx = 0;
-        _dy = 0;
-      }),
-      child: Transform(
-        transform: Matrix4.identity()
-          ..setEntry(3, 2, 0.0008)
-          ..rotateY(_dx * 0.0174533)
-          ..rotateX(_dy * 0.0174533),
-        alignment: Alignment.center,
-        child: widget.child,
-      ),
-    );
-  }
-}
-
 class _SignalHero extends StatelessWidget {
-  const _SignalHero({required this.signal, required this.prediction, required this.price, required this.decimals, required this.pulse, this.advanced, this.confHistory = const []});
+  const _SignalHero({required this.signal, required this.prediction, required this.price, required this.decimals, this.advanced, this.confHistory = const []});
 
   final Signal signal;
   final Prediction prediction;
   final double price;
   final int decimals;
-  final AnimationController pulse;
   final Advanced? advanced;
   final List<double> confHistory;
 
@@ -609,37 +486,12 @@ class _SignalHero extends StatelessWidget {
     final arrow = prediction.direction == 'UP' ? '\u25B2' : prediction.direction == 'DOWN' ? '\u25BC' : '\u25C6';
     final pct = price == 0 ? 0.0 : (prediction.nextPrice - price) / price * 100;
 
-    return AnimatedBuilder(
-      animation: pulse,
-      builder: (_, __) => Container(
+    return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(22),
-          gradient: LinearGradient(
-            colors: [sigColor.withValues(alpha: 0.12 + pulse.value * 0.06), AppColors.surface],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-          border: Border.all(color: sigColor.withValues(alpha: 0.3 + pulse.value * 0.15)),
-          boxShadow: [
-            BoxShadow(
-              color: sigColor.withValues(alpha: 0.08 + pulse.value * 0.08),
-              blurRadius: 28 + pulse.value * 8,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        foregroundDecoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          gradient: LinearGradient(
-            colors: [
-              Colors.white.withValues(alpha: 0.06),
-              Colors.white.withValues(alpha: 0.02),
-              Colors.transparent,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.center,
-          ),
+          border: Border.all(color: AppColors.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -677,7 +529,6 @@ class _SignalHero extends StatelessWidget {
                         fontWeight: FontWeight.w900,
                         letterSpacing: 0.5,
                         height: 1,
-                        shadows: [Shadow(color: sigColor.withValues(alpha: 0.5), blurRadius: 20)],
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -743,7 +594,6 @@ class _SignalHero extends StatelessWidget {
             ],
           ],
         ),
-      ),
     );
   }
 
@@ -859,71 +709,175 @@ class _AdvancedBadges extends StatelessWidget {
   }
 }
 
-class _RiskPlanCard extends StatelessWidget {
-  const _RiskPlanCard({required this.risk, required this.decimals});
+class _LevelCard extends StatelessWidget {
+  const _LevelCard({required this.risk, required this.position, required this.decimals, required this.alertTarget, required this.price, required this.onSetAlert, required this.onClearAlert});
 
   final Risk risk;
+  final PositionPlan position;
   final int decimals;
+  final double? alertTarget;
+  final double price;
+  final VoidCallback onSetAlert;
+  final VoidCallback onClearAlert;
 
   @override
   Widget build(BuildContext context) {
-    if (!risk.available) {
-      if ((risk.note ?? '').isEmpty) return const SizedBox.shrink();
-      return Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.textSecondary.withValues(alpha: 0.15)),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.textSecondary),
-            const SizedBox(width: 8),
-            Expanded(child: Text(risk.note!, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12))),
-          ],
-        ),
-      );
-    }
-
-    final side = risk.side == 'SELL';
-    final col = side ? AppColors.red : AppColors.green;
-    String fmt(double v) => v.toStringAsFixed(decimals);
+    final showPlan = risk.available;
+    final showPos = position.open;
+    final planNote = risk.note ?? '';
+    final showTop = showPlan || planNote.isNotEmpty || showPos;
+    final planCol = risk.side == 'SELL' ? AppColors.red : AppColors.green;
+    final posCol = position.side == 'SELL' ? AppColors.red : AppColors.green;
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: col.withValues(alpha: 0.35)),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (showPlan) ...[
+            Row(
+              children: [
+                Icon(risk.side == 'SELL' ? Icons.south_rounded : Icons.north_rounded, size: 15, color: planCol),
+                const SizedBox(width: 6),
+                const Text('RENCANA', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                const Spacer(),
+                Text('RR ${risk.riskReward.toStringAsFixed(2)}', style: TextStyle(color: planCol, fontSize: 12, fontWeight: FontWeight.w800)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: _PlanCell(label: 'Entry', value: fmt(risk.entry), color: AppColors.textPrimary)),
+                Expanded(child: _PlanCell(label: 'Stop Loss', value: fmt(risk.stopLoss), color: AppColors.red)),
+                Expanded(child: _PlanCell(label: 'Take Profit', value: fmt(risk.takeProfit), color: AppColors.green)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Rekomendasi: risk maksimal 1-2% saldo. SL/TP dihitung dari ATR (${risk.atr.toStringAsFixed(decimals >= 3 ? 5 : 2)}).',
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, height: 1.4),
+            ),
+          ] else if (planNote.isNotEmpty) ...[
+            Row(
+              children: [
+                const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.textSecondary),
+                const SizedBox(width: 8),
+                Expanded(child: Text(planNote, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12))),
+              ],
+            ),
+          ],
+          if (showPos) ...[
+            if (showPlan || planNote.isNotEmpty) const Divider(color: AppColors.border, height: 22),
+            Row(
+              children: [
+                Icon(position.side == 'SELL' ? Icons.south_rounded : Icons.north_rounded, size: 15, color: posCol),
+                const SizedBox(width: 6),
+                const Text('POSISI', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                const Spacer(),
+                _chip(position.status == 'OPEN' ? 'OPEN' : position.status, _statusColor),
+                const SizedBox(width: 6),
+                Text(_fmtOpened, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(position.pnlPct >= 0 ? '+' : '', style: TextStyle(color: pnlCol, fontSize: 15, fontWeight: FontWeight.w800)),
+                Text('${position.pnlPct.toStringAsFixed(2)}%', style: TextStyle(color: pnlCol, fontSize: 26, fontWeight: FontWeight.w900)),
+                const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 3),
+                  child: Text('${position.points >= 0 ? '+' : ''}${position.points.toStringAsFixed(decimals)}', style: TextStyle(color: pnlCol, fontSize: 12, fontWeight: FontWeight.w700)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: _PlanCell(label: 'Entry', value: fmt(position.entryPrice), color: AppColors.textPrimary)),
+                Expanded(child: _PlanCell(label: 'Now', value: fmt(position.currentPrice), color: pnlCol)),
+                Expanded(child: _PlanCell(label: 'SL', value: fmt(position.stopLoss), color: AppColors.red)),
+                Expanded(child: _PlanCell(label: 'TP', value: fmt(position.takeProfit), color: AppColors.green)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                if (position.trailActive && position.trailLevel != null)
+                  _chip('TRAIL ${fmt(position.trailLevel!)}', AppColors.amber)
+                else if (position.stopLoss > 0)
+                  _chip('SL ${fmt(position.stopLoss)}', AppColors.red),
+                _chip('TP ${fmt(position.takeProfit)}', AppColors.green),
+                if (position.trailActive)
+                  _chip('LOCK +${position.profitLockedPct.toStringAsFixed(2)}%', AppColors.blue),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const Text('Simulasi dari sinyal terakhir \u2014 bukan akun MT5 live.', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, height: 1.4)),
+          ],
+          if (showTop) const Divider(color: AppColors.border, height: 22),
           Row(
             children: [
-              Icon(side ? Icons.south_rounded : Icons.north_rounded, size: 15, color: col),
-              const SizedBox(width: 6),
-              const Text('Plan Entry', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
-              const Spacer(),
-              Text('RR ${risk.riskReward.toStringAsFixed(2)}', style: TextStyle(color: col, fontSize: 12, fontWeight: FontWeight.w800)),
+              Icon(alertTarget != null ? Icons.notifications_active_rounded : Icons.low_priority, size: 18, color: alertTarget != null ? AppColors.amber : AppColors.textSecondary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: alertTarget != null
+                    ? Text('Target ${alertTarget!.toStringAsFixed(decimals)} \u2022 Harga kini ${price.toStringAsFixed(decimals)}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w700))
+                    : const Text('Setel alert harga \u2022 dicek tiap 5 menit saat app aktif', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              ),
+              InkWell(
+                onTap: alertTarget != null ? onClearAlert : onSetAlert,
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: (alertTarget != null ? AppColors.red : AppColors.blue).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(alertTarget != null ? 'HAPUS' : 'SETEL', style: TextStyle(color: alertTarget != null ? AppColors.red : AppColors.blue, fontSize: 11, fontWeight: FontWeight.w800)),
+                ),
+              ),
             ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: _PlanCell(label: 'Entry', value: fmt(risk.entry), color: AppColors.textPrimary)),
-              Expanded(child: _PlanCell(label: 'Stop Loss', value: fmt(risk.stopLoss), color: AppColors.red)),
-              Expanded(child: _PlanCell(label: 'Take Profit', value: fmt(risk.takeProfit), color: AppColors.green)),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Rekomendasi: risk maksimal 1-2% saldo. SL/TP dihitung dari ATR (${risk.atr.toStringAsFixed(decimals >= 3 ? 5 : 2)}).',
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, height: 1.4),
           ),
         ],
       ),
+    );
+  }
+
+  String fmt(double v) => v.toStringAsFixed(decimals);
+
+  Color get pnlCol {
+    if (position.points == 0) return AppColors.textSecondary;
+    return position.pnlPct > 0 ? AppColors.green : AppColors.red;
+  }
+
+  Color get _statusColor {
+    if (position.status == 'OPEN') return AppColors.green;
+    return position.status == 'TARGET' ? AppColors.green : AppColors.red;
+  }
+
+  String get _fmtOpened {
+    final t = DateTime.tryParse(position.openedAt);
+    if (t == null) return '';
+    final wib = t.toUtc().add(const Duration(hours: 7));
+    final hh = wib.hour.toString().padLeft(2, '0');
+    final mm = wib.minute.toString().padLeft(2, '0');
+    return '$hh:$mm WIB';
+  }
+
+  Widget _chip(String text, Color c) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(4)),
+      child: Text(text, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w800)),
     );
   }
 }
@@ -944,104 +898,6 @@ class _PlanCell extends StatelessWidget {
         const SizedBox(height: 4),
         Text(value, style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w800)),
       ],
-    );
-  }
-}
-
-class _PositionCard extends StatelessWidget {
-  const _PositionCard({required this.position, required this.decimals});
-
-  final PositionPlan position;
-  final int decimals;
-
-  @override
-  Widget build(BuildContext context) {
-    final sell = position.side == 'SELL';
-    final col = sell ? AppColors.red : AppColors.green;
-    final profit = position.pnlPct > 0;
-    final pnlCol = position.points == 0 ? AppColors.textSecondary : profit ? AppColors.green : AppColors.red;
-    final closed = position.status == 'STOP' || position.status == 'TARGET';
-
-    String fmt(double v) => v.toStringAsFixed(decimals);
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: col.withValues(alpha: 0.45)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(sell ? Icons.south_rounded : Icons.north_rounded, size: 15, color: col),
-              const SizedBox(width: 6),
-              const Text('POSISI SIMULASI', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
-              const Spacer(),
-              _chip(position.status == 'OPEN' ? 'OPEN' : position.status, position.status == 'OPEN' ? (closed ? AppColors.amber : AppColors.green) : position.status == 'TARGET' ? AppColors.green : AppColors.red),
-              const SizedBox(width: 6),
-              Text(_fmtOpened, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(position.pnlPct >= 0 ? '+' : '', style: TextStyle(color: pnlCol, fontSize: 15, fontWeight: FontWeight.w800)),
-              Text('${position.pnlPct.toStringAsFixed(2)}%', style: TextStyle(color: pnlCol, fontSize: 26, fontWeight: FontWeight.w900)),
-              const SizedBox(width: 8),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 3),
-                child: Text('${position.points >= 0 ? '+' : ''}${position.points.toStringAsFixed(decimals)}', style: TextStyle(color: pnlCol, fontSize: 12, fontWeight: FontWeight.w700)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: _PlanCell(label: 'Entry', value: fmt(position.entryPrice), color: AppColors.textPrimary)),
-              Expanded(child: _PlanCell(label: 'Now', value: fmt(position.currentPrice), color: pnlCol)),
-              Expanded(child: _PlanCell(label: 'SL', value: fmt(position.stopLoss), color: AppColors.red)),
-              Expanded(child: _PlanCell(label: 'TP', value: fmt(position.takeProfit), color: AppColors.green)),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 6,
-            runSpacing: 4,
-            children: [
-              if (position.trailActive && position.trailLevel != null)
-                _chip('TRAIL ${fmt(position.trailLevel!)}', AppColors.amber)
-              else if (position.stopLoss > 0)
-                _chip('SL ${fmt(position.stopLoss)}', AppColors.red),
-              _chip('TP ${fmt(position.takeProfit)}', AppColors.green),
-              if (position.trailActive)
-                _chip('LOCK +${position.profitLockedPct.toStringAsFixed(2)}%', AppColors.blue),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Text('Simulasi dari sinyal terakhir \u2014 bukan akun MT5 live.', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, height: 1.4)),
-        ],
-      ),
-    );
-  }
-
-  String get _fmtOpened {
-    final t = DateTime.tryParse(position.openedAt);
-    if (t == null) return '';
-    final wib = t.toUtc().add(const Duration(hours: 7));
-    final hh = wib.hour.toString().padLeft(2, '0');
-    final mm = wib.minute.toString().padLeft(2, '0');
-    return '$hh:$mm WIB';
-  }
-
-  Widget _chip(String text, Color c) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(4)),
-      child: Text(text, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w800)),
     );
   }
 }
@@ -1337,7 +1193,7 @@ class _MarketCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.textSecondary.withValues(alpha: 0.15)),
+          border: Border.all(color: AppColors.border),
         ),
         child: const Row(
           children: [
@@ -1388,7 +1244,7 @@ class _MarketCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.blue.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

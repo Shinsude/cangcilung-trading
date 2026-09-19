@@ -1,15 +1,15 @@
 part of 'package:cangcilung_trading/screens/home_screen.dart';
 
-class _CalendarPage extends StatefulWidget {
-  const _CalendarPage({required this.api});
+class _CalendarSection extends StatefulWidget {
+  const _CalendarSection({super.key, required this.api});
 
   final ApiService api;
 
   @override
-  State<_CalendarPage> createState() => _CalendarPageState();
+  State<_CalendarSection> createState() => _CalendarSectionState();
 }
 
-class _CalendarPageState extends State<_CalendarPage> {
+class _CalendarSectionState extends State<_CalendarSection> {
   List<EconomicEvent>? _events;
   String? _error;
   Timer? _timer;
@@ -34,6 +34,10 @@ class _CalendarPageState extends State<_CalendarPage> {
     if (_events == null) return const [];
     if (!_hideMedium) return _events!;
     return _events!.where((e) => e.impact.toLowerCase() == 'high').toList();
+  }
+
+  Future<void> reload() async {
+    await _load();
   }
 
   Future<void> _load() async {
@@ -72,71 +76,66 @@ class _CalendarPageState extends State<_CalendarPage> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    return RefreshIndicator(
-      color: AppColors.blue,
-      onRefresh: _load,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          const Text('KALENDER EKONOMI', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1)),
-          const SizedBox(height: 4),
-          const Text(
-            'Event high & medium impact dari kalender ForexFactory untuk 48 jam ke depan (waktu WIB).',
-            style: TextStyle(color: AppColors.textTertiary, fontSize: 11, height: 1.4),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('KALENDER EKONOMI', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1)),
+        const SizedBox(height: 4),
+        const Text(
+          'Event high & medium impact dari kalender ForexFactory untuk 48 jam ke depan (waktu WIB).',
+          style: TextStyle(color: AppColors.textTertiary, fontSize: 11, height: 1.4),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.border),
           ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Row(
-              children: [
-                const Expanded(
-                  child: Text('Sembunyikan impact Medium', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-                ),
-                SizedBox(
-                  height: 20,
-                  width: 36,
-                  child: Switch(
-                    value: _hideMedium,
-                    onChanged: (v) => setState(() => _hideMedium = v),
-                    activeTrackColor: AppColors.blue.withValues(alpha: 0.3),
-                    inactiveThumbColor: AppColors.textTertiary,
-                    inactiveTrackColor: AppColors.surfaceAlt,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (_events == null && _error == null)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 32),
-              child: Center(child: CircularProgressIndicator(color: AppColors.blue, strokeWidth: 3)),
-            )
-else if (_events == null)
-            _CalendarError(message: _error ?? 'Gagal memuat data', onRetry: _load)
-          else if (_filteredEvents.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 32),
-              child: Center(
-                child: Text(
-                  _hideMedium
-                      ? 'Tidak ada event HIGH impact mendatang'
-                      : 'Belum ada event high/medium impact mendatang',
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+          child: Row(
+            children: [
+              const Expanded(
+                child: Text('Sembunyikan impact Medium', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+              ),
+              SizedBox(
+                height: 20,
+                width: 36,
+                child: Switch(
+                  value: _hideMedium,
+                  onChanged: (v) => setState(() => _hideMedium = v),
+                  activeTrackColor: AppColors.blue.withValues(alpha: 0.3),
+                  inactiveThumbColor: AppColors.textTertiary,
+                  inactiveTrackColor: AppColors.surfaceAlt,
                 ),
               ),
-            )
-          else ...[
-            ..._filteredEvents.map((e) => _EventTile(event: e, now: now)),
-          ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (_events == null && _error == null)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(child: CircularProgressIndicator(color: AppColors.blue, strokeWidth: 3)),
+          )
+        else if (_events == null)
+          _CalendarError(message: _error ?? 'Gagal memuat data', onRetry: _load)
+        else if (_filteredEvents.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            child: Center(
+              child: Text(
+                _hideMedium
+                    ? 'Tidak ada event HIGH impact mendatang'
+                    : 'Belum ada event high/medium impact mendatang',
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
+            ),
+          )
+        else ...[
+          ..._filteredEvents.map((e) => _EventTile(event: e, now: now)),
         ],
-      ),
+      ],
     );
   }
 }
@@ -166,7 +165,7 @@ class _EventTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_CalendarPageState._dayLabel(now, event.ts), style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600)),
+                Text(_CalendarSectionState._dayLabel(now, event.ts), style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
                 Text(event.timeWib, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, fontFeatures: [FontFeature.tabularFigures()])),
               ],
@@ -201,7 +200,7 @@ class _EventTile extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            _CalendarPageState._countdown(now, event.ts),
+            _CalendarSectionState._countdown(now, event.ts),
             style: TextStyle(color: impactColor, fontSize: 13, fontWeight: FontWeight.w900),
           ),
         ],

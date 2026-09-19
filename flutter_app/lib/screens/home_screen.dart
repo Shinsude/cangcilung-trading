@@ -17,6 +17,7 @@ part 'home_screen_parts/indicators.dart';
 part 'home_screen_parts/model.dart';
 part 'home_screen_parts/calendar.dart';
 part 'home_screen_parts/sentiment.dart';
+part 'home_screen_parts/news.dart';
 part 'home_screen_parts/extras.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -26,7 +27,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> {
   final ApiService _api = ApiService();
   final List<String> _symbols = ['XAUUSD', 'NASDAQ', 'AUDUSD'];
   String _selected = 'XAUUSD';
@@ -41,7 +42,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String? _modelError;
   bool _warmed = false;
   bool _notifOn = false;
-  bool _minimal = false;
   Timer? _signalWatcher;
   Timer? _candleRefresh;
   final Map<String, double> _alerts = {};
@@ -52,16 +52,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   MorningDigest? _digest;
   bool _digestLoaded = false;
 
-  late AnimationController _pulseCtrl;
-
   @override
   void initState() {
     super.initState();
-    _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
     _load();
     _scheduleCandleRefresh();
     _initNotifPref();
-    _initMinimalPref();
     _loadAlerts();
     _loadHistory(_selected);
   }
@@ -70,7 +66,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void dispose() {
     _signalWatcher?.cancel();
     _candleRefresh?.cancel();
-    _pulseCtrl.dispose();
     super.dispose();
   }
 
@@ -103,23 +98,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _startSignalWatcher() {
     _signalWatcher?.cancel();
     _signalWatcher = Timer.periodic(const Duration(minutes: 5), (_) => unawaited(_checkStrongSignals()));
-  }
-
-  Future<void> _initMinimalPref() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final m = prefs.getBool('minimal_mode') ?? false;
-      if (!mounted) return;
-      setState(() => _minimal = m);
-    } catch (_) {}
-  }
-
-  Future<void> _toggleMinimal(bool on) async {
-    setState(() => _minimal = on);
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('minimal_mode', on);
-    } catch (_) {}
   }
 
   Future<void> _loadAlerts() async {
@@ -424,7 +402,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         bottom: false,
         child: Column(
           children: [
-            _TopBar(symbols: _symbols, selected: _selected, onSelect: _selectSymbol, onRefresh: _refreshAll, live: _data?.dataSource == 'live', simulated: _data?.dataSource == 'synthetic', notifyOn: _notifOn, onToggleNotify: _toggleNotif, minimal: _minimal, onToggleMinimal: _toggleMinimal),
+            _TopBar(symbols: _symbols, selected: _selected, onSelect: _selectSymbol, onRefresh: _refreshAll, live: _data?.dataSource == 'live', simulated: _data?.dataSource == 'synthetic', notifyOn: _notifOn, onToggleNotify: _toggleNotif),
             AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               height: _fetching ? 3 : 0,
@@ -466,7 +444,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           tab: _tab,
           onChanged: (i) {
             setState(() => _tab = i);
-            if (i == 4 && _model == null && !_modelLoading) {
+            if (i == 2 && _model == null && !_modelLoading) {
               unawaited(_loadModel());
             }
           },
@@ -483,11 +461,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _SignalPage(
           data: d,
           onRefresh: _refreshAll,
-          pulse: _pulseCtrl,
           alertTarget: _alerts[d.symbol],
           onSetAlert: () => _setAlert(d.symbol),
           onClearAlert: () => _clearAlert(d.symbol),
-          minimal: _minimal,
           confHistory: _confHistory[d.symbol] ?? const [],
           history: _history,
           historyLoading: _historyLoading,
@@ -496,9 +472,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           digest: _digest,
           onSelectSymbol: _selectSymbol,
         ),
-        _IndicatorsPage(ind: d.indicators, price: d.currentPrice, weights: d.weights),
-        _CalendarPage(api: _api),
-        _SentimentPage(sentiment: d.sentiment),
+        _NewsPage(sentiment: d.sentiment, api: _api, onRefresh: _refreshAll),
         _ModelPage(
           model: _model,
           loading: _modelLoading,

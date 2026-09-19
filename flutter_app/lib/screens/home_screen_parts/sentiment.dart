@@ -1,7 +1,8 @@
 part of 'package:cangcilung_trading/screens/home_screen.dart';
 
-class _SentimentPage extends StatelessWidget {
-  const _SentimentPage({required this.sentiment});
+class _SentimentBlock extends StatelessWidget {
+  const _SentimentBlock({required this.sentiment});
+
   final Sentiment sentiment;
 
   @override
@@ -9,8 +10,8 @@ class _SentimentPage extends StatelessWidget {
     final color = sentiment.label.toSignalColor();
     final isNews = sentiment.headlines.isNotEmpty;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('MARKET SENTIMENT', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1)),
         const SizedBox(height: 12),
@@ -19,8 +20,7 @@ class _SentimentPage extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: color.withValues(alpha: 0.25)),
-            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.08), blurRadius: 24)],
+            border: Border.all(color: AppColors.border),
           ),
           child: Column(
             children: [

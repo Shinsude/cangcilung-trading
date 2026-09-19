@@ -2,6 +2,20 @@
 
 Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://semver.org/).
 
+## [1.3.6] - 2026-09-19
+
+### Diubah
+- **Navigasi dipangkas 5 → 3 tab: Sinyal / Berita / Model.**
+  - Tab Sentimen + Kalender digabung jadi **Berita** (sentimen pasar di atas, kalender ekonomi di bawah, satu pull-to-refresh).
+  - Tab Indikator digabung ke **Sinyal**: indikator teknikal kini bagian dari section "DETAIL & KONTEKS".
+- **Mode ringkas dihapus**: selalu tampil lengkap, tidak perlu toggle "sembunyikan detail".
+- **Kartu "Rencana → Posisi → Alert" dilebur jadi satu kartu Level** di tab Sinyal: alur keputusan (entry/SL/TP → PnL posisi → alert harga) dalam satu urutan tanpa kartu yang berhamburan.
+- **Efek dekoratif dihilangkan**: tilt 3D & denyut pulsa pada kartu sinyal, gradient + box-shadow pada kartu harga/rekap/sentimen dibuang — kartu memakai permukaan datar dengan border netral agar hirarki datang dari konten, bukan efek.
+- Kartu RISET BACKTEST KETAT & uji backtest di netralkan bordernya (tetap pakai warna aksen hanya pada judul/chip).
+
+### Diperbaiki
+- **Bobot model tetap tampil**: chips "BOBOT TER-TUNE" pada status model dipertahankan saat indikator tab digabung ke Sinyal.
+
 ## [1.3.5] - 2026-09-19
 
 ### Ditambahkan

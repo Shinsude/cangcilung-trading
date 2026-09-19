@@ -219,7 +219,7 @@ class _BacktestExplorer extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.blue.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -559,6 +559,40 @@ class _ModelCard extends StatelessWidget {
   }
 }
 
+class _WeightChip extends StatelessWidget {
+  const _WeightChip({required this.label, required this.weight});
+  final String label;
+  final double weight;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color;
+    if (weight > 1.05) {
+      color = AppColors.green;
+    } else if (weight < 0.95) {
+      color = AppColors.blue;
+    } else {
+      color = AppColors.textSecondary;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600)),
+          const SizedBox(width: 6),
+          Text(weight.toStringAsFixed(1), style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w900)),
+        ],
+      ),
+    );
+  }
+}
+
 class _AccChip extends StatelessWidget {
   const _AccChip({required this.label, required this.value, required this.color});
   final String label;
@@ -667,7 +701,7 @@ class _ResearchCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
+            border: Border.all(color: AppColors.border),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

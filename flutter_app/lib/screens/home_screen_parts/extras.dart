@@ -28,7 +28,7 @@ class _MiniScoreboard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.purple.withValues(alpha: 0.25)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,7 +143,7 @@ class _SignalHistoryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.purple.withValues(alpha: 0.25)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,7 +245,7 @@ class _GuideSheet extends StatelessWidget {
               icon: Icons.traffic_rounded,
               title: '1. Membaca sinyal',
               body:
-                  'BUY = peluang naik, SELL = peluang turun, HOLD = tunggu. Kekuatan STRONG lebih yakin daripada MODERATE. Persentase di kartu sinyal = tingkat keyakinan model, bukan jaminan. Selalu cek tab Indikator & Chart untuk konfirmasi.',
+                  'BUY = peluang naik, SELL = peluang turun, HOLD = tunggu. Kekuatan STRONG lebih yakin daripada MODERATE. Persentase di kartu sinyal = tingkat keyakinan model, bukan jaminan. Konfirmasikan pada DETAIL & KONTEKS di tab Sinyal.',
             ),
             const _GuideSection(
               icon: Icons.alt_route_rounded,
