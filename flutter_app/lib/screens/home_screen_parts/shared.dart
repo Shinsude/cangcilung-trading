@@ -242,18 +242,25 @@ class _SystemHealthCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _row('TS', '$_tsLabel ${system.tsIntrinsic.toStringAsFixed(0)}%',
-              system.tsIntrinsic >= 40 ? AppColors.green : system.tsIntrinsic >= 25 ? AppColors.amber : AppColors.red),
+              system.tsIntrinsic >= 40 ? AppColors.green : system.tsIntrinsic >= 25 ? AppColors.amber : AppColors.red,
+              explain: 'Kekuatan tren intrinsik \u2014 seberapa solid arah tren yang terdeteksi model.'),
           _row('SNR', '${system.tsSnr.toStringAsFixed(1)}x',
-              system.tsSnr >= 1.5 ? AppColors.green : system.tsSnr >= 0.8 ? AppColors.amber : AppColors.red),
+              system.tsSnr >= 1.5 ? AppColors.green : system.tsSnr >= 0.8 ? AppColors.amber : AppColors.red,
+              explain: 'Signal-to-noise ratio \u2014 kejelasan gerakan harga dibanding noise pasar.'),
           _row('DECOMP', system.decompRegime,
-              system.decompRegime == 'TRENDING' ? AppColors.green : system.decompRegime == 'RANGING' ? AppColors.amber : AppColors.red),
+              system.decompRegime == 'TRENDING' ? AppColors.green : system.decompRegime == 'RANGING' ? AppColors.amber : AppColors.red,
+              explain: 'Rezim pergerakan hasil dekomposisi: TRENDING, RANGING, atau CHOPPY.'),
           _row('BAR', '${system.barTotal.toStringAsFixed(0)}/100',
-              system.barTotal >= 70 ? AppColors.green : system.barTotal >= 40 ? AppColors.amber : AppColors.red),
+              system.barTotal >= 70 ? AppColors.green : system.barTotal >= 40 ? AppColors.amber : AppColors.red,
+              explain: 'Jumlah bar (candle) yang dipakai perhitungan model, skala /100.'),
           const SizedBox(height: 4),
           const Divider(color: AppColors.border, height: 14),
           Row(
             children: [
-              const Text('THETA', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.7)),
+              Tooltip(
+                message: 'Keselarasan arah AI vs aturan (RULES) pada kerangka theta.',
+                child: const Text('THETA', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.7)),
+              ),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
@@ -269,10 +276,11 @@ class _SystemHealthCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           _row('SAFE', system.safety.status,
-              system.safety.status == 'OK' ? AppColors.green : system.safety.status == 'N/A' ? AppColors.textSecondary : AppColors.red),
+              system.safety.status == 'OK' ? AppColors.green : system.safety.status == 'N/A' ? AppColors.textSecondary : AppColors.red,
+              explain: 'Cek safety rules: pelanggaran aturan, minimal stop-loss, dan rasio risiko.'),
           if (system.safety.violations > 0)
             Padding(
-              padding: const EdgeInsets.only(top: 4, left: 44),
+              padding: const EdgeInsets.only(top: 4, left: 48),
               child: Text('\u26A0 ${system.safety.violations} pelanggaran \u00B7 SL min ${system.safety.minimumStop.toStringAsFixed(0)} \u00B7 RR ${system.safety.riskReward.toStringAsFixed(1)}',
                   style: const TextStyle(color: AppColors.red, fontSize: 11)),
             ),
@@ -281,11 +289,19 @@ class _SystemHealthCard extends StatelessWidget {
     );
   }
 
-  Widget _row(String k, String v, Color c) => Padding(
+  Widget _row(String k, String v, Color c, {String? explain}) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: Row(
           children: [
-            SizedBox(width: 40, child: Text(k, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5))),
+            SizedBox(
+              width: 44,
+              child: explain == null
+                  ? Text(k, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5))
+                  : Tooltip(
+                      message: explain,
+                      child: Text(k, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                    ),
+            ),
             Text(v, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w800)),
           ],
         ),

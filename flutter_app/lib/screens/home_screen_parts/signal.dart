@@ -429,7 +429,7 @@ class _PriceHero extends StatelessWidget {
           if (data.updatedAt != null)
             Padding(
               padding: const EdgeInsets.only(top: 10),
-              child: Text('Diperbarui ${_relativeTime(data.updatedAt!)}', style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, letterSpacing: 0.3)),
+              child: _UpdatedLabel(at: data.updatedAt!),
             ),
         ],
       ),
@@ -443,6 +443,40 @@ String _relativeTime(DateTime t) {
   if (diff.inMinutes < 60) return '${diff.inMinutes} menit lalu';
   if (diff.inHours < 24) return '${diff.inHours} jam lalu';
   return '${diff.inDays} hari lalu';
+}
+
+class _UpdatedLabel extends StatefulWidget {
+  const _UpdatedLabel({required this.at});
+  final DateTime at;
+
+  @override
+  State<_UpdatedLabel> createState() => _UpdatedLabelState();
+}
+
+class _UpdatedLabelState extends State<_UpdatedLabel> {
+  Timer? _t;
+
+  @override
+  void initState() {
+    super.initState();
+    _t = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _t?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      'Diperbarui ${_relativeTime(widget.at)}',
+      style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, letterSpacing: 0.3),
+    );
+  }
 }
 
 class _ConfidenceSparkline extends StatelessWidget {

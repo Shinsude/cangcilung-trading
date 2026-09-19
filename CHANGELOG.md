@@ -2,6 +2,21 @@
 
 Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://semver.org/).
 
+## [1.3.5] - 2026-09-19
+
+### Ditambahkan
+- **Refresh otomatis mengikuti tutup candle M15**: sinyal di-refresh diam-diam beberapa detik setelah setiap candle 15 menit menutup — tab tidak lagi menampilkan data basi tanpa disadari sambil terbuka.
+- **Tombol "Segarkan data" di header** (web/desktop kini punya cara refresh manual; tidak hanya gesture tarik yang butuh layar sentuh).
+
+### Diperbaiki
+- **Label usia data tampil akurat**: "Diperbarui …" di kartu harga kini bertambah sendiri setiap 30 detik, bukan membeku sampai tab diganti.
+- **Pesan error ramah**: teks exception mentah diganti kalimat manusia ("Waktu koneksi habis…", "Koneksi gagal…") pada kegagalan muat data utama & model.
+- **Aksesibilitas keyboard web**: tombol notifikasi & mode ringkas kini `InkWell` (fokus Tab + semantik tombol), konsisten dengan tombol help.
+- **Terminologi tab konsisten**: tab pertama "Signal" → "Sinyal".
+
+### Diubah
+- **Jargon diberi penjelasan**: THETA, TS, SNR, DECOMP, BAR, SAFE di kartu System Health kini punya tooltip penjelasan saat ragu.
+
 ## [1.3.4] - 2026-09-19
 
 ### Diperbaiki

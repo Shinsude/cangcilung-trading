@@ -43,6 +43,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool _notifOn = false;
   bool _minimal = false;
   Timer? _signalWatcher;
+  Timer? _candleRefresh;
   final Map<String, double> _alerts = {};
   final Map<String, List<double>> _confHistory = {};
   List<Map<String, dynamic>> _history = const [];
@@ -58,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.initState();
     _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
     _load();
+    _scheduleCandleRefresh();
     _initNotifPref();
     _initMinimalPref();
     _loadAlerts();
@@ -67,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _signalWatcher?.cancel();
+    _candleRefresh?.cancel();
     _pulseCtrl.dispose();
     super.dispose();
   }
@@ -320,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     } on Exception catch (e) {
       if (!mounted) return;
       setState(() {
-        _modelError = e.toString();
+        _modelError = _friendlyError(e);
         _modelLoading = false;
       });
     }
@@ -375,7 +378,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       setState(() => _fetching = false);
       if (_data == null) {
         setState(() {
-          _error = e.toString();
+          _error = _friendlyError(e);
           _loading = false;
         });
       } else {
@@ -386,6 +389,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _refreshAll() async {
     await Future.wait([_load(), _loadHistory(_selected), _loadDigest(refresh: true)]);
+  }
+
+  void _scheduleCandleRefresh() {
+    _candleRefresh?.cancel();
+    final now = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final mins = (now.minute ~/ 15 + 1) * 15 % 60;
+    var next = DateTime(now.year, now.month, now.day, now.hour, mins);
+    if (next.isBefore(now)) next = next.add(const Duration(hours: 1));
+    final wait = next.difference(now) + const Duration(seconds: 2);
+    _candleRefresh = Timer(wait, _onCandleBoundary);
+  }
+
+  void _onCandleBoundary() {
+    if (_loading || _fetching || _error != null) {
+      _scheduleCandleRefresh();
+      return;
+    }
+    unawaited(_load().then((_) => _scheduleCandleRefresh()));
   }
 
   void _selectSymbol(String s) {
@@ -403,7 +424,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         bottom: false,
         child: Column(
           children: [
-            _TopBar(symbols: _symbols, selected: _selected, onSelect: _selectSymbol, live: _data?.dataSource == 'live', simulated: _data?.dataSource == 'synthetic', notifyOn: _notifOn, onToggleNotify: _toggleNotif, minimal: _minimal, onToggleMinimal: _toggleMinimal),
+            _TopBar(symbols: _symbols, selected: _selected, onSelect: _selectSymbol, onRefresh: _refreshAll, live: _data?.dataSource == 'live', simulated: _data?.dataSource == 'synthetic', notifyOn: _notifOn, onToggleNotify: _toggleNotif, minimal: _minimal, onToggleMinimal: _toggleMinimal),
             AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               height: _fetching ? 3 : 0,
@@ -492,6 +513,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ],
     );
   }
+}
+
+String _friendlyError(Object e) {
+  final m = e.toString().toLowerCase();
+  if (m.contains('timeout') || m.contains('timed out')) {
+    return 'Waktu koneksi habis. Periksa internet lalu coba lagi.';
+  }
+  if (m.contains('socket') ||
+      m.contains('connection') ||
+      m.contains('host lookup') ||
+      m.contains('dns') ||
+      m.contains('network') ||
+      m.contains('internet')) {
+    return 'Koneksi gagal. Pastikan internet aktif, lalu coba lagi.';
+  }
+  return 'Layanan tidak merespons. Coba lagi beberapa saat.';
 }
 
 class _TabStack extends StatefulWidget {

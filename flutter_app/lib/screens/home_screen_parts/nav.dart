@@ -1,11 +1,12 @@
 part of 'package:cangcilung_trading/screens/home_screen.dart';
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.symbols, required this.selected, required this.onSelect, required this.live, this.simulated = false, required this.notifyOn, required this.onToggleNotify, required this.minimal, required this.onToggleMinimal});
+  const _TopBar({required this.symbols, required this.selected, required this.onSelect, required this.onRefresh, required this.live, this.simulated = false, required this.notifyOn, required this.onToggleNotify, required this.minimal, required this.onToggleMinimal});
 
   final List<String> symbols;
   final String selected;
   final ValueChanged<String> onSelect;
+  final Future<void> Function() onRefresh;
   final bool live;
   final bool simulated;
   final bool notifyOn;
@@ -55,6 +56,11 @@ class _TopBar extends StatelessWidget {
                 icon: const Icon(Icons.help_outline_rounded, color: AppColors.textSecondary, size: 22),
                 tooltip: 'Cara Pakai',
               ),
+              IconButton(
+                onPressed: () => unawaited(onRefresh()),
+                icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary, size: 22),
+                tooltip: 'Segarkan data',
+              ),
               _NotifButton(on: notifyOn, onToggle: onToggleNotify),
               _MinimalButton(minimal: minimal, onToggle: onToggleMinimal),
               _LiveIndicator(live: live, simulated: simulated),
@@ -78,9 +84,9 @@ class _NotifButton extends StatelessWidget {
     final c = on ? AppColors.blue : AppColors.textTertiary;
     return Tooltip(
       message: on ? 'Nonaktifkan notifikasi sinyal' : 'Aktifkan notifikasi sinyal',
-      child: GestureDetector(
+      child: InkWell(
         onTap: () => onToggle(!on),
-        behavior: HitTestBehavior.opaque,
+        borderRadius: BorderRadius.circular(14),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           decoration: BoxDecoration(
@@ -105,9 +111,9 @@ class _MinimalButton extends StatelessWidget {
     final c = minimal ? AppColors.amber : AppColors.textTertiary;
     return Tooltip(
       message: minimal ? 'Kembali ke mode normal' : 'Mode ringkas (sembunyikan detail)',
-      child: GestureDetector(
+      child: InkWell(
         onTap: () => onToggle(!minimal),
-        behavior: HitTestBehavior.opaque,
+        borderRadius: BorderRadius.circular(14),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           decoration: BoxDecoration(
@@ -272,7 +278,7 @@ class _BottomNav extends StatelessWidget {
   final ValueChanged<int> onChanged;
 
   static const _icons = [Icons.auto_graph, Icons.insights, Icons.event_rounded, Icons.newspaper, Icons.psychology_rounded];
-  static const _labels = ['Signal', 'Indikator', 'Kalender', 'Sentimen', 'Model'];
+  static const _labels = ['Sinyal', 'Indikator', 'Kalender', 'Sentimen', 'Model'];
 
   @override
   Widget build(BuildContext context) {
