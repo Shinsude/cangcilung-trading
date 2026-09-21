@@ -418,7 +418,7 @@ class FuturesBasis {
   const FuturesBasis({
     this.lastPct,
     this.avg20Pct,
-    this.state = 'CONTANGO',
+    this.state = 'NETRAL',
     this.spot,
     this.future,
     this.lookbackDays,
@@ -427,7 +427,7 @@ class FuturesBasis {
   factory FuturesBasis.fromJson(Map<String, dynamic>? json) => FuturesBasis(
         lastPct: (json?['last_pct'] as num?)?.toDouble(),
         avg20Pct: (json?['avg20_pct'] as num?)?.toDouble(),
-        state: (json?['state'] as String? ?? 'CONTANGO').toUpperCase(),
+        state: (json?['state'] as String? ?? 'NETRAL').toUpperCase(),
         spot: (json?['spot'] as num?)?.toDouble(),
         future: (json?['future'] as num?)?.toDouble(),
         lookbackDays: (json?['lookback_days'] as num?)?.toInt(),

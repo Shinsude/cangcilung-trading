@@ -19,7 +19,7 @@ def _df(n: int = 140) -> pd.DataFrame:
     )
 
 
-def _trend_up(n: int = 140) -> pd.DataFrame:
+def _trend_df(n: int = 140) -> pd.DataFrame:
     closes = np.linspace(100.0, 120.0, n)
     dates = pd.date_range(end=pd.Timestamp.now().normalize(), periods=n, freq="D")
     highs = closes + 0.3
@@ -30,6 +30,18 @@ def _trend_up(n: int = 140) -> pd.DataFrame:
     return pd.DataFrame(
         {"Open": opens, "High": highs, "Low": lows, "Close": closes, "Volume": vols},
         index=dates,
+    )
+
+
+def _basis_pair(tail_shift: float = 0.0, tail: int = 30, n: int = 140):
+    """Future vs physical pair; shift moves the last ``tail`` rows of the ratio."""
+    f = np.linspace(100.0, 120.0, n)
+    s = f.copy()
+    s[-tail:] = s[-tail:] * (1.0 + tail_shift)
+    dates = pd.date_range(end=pd.Timestamp.now().normalize(), periods=n, freq="D")
+    return (
+        pd.DataFrame({"Close": f}, index=dates),
+        pd.DataFrame({"Close": s}, index=dates),
     )
 
 
@@ -73,7 +85,7 @@ def test_volume_profile_short_frame():
 
 
 def test_cvd_divergence_none_on_clean_trend():
-    assert cvd_divergence(_trend_up()) == "NONE"
+    assert cvd_divergence(_trend_df()) == "NONE"
 
 
 def test_cvd_divergence_bearish():
@@ -84,17 +96,32 @@ def test_cvd_divergence_small_frame():
     assert cvd_divergence(_df(10)) in ("NONE", "BULLISH", "BEARISH")
 
 
-def test_futures_basis_contango():
-    f = _df()
-    s = _df()
-    s["Close"] = s["Close"] * 0.99
+def test_futures_basis_premium():
+    f, s = _basis_pair(tail_shift=-0.02)  # physical drops at the end -> futures rich
     b = futures_basis(f, s)
     assert b is not None
-    assert b["state"] == "CONTANGO"
+    assert b["state"] == "PREMIUM"
     assert b["last_pct"] > 0
+
+
+def test_futures_basis_discount():
+    f, s = _basis_pair(tail_shift=0.02)  # physical pops -> futures cheap
+    b = futures_basis(f, s)
+    assert b is not None
+    assert b["state"] == "DISKONTO"
+    assert b["last_pct"] < 0
+
+
+def test_futures_basis_neutral():
+    f, s = _basis_pair(tail_shift=0.0)  # stable relationship
+    b = futures_basis(f, s)
+    assert b is not None
+    assert b["state"] == "NETRAL"
 
 
 def test_futures_basis_degradation():
     assert futures_basis(None, None) is None
     assert futures_basis(_df(), None) is None
     assert futures_basis(None, _df()) is None
+    short = _basis_pair(n=40)
+    assert futures_basis(*short) is None  # not enough history for the baseline

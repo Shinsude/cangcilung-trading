@@ -2,6 +2,11 @@
 
 Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://semver.org/).
 
+## [1.4.1] - 2026-09-21
+
+### Diperbaiki
+- **Basis Futur–Fisik Emas diperbaiki**: Yahoo sudah tidak menyediakan seri spot `XAUUSD=X` (404), sehingga basis sebelumnya kosong. Kini memakai **GLD** sebagai proxy fisik dan dihitung sebagai *premium/diskonto* futures (`GC=F`) relatif terhadap baseline rasionya sendiri 60 hari (bukan klaim kontango/backwardation absolut). Status `PREMIUM` / `DISKONTO` / `NETRAL` + rata-rata 20 hari. Label UI diubah menjadi "BASIS FUTUR–FISIK" dengan keterangan `(GLD)` agar tetap jujur terhadap sumber data.
+
 ## [1.4.0] - 2026-09-19
 
 ### Ditambahkan

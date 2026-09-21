@@ -433,7 +433,7 @@ def _build_payload(symbol: str) -> dict:
     try:
         inst["volume_profile"] = institutional.volume_profile(df)
         if symbol == "XAUUSD":
-            spot = data_service.fetch_ticker("XAUUSD=X", ttl=CACHE_TTL_SECONDS)
+            spot = data_service.fetch_ticker("GLD", ttl=CACHE_TTL_SECONDS)
             inst["basis"] = institutional.futures_basis(df, spot)
     except Exception as exc:  # noqa: BLE001
         logger.warning("institutional analysis failed for %s: %s", symbol, exc)

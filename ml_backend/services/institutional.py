@@ -12,6 +12,8 @@ VALUE_AREA_PCT = 0.70
 VP_BINS = 48
 CVD_DIVERGENCE_LOOKBACK = 14
 BASIS_AVG_LOOKBACK = 20
+BASIS_BASELINE_LOOKBACK = 60
+BASIS_PREMIUM_BAND_PCT = 0.5  # +/- band around the rolling physical-place ratio
 
 
 def volume_profile(
@@ -131,37 +133,48 @@ def cvd_divergence(
 
 def futures_basis(
     futures_df: pd.DataFrame | None,
-    spot_df: pd.DataFrame | None,
+    physical_df: pd.DataFrame | None,
     lookback: int = BASIS_AVG_LOOKBACK,
+    baseline: int = BASIS_BASELINE_LOOKBACK,
 ) -> dict | None:
-    """Contango/backwardation between a futures and spot daily close series.
+    """Premium/discount of futures over physical gold, vs its own rolling baseline.
 
-    Only meaningful when both series overlap on their index; returns None on any
-    gap so the caller can hide the signal.
+    Yahoo no longer serves a free spot XAUUSD series, so the physical leg is a
+    proxy (e.g. GLD ETF). Because the futures/ETF absolute ratio is not a fixed
+    number, the signal is expressed RELATIVE to the ratio's own ``baseline``-day
+    rolling mean: futures trading rich vs that baseline = PREMIUM, cheap =
+    DISKONTO. Returns None when overlapping history is too short.
     """
     if (
         futures_df is None
-        or spot_df is None
+        or physical_df is None
         or len(futures_df) < 2
-        or len(spot_df) < 2
+        or len(physical_df) < 2
     ):
         return None
     f = futures_df["Close"].astype(float)
-    s = spot_df["Close"].astype(float)
+    s = physical_df["Close"].astype(float)
     idx = f.index.intersection(s.index)
-    if len(idx) < 2:
+    if len(idx) < baseline:  # need enough history for the rolling baseline
         return None
     f = f.loc[idx]
     s = s.loc[idx]
     if not (f.iloc[-1] > 0 and s.iloc[-1] > 0):
         return None
-    basis = (f / s - 1.0) * 100.0
-    last = float(basis.iloc[-1])
-    avg = float(basis.tail(lookback).mean())
+    ratio = f / s
+    base = ratio.rolling(baseline, min_periods=max(20, baseline // 2)).mean()
+    prem = (ratio / base - 1.0) * 100.0
+    prem = prem.dropna()
+    if prem.empty or not np.isfinite(prem.iloc[-1]):
+        return None
+    last = float(prem.iloc[-1])
+    avg = float(prem.tail(lookback).mean())
+    band = BASIS_PREMIUM_BAND_PCT
+    state = "PREMIUM" if last > band else "DISKONTO" if last < -band else "NETRAL"
     return {
         "last_pct": round(last, 3),
         "avg20_pct": round(avg, 3),
-        "state": "BACKWARDATION" if last < 0 else "CONTANGO",
+        "state": state,
         "spot": round(float(s.iloc[-1]), 3),
         "future": round(float(f.iloc[-1]), 3),
         "lookback_days": int(len(idx)),

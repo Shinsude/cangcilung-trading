@@ -1134,12 +1134,16 @@ class _VolumeProfileCard extends StatelessWidget {
               children: [
                 const Icon(Icons.straighten_rounded, size: 14, color: AppColors.textSecondary),
                 const SizedBox(width: 6),
-                const Text('BASIS FUTUR\u2013SPOT', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+                const Text('BASIS FUTUR\u2013FISIK', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
                 const Spacer(),
                 Text(
                   basis.state,
                   style: TextStyle(
-                    color: basis.state == 'CONTANGO' ? AppColors.green : AppColors.red,
+                    color: basis.state == 'PREMIUM'
+                        ? AppColors.green
+                        : basis.state == 'DISKONTO'
+                            ? AppColors.red
+                            : AppColors.amber,
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
@@ -1151,7 +1155,7 @@ class _VolumeProfileCard extends StatelessWidget {
             ),
             if ((basis.avg20Pct ?? 0) != 0) ...[
               const SizedBox(height: 3),
-              Text('rata-rata 20 hari: ${basis.avg20Pct!.toStringAsFixed(3)}% \u00B7 hanya untuk konteks, bukan sinyal.',
+              Text('premium/diskonto vs fisik (GLD) \u00B7 rata-rata 20 hari: ${basis.avg20Pct!.toStringAsFixed(3)}% \u00B7 hanya untuk konteks, bukan sinyal.',
                   style: const TextStyle(color: AppColors.textTertiary, fontSize: 10)),
             ],
           ],
