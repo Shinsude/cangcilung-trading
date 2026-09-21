@@ -6,6 +6,7 @@ Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://s
 
 ### Diperbaiki
 - **Basis Futur–Fisik Emas diperbaiki**: Yahoo sudah tidak menyediakan seri spot `XAUUSD=X` (404), sehingga basis sebelumnya kosong. Kini memakai **GLD** sebagai proxy fisik dan dihitung sebagai *premium/diskonto* futures (`GC=F`) relatif terhadap baseline rasionya sendiri 60 hari (bukan klaim kontango/backwardation absolut). Status `PREMIUM` / `DISKONTO` / `NETRAL` + rata-rata 20 hari. Label UI diubah menjadi "BASIS FUTUR–FISIK" dengan keterangan `(GLD)` agar tetap jujur terhadap sumber data.
+- **Kestabilan data**: `yfinance` dinaikkan `0.2.54 → 1.6.0` (mengatasi rate-limit Yahoo yang membuat fetch tambahan GLD kosong di server), timeout unduh dinaikkan (12s → 20s), dan seri GLD di-cache lebih lama (1 jam).
 
 ## [1.4.0] - 2026-09-19
 

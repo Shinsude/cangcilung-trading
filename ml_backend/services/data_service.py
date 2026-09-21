@@ -91,7 +91,7 @@ class DataService:
                     fut = ex.submit(
                         lambda: ticker.history(period=period, interval=interval, auto_adjust=False)
                     )
-                    df = fut.result(timeout=12)
+                    df = fut.result(timeout=20)
                 finally:
                     ex.shutdown(wait=False)
                 if df is None or df.empty:
