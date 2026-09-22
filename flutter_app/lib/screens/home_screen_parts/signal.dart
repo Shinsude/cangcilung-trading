@@ -1279,7 +1279,7 @@ class _SmcCard extends StatelessWidget {
               _chip('TREND', st.trend, trendColor),
               const SizedBox(width: 8),
               if (st.breakout != null)
-                _chip('${st.breakoutType ?? ''}\u00B7${st.breakout}', st.breakout == 'BULLISH' ? Colors.green : Colors.red),
+                _chip('BREAK', st.breakout == 'BULLISH' ? '${st.breakoutType ?? ''} \u00B7 UP' : '${st.breakoutType ?? ''} \u00B7 DOWN', st.breakout == 'BULLISH' ? Colors.green : Colors.red),
               const SizedBox(width: 8),
               _chip('PREM/DISC', pdPos, pdColor),
             ],
