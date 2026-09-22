@@ -1,7 +1,7 @@
 name: cangcilung_trading
 description: AI Trading Signal App - XAUUSD (Emas)
 publish_to: "none"
-version: 1.5.0+21
+version: 1.6.0+22
 
 environment:
   sdk: ">=3.3.0 <4.0.0"

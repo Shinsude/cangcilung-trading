@@ -50,6 +50,7 @@ class _SignalPage extends StatelessWidget {
               _MiniScoreboard(loading: historyLoading, entries: history, hasError: historyError, onRetry: onRetryHistory),
               _IndicatorBlock(ind: data.indicators, vp: data.institutional?.vp, decimals: data.decimals),
               if (data.institutional != null) _VolumeProfileCard(inst: data.institutional!, decimals: data.decimals),
+              if (data.institutional?.smc != null && data.institutional!.smc!.available) _SmcCard(smc: data.institutional!.smc!, decimals: data.decimals),
               _AdvancedScores(adv: data.advanced),
               const _EducationPanel(),
             ],
@@ -1186,6 +1187,221 @@ class _VolumeProfileCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _SmcZoneRow extends StatelessWidget {
+  const _SmcZoneRow({required this.label, required this.zone, required this.color, required this.decimals});
+
+  final String label;
+  final SmcZone? zone;
+  final Color color;
+  final int decimals;
+
+  @override
+  Widget build(BuildContext context) {
+    final zoneOk = zone != null && zone!.available;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(width: 120, child: Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700))),
+          const Spacer(),
+          if (!zoneOk)
+            const Text('\u2014', style: TextStyle(color: AppColors.textTertiary, fontSize: 11))
+          else
+            Text(
+              '${zone!.top!.toStringAsFixed(decimals)} \u2022 ${zone!.bottom!.toStringAsFixed(decimals)}',
+              style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w800, fontFeatures: const [FontFeature.tabularFigures()]),
+            ),
+          const SizedBox(width: 6),
+          if (zoneOk && zone!.ageDays != null)
+            Text('${zone!.ageDays}d', style: const TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+}
+
+class _SmcCard extends StatelessWidget {
+  const _SmcCard({required this.smc, required this.decimals});
+
+  final SmartMoneyContext smc;
+  final int decimals;
+
+  @override
+  Widget build(BuildContext context) {
+    final st = smc.structure;
+    final trendColor = st.trend == 'BULLISH'
+        ? Colors.green
+        : st.trend == 'BEARISH'
+            ? Colors.red
+            : Colors.grey;
+    final pdPos = smc.premiumDiscount.pos;
+    final pdColor = pdPos == 'PREMIUM'
+        ? Colors.deepOrange
+        : pdPos == 'DISKONTO'
+            ? Colors.cyan
+            : Colors.grey;
+    final biasColor = smc.bias.contains('BULLISH')
+        ? Colors.green
+        : smc.bias.contains('BEARISH')
+            ? Colors.red
+            : Colors.grey;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('SMART MONEY (SMC)', style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: biasColor.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(_biasLabel(smc.bias), style: TextStyle(color: biasColor, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.6)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _chip('TREND', st.trend, trendColor),
+              const SizedBox(width: 8),
+              if (st.breakout != null)
+                _chip('${st.breakoutType ?? ''}\u00B7${st.breakout}', st.breakout == 'BULLISH' ? Colors.green : Colors.red),
+              const SizedBox(width: 8),
+              _chip('PREM/DISC', pdPos, pdColor),
+            ],
+          ),
+          if (st.swingHigh != null || st.swingLow != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: _levelCell('SWING HIGH', st.swingHigh, '${st.swingHighBarsAgo ?? 0} bar', Colors.green, decimals)),
+                const SizedBox(width: 8),
+                Expanded(child: _levelCell('SWING LOW', st.swingLow, '${st.swingLowBarsAgo ?? 0} bar', Colors.red, decimals)),
+              ],
+            ),
+          ],
+          const SizedBox(height: 14),
+          const Text('FAIR VALUE GAP (UNMITIGATED)', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+          const SizedBox(height: 4),
+          _SmcZoneRow(label: 'BULLISH', zone: smc.bullishFvg, color: Colors.green, decimals: decimals),
+          _SmcZoneRow(label: 'BEARISH', zone: smc.bearishFvg, color: Colors.red, decimals: decimals),
+          const SizedBox(height: 10),
+          const Text('ORDER BLOCK (EST.)', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+          const SizedBox(height: 4),
+          _SmcZoneRow(label: 'DEMAND (BUY)', zone: smc.bullishOb, color: Colors.green, decimals: decimals),
+          _SmcZoneRow(label: 'SUPPLY (SELL)', zone: smc.bearishOb, color: Colors.red, decimals: decimals),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Icon(Icons.water_drop_rounded, size: 13, color: AppColors.textTertiary),
+              const SizedBox(width: 6),
+              const Text('LIKUIDITAS (PDH/PDL)', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+              const Spacer(),
+              Text(_sweepLabel(smc.liquidity.sweep),
+                  style: TextStyle(
+                    color: smc.liquidity.sweep == 'NONE' ? AppColors.textTertiary : smc.liquidity.sweep == 'BUY_SWEEP' ? Colors.green : Colors.red,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                  )),
+            ],
+          ),
+          if (smc.liquidity.pdh != null || smc.liquidity.pdl != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              'PDH ${smc.liquidity.pdh?.toStringAsFixed(decimals) ?? '\u2014'} \u2022 PDL ${smc.liquidity.pdl?.toStringAsFixed(decimals) ?? '\u2014'}',
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.amber.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.amber.withValues(alpha: 0.35)),
+            ),
+            child: Text(
+              smc.note.isEmpty
+                  ? 'Estimasi Smart Money dari data harian, bukan order-flow intraday.'
+                  : smc.note,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 10, height: 1.4),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _chip(String label, String value, Color c) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(4)),
+      child: Text('$label $value', style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w700)),
+    );
+  }
+
+  Widget _levelCell(String label, double? value, String sub, Color color, int decimals) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 9.5, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 3),
+          Text(
+            value == null ? '\u2014' : value.toStringAsFixed(decimals),
+            style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w800, fontFeatures: const [FontFeature.tabularFigures()]),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(sub, style: const TextStyle(color: AppColors.textTertiary, fontSize: 9)),
+        ],
+      ),
+    );
+  }
+
+  String _biasLabel(String bias) {
+    switch (bias) {
+      case 'LEAN_BULLISH':
+        return 'CENDERUNG BULLISH';
+      case 'LEAN_BEARISH':
+        return 'CENDERUNG BEARISH';
+      default:
+        return 'NETRAL';
+    }
+  }
+
+  String _sweepLabel(String sweep) {
+    switch (sweep) {
+      case 'BUY_SWEEP':
+        return 'SWEEP BAWAH (BULLISH)';
+      case 'SELL_SWEEP':
+        return 'SWEEP ATAS (BEARISH)';
+      case 'BOTH':
+        return 'SWEEP KEDUA ARAH';
+      default:
+        return 'TIDAK ADA SWEEP';
+    }
   }
 }
 

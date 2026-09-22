@@ -101,6 +101,7 @@ flutter build apk --release --dart-define=API_URL=https://URL-ANDA.vercel.app
 - **Sistim health (K-Synthesizer)**: agregat `system` di `/signal/{symbol}` memuat `ts_intrinsic`, `ts_snr`, `decomp_regime`, `bar_total`, `theta` (label AI vs RULES), dan `safety` (status, jumlah pelanggaran, SL minimum, risk/reward) — ditampilkan sebagai kartu **SISTEM HEALTH** di aplikasi agar pengguna melihat kualitas sinyal secara sekilas.
 - **Aplikasi**: Tab **Model** menampilkan akurasi rolling + akurasi nyata, profit factor, bobot, validasi MLP, dan **scoreboard riwayat sinyal** per simbol; **backtest interaktif** (pilih simbol + rentang); **notifikasi sinyal** dan **alert harga** — ini *polling lokal* (WorkManager 1 jam saat app di background; cek tiap 5 menit saat app terbuka), **bukan pusaran push server real-time**. Tanpa Firebase.
 - **Data source**: setiap sinyal menandai asal data (`live`/`synthetic`). Bila Yahoo Finance gagal, app memakai data simulasi **dan menunjukkan peringatan** alih-alih menyajikan sinyal seolah-olah nyata.
+- **Konteks institusional**: konteks **Volume Profile** (POC/VAH/VAL), **CVD divergence**, **basis futures–fisik (GLD)**, dan **Smart Money Concepts (SMC)** — FVG (Fair Value Gap), Order Block, Liquidity Sweep PDH/PDL, posisi premium/discount, serta struktur BOS/ChoCh — diestimasi dari data **harian** `GC=F` dan diberi label jujur sebagai *proxy*, bukan order-flow intraday (tanpa MT5/tick data).
 
 ## iOS
 

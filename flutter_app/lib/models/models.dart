@@ -434,15 +434,146 @@ class FuturesBasis {
       );
 }
 
+class SmcZone {
+  final double? top;
+  final double? bottom;
+  final int? ageDays;
+
+  const SmcZone({this.top, this.bottom, this.ageDays});
+
+  bool get available => top != null && bottom != null;
+
+  factory SmcZone.fromJson(Map<String, dynamic>? json) => SmcZone(
+        top: (json?['top'] as num?)?.toDouble(),
+        bottom: (json?['bottom'] as num?)?.toDouble(),
+        ageDays: (json?['age_days'] as num?)?.toInt(),
+      );
+}
+
+class SmcStructure {
+  final String trend;
+  final double? swingHigh;
+  final int? swingHighBarsAgo;
+  final double? swingLow;
+  final int? swingLowBarsAgo;
+  final String? breakout;
+  final String? breakoutType;
+  final double? retracementLevel;
+
+  const SmcStructure({
+    this.trend = 'NEUTRAL',
+    this.swingHigh,
+    this.swingHighBarsAgo,
+    this.swingLow,
+    this.swingLowBarsAgo,
+    this.breakout,
+    this.breakoutType,
+    this.retracementLevel,
+  });
+
+  factory SmcStructure.fromJson(Map<String, dynamic>? json) => SmcStructure(
+        trend: (json?['trend'] as String? ?? 'NEUTRAL').toUpperCase(),
+        swingHigh: (json?['swing_high'] as num?)?.toDouble(),
+        swingHighBarsAgo: (json?['swing_high_bars_ago'] as num?)?.toInt(),
+        swingLow: (json?['swing_low'] as num?)?.toDouble(),
+        swingLowBarsAgo: (json?['swing_low_bars_ago'] as num?)?.toInt(),
+        breakout: json?['breakout'] as String?,
+        breakoutType: json?['breakout_type'] as String?,
+        retracementLevel: (json?['retracement_level'] as num?)?.toDouble(),
+      );
+}
+
+class SmcLiquidity {
+  final double? pdh;
+  final double? pdl;
+  final String sweep;
+  final String? sweepType;
+
+  const SmcLiquidity({
+    this.pdh,
+    this.pdl,
+    this.sweep = 'NONE',
+    this.sweepType,
+  });
+
+  factory SmcLiquidity.fromJson(Map<String, dynamic>? json) => SmcLiquidity(
+        pdh: (json?['pdh'] as num?)?.toDouble(),
+        pdl: (json?['pdl'] as num?)?.toDouble(),
+        sweep: (json?['sweep'] as String? ?? 'NONE').toUpperCase(),
+        sweepType: json?['sweep_type'] as String?,
+      );
+}
+
+class SmcPremiumDiscount {
+  final double? equilibrium;
+  final double? pct;
+  final String pos;
+
+  const SmcPremiumDiscount({this.equilibrium, this.pct, this.pos = 'NETRAL'});
+
+  factory SmcPremiumDiscount.fromJson(Map<String, dynamic>? json) =>
+      SmcPremiumDiscount(
+        equilibrium: (json?['equilibrium'] as num?)?.toDouble(),
+        pct: (json?['pct'] as num?)?.toDouble(),
+        pos: (json?['pos'] as String? ?? 'NETRAL').toUpperCase(),
+      );
+}
+
+class SmartMoneyContext {
+  final bool available;
+  final SmcStructure structure;
+  final SmcZone? bullishFvg;
+  final SmcZone? bearishFvg;
+  final SmcZone? bullishOb;
+  final SmcZone? bearishOb;
+  final SmcLiquidity liquidity;
+  final SmcPremiumDiscount premiumDiscount;
+  final String bias;
+  final String note;
+
+  const SmartMoneyContext({
+    this.available = false,
+    this.structure = const SmcStructure(),
+    this.bullishFvg,
+    this.bearishFvg,
+    this.bullishOb,
+    this.bearishOb,
+    this.liquidity = const SmcLiquidity(),
+    this.premiumDiscount = const SmcPremiumDiscount(),
+    this.bias = 'NETRAL',
+    this.note = '',
+  });
+
+  factory SmartMoneyContext.fromJson(Map<String, dynamic>? json) {
+    final fvg = json?['fvg'] as Map<String, dynamic>? ?? const {};
+    final ob = json?['order_blocks'] as Map<String, dynamic>? ?? const {};
+    return SmartMoneyContext(
+      available: json?['available'] as bool? ?? false,
+      structure: SmcStructure.fromJson(json?['structure'] as Map<String, dynamic>?),
+      bullishFvg: SmcZone.fromJson(fvg['bullish'] as Map<String, dynamic>?),
+      bearishFvg: SmcZone.fromJson(fvg['bearish'] as Map<String, dynamic>?),
+      bullishOb: SmcZone.fromJson(ob['bullish'] as Map<String, dynamic>?),
+      bearishOb: SmcZone.fromJson(ob['bearish'] as Map<String, dynamic>?),
+      liquidity: SmcLiquidity.fromJson(json?['liquidity'] as Map<String, dynamic>?),
+      premiumDiscount: SmcPremiumDiscount.fromJson(json?['premium_discount'] as Map<String, dynamic>?),
+      bias: (json?['bias'] as String? ?? 'NETRAL').toUpperCase(),
+      note: json?['note'] as String? ?? '',
+    );
+  }
+}
+
 class InstitutionalContext {
   final VolumeProfile? vp;
   final FuturesBasis? basis;
+  final SmartMoneyContext? smc;
 
-  const InstitutionalContext({this.vp, this.basis});
+  const InstitutionalContext({this.vp, this.basis, this.smc});
 
-  factory InstitutionalContext.fromJson(Map<String, dynamic>? json) => InstitutionalContext(
+  factory InstitutionalContext.fromJson(Map<String, dynamic>? json) =>
+      InstitutionalContext(
         vp: VolumeProfile.fromJson(json?['volume_profile'] as Map<String, dynamic>?),
         basis: FuturesBasis.fromJson(json?['basis'] as Map<String, dynamic>?),
+        smc: SmartMoneyContext.fromJson(json?['smc'] as Map<String, dynamic>?),
       );
 }
 

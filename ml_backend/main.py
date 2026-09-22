@@ -10,7 +10,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import CACHE_TTL_SECONDS, SYMBOLS
-from services import backtest, institutional, research, timeframe, tuner
+from services import backtest, institutional, research, smc, timeframe, tuner
 from services.data_service import data_service
 from services.indicators import compute_all
 from services.market_analysis import analyze_market
@@ -429,9 +429,10 @@ def _build_payload(symbol: str) -> dict:
     market["current_regime"] = research.current_regime(df)["label"]
     market["regime_history"] = research.regime_breakdown(df, weights=tuning["weights"])
 
-    inst = {"volume_profile": None, "basis": None}
+    inst = {"volume_profile": None, "basis": None, "smc": None}
     try:
         inst["volume_profile"] = institutional.volume_profile(df)
+        inst["smc"] = smc.smc_context(df)
         if symbol == "XAUUSD":
             spot = data_service.fetch_ticker("GLD", ttl=3600)
             inst["basis"] = institutional.futures_basis(df, spot)
