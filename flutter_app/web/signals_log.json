@@ -245,5 +245,32 @@
   "score": 5.209,
   "close": 4514.92,
   "data_source": "synthetic"
+ },
+ {
+  "date": "2026-09-22",
+  "symbol": "XAUUSD",
+  "action": "SELL",
+  "strength": "STRONG",
+  "score": -4.136,
+  "close": 4393.1,
+  "data_source": "live"
+ },
+ {
+  "date": "2026-09-22",
+  "symbol": "NASDAQ",
+  "action": "BUY",
+  "strength": "MODERATE",
+  "score": 2.962,
+  "close": 27122.09,
+  "data_source": "live"
+ },
+ {
+  "date": "2026-09-22",
+  "symbol": "AUDUSD",
+  "action": "HOLD",
+  "strength": "WEAK",
+  "score": -0.366,
+  "close": 0.71129,
+  "data_source": "live"
  }
 ]
