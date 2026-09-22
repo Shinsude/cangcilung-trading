@@ -4,7 +4,7 @@ from services.predictor import predict
 from services.sentiment import analyze as analyze_sentiment
 from services.signal import build_signal
 
-for symbol in ["XAUUSD", "NASDAQ", "AUDUSD"]:
+for symbol in ["XAUUSD"]:
     df = data_service.fetch(symbol)
     print(f"[{symbol}] data rows: {len(df)}")
     ind = compute_all(df)

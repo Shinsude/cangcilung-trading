@@ -38,17 +38,11 @@ NEGATORS = {"not", "no", "slows", "fails to beat", "loses momentum left", "downs
 
 KEYWORDS = {
     "XAUUSD": ["gold", "xau", "precious metal", "bullion", "fed", "dollar", "usd"],
-    "NASDAQ": ["nasdaq", "tech", "technology", "nvidia", "apple", "microsoft",
-               "semiconductor", "ai", "fed", "earnings", "big tech"],
-    "AUDUSD": ["aud", "australia", "rba", "dollar", "usd", "reserve bank australia",
-               "miners", "china"],
 }
 
 # Query pencarian gratis (tanpa kunci) per simbol di ActuallyFreeAPI
 SEARCH_QUERIES = {
     "XAUUSD": "gold",
-    "NASDAQ": "nasdaq",
-    "AUDUSD": "usd",
 }
 
 
@@ -91,7 +85,7 @@ def _score_text(text: str, with_confidence: bool = False):
 
 
 def _finnhub_news(symbol: str) -> list:
-    query = "gold" if symbol == "XAUUSD" else ("nasdaq" if symbol == "NASDAQ" else "audusd")
+    query = SEARCH_QUERIES.get(symbol, "gold")
     if not FINNHUB_API_KEY:
         return []
     url = "https://finnhub.io/api/v1/company-news"

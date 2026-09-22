@@ -38,7 +38,7 @@ logger = logging.getLogger("api")
 app = FastAPI(
     title="Cangcilung Trading AI API",
     version="1.0.0",
-    description="Prediksi harga, technical indicators, sentiment, dan sinyal trading untuk XAUUSD, NASDAQ, AUDUSD.",
+    description="Prediksi harga, technical indicators, sentiment, dan sinyal trading untuk XAUUSD (emas).",
 )
 
 app.add_middleware(
@@ -755,10 +755,7 @@ def check_alerts():
         except Exception:  # noqa: BLE001
             still_active.append(aid)
             continue
-        if a["symbol"].upper() == "AUDUSD":
-            hit = price <= a["target"]
-        else:
-            hit = price >= a["target"]
+        hit = price >= a["target"]
         if hit:
             a["triggered"] = True
             a["triggered_at"] = dt.datetime.utcnow().isoformat() + "Z"

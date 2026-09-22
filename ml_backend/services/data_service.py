@@ -110,8 +110,8 @@ class DataService:
 
         rng = np.random.default_rng(42)
         n = 140
-        base = 4500.0 if symbol == "XAUUSD" else (18500.0 if symbol == "NASDAQ" else 0.66)
-        vol = 0.012 if symbol == "XAUUSD" else (0.014 if symbol == "NASDAQ" else 0.006)
+        base = 4500.0
+        vol = 0.012
         drift = 0.0004
         returns = rng.normal(drift, vol, n)
         closes = base * np.exp(np.cumsum(returns))

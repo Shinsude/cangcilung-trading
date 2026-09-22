@@ -2,6 +2,11 @@
 
 Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] - 2026-09-21
+
+### Diubah
+- **Fokus satu aset: XAUUSD (Emas)**. Nasdaq dan AUDUSD dihapus dari seluruh aplikasi: bar pemilih simbol, backtest, notifikasi, automasi, sentimen, dan API backend (daftar simbol, digest, warm-up, alert). Backend kini hanya melayani `XAUUSD` (`GC=F`) dengan jalur lebih sederhana.
+
 ## [1.4.1] - 2026-09-21
 
 ### Diperbaiki

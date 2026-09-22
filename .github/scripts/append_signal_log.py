@@ -11,7 +11,7 @@ import urllib.request
 
 BASE = "https://cangcilung-trading-api.vercel.app/signal/"
 PATH = os.path.join("flutter_app", "web", "signals_log.json")
-SYMBOLS = ("XAUUSD", "NASDAQ", "AUDUSD")
+SYMBOLS = ("XAUUSD",)
 
 
 def load() -> list:

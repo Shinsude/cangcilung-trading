@@ -29,7 +29,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ApiService _api = ApiService();
-  final List<String> _symbols = ['XAUUSD', 'NASDAQ', 'AUDUSD'];
+  final List<String> _symbols = ['XAUUSD'];
   String _selected = 'XAUUSD';
   TradingData? _data;
   String? _error;

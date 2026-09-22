@@ -7,18 +7,6 @@ SYMBOLS = {
         "decimals": 2,
         "category": "Commodity",
     },
-    "NASDAQ": {
-        "yahoo": "^IXIC",
-        "name": "Nasdaq Composite",
-        "decimals": 2,
-        "category": "Index",
-    },
-    "AUDUSD": {
-        "yahoo": "AUDUSD=X",
-        "name": "AUD / USD",
-        "decimals": 5,
-        "category": "Forex",
-    },
 }
 
 PERIOD = os.getenv("DATA_PERIOD", "1y")

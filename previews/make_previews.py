@@ -116,7 +116,7 @@ def render(symbol):
 
     y = 52
     # ---- symbol bar ----
-    syms = ["XAUUSD", "NASDAQ", "AUDUSD"]
+    syms = ["XAUUSD"]
     x = 14
     sw = (W - 28 - 16) / 3
     for s in syms:
@@ -266,6 +266,6 @@ def render(symbol):
 if __name__ == "__main__":
     import os
     os.makedirs(OUT, exist_ok=True)
-    for s in ["XAUUSD", "NASDAQ", "AUDUSD"]:
+    for s in ["XAUUSD"]:
         p = render(s)
         print("saved", p)

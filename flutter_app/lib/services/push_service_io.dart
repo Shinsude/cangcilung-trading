@@ -36,7 +36,7 @@ class PushService {
 }
 
 const String _api = 'https://cangcilung-trading-api.vercel.app';
-const List<String> _signalSymbols = ['XAUUSD', 'NASDAQ', 'AUDUSD'];
+const List<String> _signalSymbols = ['XAUUSD'];
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -116,7 +116,7 @@ Future<void> _checkDigestInBackground() async {
   if (prefs.getBool(seenKey) ?? false) return;
 
   final textM = RegExp(r'"text"\s*:\s*"([^"]+)"').firstMatch(resp.body);
-  final text = textM?.group(1) ?? 'Cek prediksi XAUUSD, NASDAQ, AUDUSD hari ini.';
+  final text = textM?.group(1) ?? 'Cek prediksi XAUUSD hari ini.';
   await prefs.setBool(seenKey, true);
 
   final plugin = FlutterLocalNotificationsPlugin();

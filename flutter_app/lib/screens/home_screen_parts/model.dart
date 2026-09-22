@@ -18,7 +18,7 @@ class _ModelPage extends StatefulWidget {
 }
 
 class _ModelPageState extends State<_ModelPage> {
-  final List<String> _btSymbols = ['XAUUSD', 'NASDAQ', 'AUDUSD'];
+  final List<String> _btSymbols = ['XAUUSD'];
   String _btSymbol = 'XAUUSD';
   int? _btDays; // null = semua data
   bool _btLoading = false;

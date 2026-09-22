@@ -1,6 +1,6 @@
 # Cangcilung Trading AI
 
-Aplikasi Android/iOS untuk sinyal trading **XAUUSD, NASDAQ, AUDUSD** berbasis **AI/ML** — dibangun 100% di cloud.
+Aplikasi Android/iOS untuk sinyal trading **XAUUSD (Emas)** berbasis **AI/ML** — dibangun 100% di cloud.
 
 ```
 Flutter App (HP) ⇄ FastAPI API (cloud) ⇄ Yahoo Finance
@@ -79,8 +79,6 @@ flutter build apk --release --dart-define=API_URL=https://URL-ANDA.vercel.app
 |----------|-----------|
 | `GET /health` | Health check |
 | `GET /signal/XAUUSD` | Data lengkap (prediksi, indikator, sentiment, sinyal, chart) |
-| `GET /signal/NASDAQ` | Sama, untuk NASDAQ |
-| `GET /signal/AUDUSD` | Sama, untuk AUD/USD |
 | `GET /warm` | Pramuat & cache semua simbol sekaligus (dijadwal otomatis via cron harian) |
 | `GET /backtest/{symbol}` | Hasil backtest default vs bobot ter-tune (opsional `?days=30/60/90` untuk range bebas) |
 | `GET /stats/{symbol}` | Akurasi rolling sinyal 7/14/30 hari + tren kualitas + akurasi nyata dari riwayat log |

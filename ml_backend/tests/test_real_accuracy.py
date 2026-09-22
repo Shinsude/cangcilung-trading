@@ -33,7 +33,7 @@ def test_includes_live():
 def test_ignores_other_symbols():
     df = _df()
     log = [
-        {"symbol": "NASDAQ", "date": "2026-09-09", "action": "BUY"},
+        {"symbol": "EURUSD", "date": "2026-09-09", "action": "BUY"},
         {"symbol": "XAUUSD", "date": "2026-09-10", "action": "BUY"},
     ]
     r = _real_accuracy(log, "XAUUSD", df)

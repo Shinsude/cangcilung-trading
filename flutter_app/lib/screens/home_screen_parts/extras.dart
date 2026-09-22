@@ -268,7 +268,7 @@ class _GuideSheet extends StatelessWidget {
             const _GuideSection(
               icon: Icons.candlestick_chart_rounded,
               title: '5. Simbol yang didukung',
-              body: 'Simbol yang didukung saat ini: XAUUSD (Emas), NASDAQ, dan AUDUSD. Pilih dari bar di atas untuk berpindah.',
+              body: 'Simbol yang didukung saat ini: XAUUSD (Emas).',
             ),
             const _GuideSection(
               icon: Icons.psychology_rounded,
