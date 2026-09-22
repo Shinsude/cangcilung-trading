@@ -123,9 +123,22 @@ def test_order_blocks_follow_fvg():
 
 def test_liquidity_structure():
     lid = liquidity(_swingy())
-    assert set(lid) == {"pdh", "pdl", "sweep", "sweep_type"}
+    assert set(lid) == {"pdh", "pdl", "sweep", "sweep_type", "body_pct"}
     assert lid["pdh"] is not None
     assert lid["sweep"] in ("NONE", "SELL_SWEEP", "BUY_SWEEP", "BOTH")
+
+
+def test_liquidity_degradation():
+    short = _df(np.linspace(100, 101, 1))
+    assert liquidity(short)["sweep"] == "NONE"
+
+
+def test_order_blocks_exposes_volume_strength():
+    obs = order_blocks(_gap_series())
+    assert obs["bullish"] is not None
+    assert obs["bullish"]["top"] >= obs["bullish"]["bottom"]
+    assert set(obs["bullish"]) >= {"volume_strong", "vol_ratio"}
+    assert isinstance(obs["bullish"]["volume_strong"], bool)
 
 
 def test_premium_discount_zone():
