@@ -1191,12 +1191,13 @@ class _VolumeProfileCard extends StatelessWidget {
 }
 
 class _SmcZoneRow extends StatelessWidget {
-  const _SmcZoneRow({required this.label, required this.zone, required this.color, required this.decimals});
+  const _SmcZoneRow({required this.label, required this.zone, required this.color, required this.decimals, this.showVol});
 
   final String label;
   final SmcZone? zone;
   final Color color;
   final int decimals;
+  final bool showVol;
 
   @override
   Widget build(BuildContext context) {
@@ -1207,6 +1208,13 @@ class _SmcZoneRow extends StatelessWidget {
         children: [
           SizedBox(width: 120, child: Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700))),
           const Spacer(),
+          if (showVol && zoneOk && zone!.volumeStrong == true)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(4)),
+              child: Text('VOL ${zone!.volRatio?.toStringAsFixed(1) ?? ''}x', style: TextStyle(color: color, fontSize: 9.5, fontWeight: FontWeight.w800)),
+            ),
+          if (zoneOk) const SizedBox(width: 6),
           if (!zoneOk)
             const Text('\u2014', style: TextStyle(color: AppColors.textTertiary, fontSize: 11))
           else
@@ -1302,8 +1310,8 @@ class _SmcCard extends StatelessWidget {
           const SizedBox(height: 10),
           const Text('ORDER BLOCK (EST.)', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
           const SizedBox(height: 4),
-          _SmcZoneRow(label: 'DEMAND (BUY)', zone: smc.bullishOb, color: Colors.green, decimals: decimals),
-          _SmcZoneRow(label: 'SUPPLY (SELL)', zone: smc.bearishOb, color: Colors.red, decimals: decimals),
+          _SmcZoneRow(label: 'DEMAND (BUY)', zone: smc.bullishOb, color: Colors.green, decimals: decimals, showVol: true),
+          _SmcZoneRow(label: 'SUPPLY (SELL)', zone: smc.bearishOb, color: Colors.red, decimals: decimals, showVol: true),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -1311,9 +1319,9 @@ class _SmcCard extends StatelessWidget {
               const SizedBox(width: 6),
               const Text('LIKUIDITAS (PDH/PDL)', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
               const Spacer(),
-              Text(_sweepLabel(smc.liquidity.sweep),
+              Text(_sweepLabel(smc.liquidity.sweep, smc.liquidity.confirmation),
                   style: TextStyle(
-                    color: smc.liquidity.sweep == 'NONE' ? AppColors.textTertiary : smc.liquidity.sweep == 'BUY_SWEEP' ? Colors.green : Colors.red,
+                    color: _sweepColor(smc.liquidity.sweep, smc.liquidity.confirmation),
                     fontSize: 10.5,
                     fontWeight: FontWeight.w800,
                   )),
@@ -1391,17 +1399,25 @@ class _SmcCard extends StatelessWidget {
     }
   }
 
-  String _sweepLabel(String sweep) {
-    switch (sweep) {
-      case 'BUY_SWEEP':
-        return 'SWEEP BAWAH (BULLISH)';
-      case 'SELL_SWEEP':
-        return 'SWEEP ATAS (BEARISH)';
-      case 'BOTH':
-        return 'SWEEP KEDUA ARAH';
-      default:
-        return 'TIDAK ADA SWEEP';
-    }
+  String _sweepLabel(String sweep, String confirmation) {
+    final base = switch (sweep) {
+      'BUY_SWEEP' => 'SWEEP BAWAH (BULLISH)',
+      'SELL_SWEEP' => 'SWEEP ATAS (BEARISH)',
+      'BOTH' => 'SWEEP KEDUA ARAH',
+      _ => 'TIDAK ADA SWEEP',
+    };
+    return switch (confirmation) {
+      'CONFIRMED' => '$base - TERKONFIRMASI',
+      'PENDING' => '$base - BELUM KONFIRM',
+      _ => base,
+    };
+  }
+
+  Color _sweepColor(String sweep, String confirmation) {
+    if (sweep == 'NONE') return AppColors.textTertiary;
+    if (confirmation == 'CONFIRMED') return sweep == 'BUY_SWEEP' ? Colors.green : Colors.red;
+    if (confirmation == 'PENDING') return AppColors.amber;
+    return AppColors.textSecondary;
   }
 }
 

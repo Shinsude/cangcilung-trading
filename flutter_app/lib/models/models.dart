@@ -438,8 +438,10 @@ class SmcZone {
   final double? top;
   final double? bottom;
   final int? ageDays;
+  final bool? volumeStrong;
+  final double? volRatio;
 
-  const SmcZone({this.top, this.bottom, this.ageDays});
+  const SmcZone({this.top, this.bottom, this.ageDays, this.volumeStrong, this.volRatio});
 
   bool get available => top != null && bottom != null;
 
@@ -447,6 +449,8 @@ class SmcZone {
         top: (json?['top'] as num?)?.toDouble(),
         bottom: (json?['bottom'] as num?)?.toDouble(),
         ageDays: (json?['age_days'] as num?)?.toInt(),
+        volumeStrong: json?['volume_strong'] as bool?,
+        volRatio: (json?['vol_ratio'] as num?)?.toDouble(),
       );
 }
 
@@ -488,12 +492,14 @@ class SmcLiquidity {
   final double? pdl;
   final String sweep;
   final String? sweepType;
+  final String confirmation;
 
   const SmcLiquidity({
     this.pdh,
     this.pdl,
     this.sweep = 'NONE',
     this.sweepType,
+    this.confirmation = 'NONE',
   });
 
   factory SmcLiquidity.fromJson(Map<String, dynamic>? json) => SmcLiquidity(
@@ -501,6 +507,7 @@ class SmcLiquidity {
         pdl: (json?['pdl'] as num?)?.toDouble(),
         sweep: (json?['sweep'] as String? ?? 'NONE').toUpperCase(),
         sweepType: json?['sweep_type'] as String?,
+        confirmation: (json?['confirmation'] as String? ?? 'NONE').toUpperCase(),
       );
 }
 
