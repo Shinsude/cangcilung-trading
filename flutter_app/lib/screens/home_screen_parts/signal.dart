@@ -1191,7 +1191,7 @@ class _VolumeProfileCard extends StatelessWidget {
 }
 
 class _SmcZoneRow extends StatelessWidget {
-  const _SmcZoneRow({required this.label, required this.zone, required this.color, required this.decimals, this.showVol});
+  const _SmcZoneRow({required this.label, required this.zone, required this.color, required this.decimals, this.showVol = false});
 
   final String label;
   final SmcZone? zone;
