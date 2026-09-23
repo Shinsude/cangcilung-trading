@@ -123,14 +123,39 @@ def test_order_blocks_follow_fvg():
 
 def test_liquidity_structure():
     lid = liquidity(_swingy())
-    assert set(lid) == {"pdh", "pdl", "sweep", "sweep_type", "body_pct"}
+    assert set(lid) == {"pdh", "pdl", "sweep", "sweep_type", "confirmation"}
     assert lid["pdh"] is not None
     assert lid["sweep"] in ("NONE", "SELL_SWEEP", "BUY_SWEEP", "BOTH")
+    assert lid["confirmation"] in ("NONE", "PENDING", "CONFIRMED")
 
 
 def test_liquidity_degradation():
     short = _df(np.linspace(100, 101, 1))
     assert liquidity(short)["sweep"] == "NONE"
+
+
+def test_liquidity_pending_sweep():
+    closes = np.array([100.0] * 6)
+    df = _df(closes)
+    lid = liquidity(df)
+    assert lid["sweep"] in ("NONE", "SELL_SWEEP", "BUY_SWEEP", "BOTH")
+    assert lid["confirmation"] in ("NONE", "PENDING", "CONFIRMED")
+
+
+def test_liquidity_confirmed_sweep():
+    # bar2 sweeps below bar1 low (BUY_SWEEP printed), bar3 confirms with a
+    # firm close above bar2 high => CONFIRMED.
+    df = pd.DataFrame(
+        [
+            {"Open": 100.0, "High": 102.0, "Low": 99.0, "Close": 101.0},
+            {"Open": 101.0, "High": 103.0, "Low": 100.0, "Close": 102.5},
+            {"Open": 102.5, "High": 102.8, "Low": 99.5, "Close": 100.6},  # BUY_SWEEP: low<100, close>100
+            {"Open": 100.6, "High": 103.4, "Low": 100.4, "Close": 103.2},  # firm close > high[2]=102.8
+        ]
+    )
+    lid = liquidity(df)
+    assert lid["confirmation"] == "CONFIRMED"
+    assert lid["sweep_type"] == "BUY_SWEEP"
 
 
 def test_order_blocks_exposes_volume_strength():

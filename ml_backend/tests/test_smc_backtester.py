@@ -6,9 +6,11 @@ from services.smc_backtester import (
     backtest_order_blocks,
     backtest_summary,
     backtest_sweep,
+    backtest_sweep_confirmed,
     collect_fvg_signals,
     collect_order_block_signals,
     collect_sweep_signals,
+    sweep_confirmation,
 )
 
 
@@ -129,8 +131,26 @@ def test_backtest_ob_split():
 def test_backtest_summary_aggregates():
     r = backtest_summary(_gap_series())
     assert r["bars"] > 0
-    assert set(r["handlers"]) == {"fvg", "sweep", "order_blocks"}
+    assert set(r["handlers"]) == {"fvg", "sweep", "sweep_confirmed", "order_blocks"}
     assert set(r["decisions"]) >= {"fvg_mitigation_rate", "sweep_reversal_rate", "ob_hold_rate_all"}
+
+
+def test_sweep_confirmation_states():
+    confirmed = [s for s in sweep_confirmation(_sweep_series()) if s["confirmation"] == "CONFIRMED"]
+    pending = [s for s in sweep_confirmation(_sweep_series()) if s["confirmation"] == "PENDING"]
+    states = [s["confirmation"] for s in sweep_confirmation(_sweep_series())]
+    assert all(st in ("CONFIRMED", "PENDING", "UNCONFIRMED") for st in states)
+    assert isinstance(confirmed, list)
+    assert isinstance(pending, list)
+
+
+def test_backtest_sweep_confirmed_shape():
+    r = backtest_sweep_confirmed(_sweep_series())
+    assert r["count"] >= 0
+    assert r["confirmed"] >= 0
+    assert 0.0 <= r["confirmed_reversal_rate"] <= 100.0
+    assert 0.0 <= r["raw_reversal_rate"] <= 100.0
+    assert set(r["by_type"]) == {"BUY_SWEEP", "SELL_SWEEP"}
 
 
 def test_backtest_on_flat_series():
