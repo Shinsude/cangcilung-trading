@@ -2,6 +2,14 @@
 
 Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://semver.org/).
 
+## [Unreleased] - Scientific Record (research/)
+
+### Ditambahkan
+- **`research/01_baseline_falsification.md`**: buku catatan laboratorium (falsification log) — dokumentasi jujur hipotesis vs hasil untuk semua setup SMC yang diuji, termasuk "why" dan keputusan yang diambil.
+- **`smc_limit_backtester.py`**: backtest eksekusi *pending limit* — ChoCh (swing-based) + premium/discount, limit istirahat di 50% zona FVG (equilibrium), SL di swing extreme, TP RR 1:2/1:3, split In-Sample/Out-of-Sample. Hasil harian IS 2022-23 (PF 0.68) vs OOS 2024-26 (PF 1.21) mayoritas exit timeout → keputusan no-go untuk daily, prioritas pipeline intraday.
+- **DST-aware session detection**: `detect_session()` kini memakai `zoneinfo` (`Europe/Bucharest`, EET/EEST) sehingga sesi tidak bergeser 1 jam saat transisi DST Maret/Oktober; helper `convert_utc_to_broker_time()` dan `broker_utc_offset_hours()` + 7 unit test DST transition.
+- 14 unit test baru (DST 7 + limit backtester 7). Total 77 passed.
+
 ## [1.5.0] - 2026-09-21
 
 ### Diubah

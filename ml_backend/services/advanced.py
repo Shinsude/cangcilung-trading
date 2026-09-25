@@ -2,6 +2,7 @@
 stability, divergence, and composite scoring — inspired by K-Synthesizer (TCIP)."""
 import datetime as _dt
 import math
+from zoneinfo import ZoneInfo
 import numpy as np
 import pandas as pd
 
@@ -23,12 +24,60 @@ _OVERLAP_LABELS = {
     frozenset({"ASIA", "NEW_YORK"}): "ASIA→NY",
 }
 
+BROKER_TZ = ZoneInfo("Europe/Bucharest")  # HFM/ICMarkets-style server time (EET/EEST)
 
-def detect_session(now_utc: _dt.datetime | None = None) -> dict:
-    """Return current trading session info based on UTC hour."""
+_UTC = ZoneInfo("UTC")
+
+
+def convert_utc_to_broker_time(utc_dt: _dt.datetime, broker_tz="Europe/Bucharest"):
+    """Auto-DST aware UTC -> broker-local time via IANA tz database.
+
+    Scalar offset (e.g. +3) is deliberately NOT used: the shift between
+    EET (UTC+2, winter) and EEST (UTC+3, summer) is resolved by zoneinfo
+    from the tz database instead of a hardcoded constant, so London/NY
+    killzone windows do not drift by an hour across the March/October
+    transitions.
+    """
+    tz = ZoneInfo(broker_tz) if not isinstance(broker_tz, ZoneInfo) else broker_tz
+    if utc_dt.tzinfo is None:
+        utc_dt = utc_dt.replace(tzinfo=_UTC)
+    else:
+        utc_dt = utc_dt.astimezone(_UTC)
+    return utc_dt.astimezone(tz)
+
+
+def broker_utc_offset_hours(utc_dt: _dt.datetime | None = None) -> float:
+    """Current UTC offset of the broker timezone (3.0 in summer, 2.0 in winter)."""
+    if utc_dt is None:
+        utc_dt = _dt.datetime.now(_dt.timezone.utc)
+    local = convert_utc_to_broker_time(utc_dt)
+    return (local.utcoffset().total_seconds() / 3600.0)
+
+
+def detect_session(now_utc: _dt.datetime | None = None, broker_tz="Europe/Bucharest") -> dict:
+    """Return current trading session info.
+
+    The session hour is computed in broker-local time (default
+    Europe/Bucharest, the HFM/ICMarkets-style server timezone) so DST is
+    applied automatically from the IANA tz database: during March->October
+    (EEST, UTC+3) the windows track the broker clock and never drift an hour
+    from the real London/NY killzones. Pass ``broker_tz="UTC"`` to keep the
+    legacy pure-UTC reading.
+    """
     if now_utc is None:
-        now_utc = _dt.datetime.utcnow()
-    h = now_utc.hour + now_utc.minute / 60.0
+        now_utc = _dt.datetime.now(_dt.timezone.utc).replace(tzinfo=_UTC)
+    elif now_utc.tzinfo is None:
+        now_utc = now_utc.replace(tzinfo=_UTC)
+
+    if broker_tz in (None, "UTC"):
+        hour_dt = now_utc
+        tz_name = _UTC
+    else:
+        hour_dt = convert_utc_to_broker_time(now_utc, broker_tz)
+        tz_name = hour_dt.tzinfo
+
+    offset_h = hour_dt.utcoffset().total_seconds() / 3600.0
+    h = hour_dt.hour + hour_dt.minute / 60.0
     active = []
     for s in SESSIONS:
         if s["start_h"] <= h < s["end_h"]:
@@ -42,7 +91,10 @@ def detect_session(now_utc: _dt.datetime | None = None) -> dict:
     return {
         "session": name,
         "active_sessions": active,
-        "hour_utc": round(h, 2),
+        "hour_utc": round(now_utc.hour + now_utc.minute / 60.0, 2),
+        "hour_broker": round(h, 2),
+        "broker_tz": str(tz_name),
+        "broker_utc_offset_h": round(offset_h, 2),
     }
 
 

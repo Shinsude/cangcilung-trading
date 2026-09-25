@@ -103,6 +103,9 @@ flutter build apk --release --dart-define=API_URL=https://URL-ANDA.vercel.app
 - **Data source**: setiap sinyal menandai asal data (`live`/`synthetic`). Bila Yahoo Finance gagal, app memakai data simulasi **dan menunjukkan peringatan** alih-alih menyajikan sinyal seolah-olah nyata.
 - **Konteks institusional**: konteks **Volume Profile** (POC/VAH/VAL), **CVD divergence**, **basis futures–fisik (GLD)**, dan **Smart Money Concepts (SMC)** — FVG (Fair Value Gap), Order Block, Liquidity Sweep PDH/PDL, posisi premium/discount, serta struktur BOS/ChoCh — diestimasi dari data **harian** `GC=F` dan diberi label jujur sebagai *proxy*, bukan order-flow intraday (tanpa MT5/tick data).
 - **SMC berbasis bukti**: sinyal SMC divalidasi dengan backtest internal (modul `smc_backtester`) — sweep PDH/PDL hanya dihitung saat bar berikut menutup tegas melampaui ekstrem bar sweep (probe 5y: reversal BUY 92%, SELL 78% vs ~48% mentah), dan order block diprioritaskan saat volume ≥ 1,2× SMA20.
+- **Limit-order backtester** (`smc_limit_backtester`): menguji eksekusi *pending limit* di 50% zona FVG (equilibrium) berdasar sinyal ChoCh + premium/discount, dengan SL di swing extreme dan TP RR 1:2 — split In-Sample/OOS.
+- **Falsification log** (`research/01_baseline_falsification.md`): buku catatan laboratorium — hipotesis, metode, hasil, dan "why" untuk setiap setup yang diuji. Hasil IS 2022-23 (PF 0.68) vs OOS 2024-26 (PF 1.21) pada data harian menutup hipotesis daily dengan no-go yang jujur.
+- **DST-aware session detection**: `detect_session()` menghitung jam sesi dari timezone broker (`Europe/Bucharest`) via `zoneinfo`, bukan skalar offset — tidak bergeser 1 jam saat transisi DST Maret/Oktober.
 
 ## iOS
 
