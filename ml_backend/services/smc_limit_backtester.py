@@ -274,7 +274,7 @@ def backtest_limit_entries(
         "retest_lookahead": retest_lookahead,
         "rr": rr,
     }
-    if oos_start is None and oos_end is None:
+    if oos_start is None and oos_end is None and is_start is None and is_end is None:
         split = int(len(df) * 0.6)
         is_df = df.iloc[:split]
         oos_df = df.iloc[split:]

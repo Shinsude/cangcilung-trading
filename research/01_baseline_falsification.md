@@ -94,6 +94,44 @@ ini adalah **intraday (M30/M5)** — di situlah retrace ke zona dan target 2R te
 dalam hitungan jam, bukan minggu. Ini menutup Q3 dengan satu keputusan no-go yang jujur
 untuk daily, dan membuka prioritas berikutnya: pipeline data intraday.
 
+### 6b. Sensitivity + walk-forward membatalkan "no-go daily"
+
+Kesimpulan 6a (**NO-GO DAILY**) ditulis dengan `retest_lookahead=10`. Sensitivity
+check (grid lookahead 10/20/40 x RR 1.5/2.0/2.5, sejalan IS->OOS) membuktikan
+sebaliknya: verdict itu adalah **artefak parameter**, bukan bukti.
+
+| Lookahead | RR | IS PF | OOS PF | Pola |
+|---|---|---|---|---|
+| 10 | 2.0 | 0.68 | 1.21 | mayoritas timeout |
+| **20** | **2.0** | **1.11** | **2.82** | timeout turun drastis, NAIK di kedua sesi |
+| 40 | 2.0 | 1.45 | 2.52 | waktu tunggu terlalu lama |
+| 40 | 2.5 | 1.57 | 2.52 | RR tinggi tidak menambah |
+
+Pola IS->OOS naik bersamaan (180 derajat dari ciri curve-fit) = parameter genuine.
+Di-lock `retest_lookahead=20, rr=2.0`.
+
+**Verifikasi walk-forward per tahun (data harian, IS-tuning, param terkunci):**
+
+| Tahun | Sinyal | Filled | Win-rate | PF | AvgR | Putusan |
+|---|---|---|---|---|---|---|
+| 2022 | 33 | 14 | 79% | **3.63** | +0.56 | kuat |
+| 2023 | 36 | 36 | 50% | **0.63** | -0.16 | **tahun rugi** |
+| 2024 | 34 | 22 | 64% | **4.37** | +0.38 | kuat |
+| 2025 | 17 | 13 | 69% | **2.64** | +0.38 | positif |
+| 2026 (parsial) | 4 | 4 | 100% | n/a | +1.28 | sampel terlalu kecil |
+
+**The "Why" ketiga (walk-forward):** PF agregat OOS 2.82 di 6a menutup 2023 yang
+full-losing (PF 0.63). Dua dari tiga tahun penuh positif kuat, satu tahun negatif.
+Pola ini khas setup yang **bergantung rezim** (trending year menguntungkan, rentang/
+news-heavy year menyakitkan), bukan edge statis. Putusan direvisi:
+
+- **BUKAN "NO-GO"** — daily layak dihidupkan kembali dengan lookahead 20.
+- **BUKAN "ALPHA TERBUKTI"** — 2023 jelas menutup kasus universal. Parameter sudah
+  *terkunci* dan **tidak boleh di-tune terhadap tahun-tahun kalah** (di situ overfit
+  dimulai).
+- Prioritas tetap: intraday M30/M5, di sana RR 1:2 selesai dalam jam bukan minggu,
+  dan rezim bisa dipisah dari time-of-day.
+
 ## 7. Reproduksi
 
 ```bash

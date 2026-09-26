@@ -10,6 +10,10 @@ Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://s
 - **DST-aware session detection**: `detect_session()` kini memakai `zoneinfo` (`Europe/Bucharest`, EET/EEST) sehingga sesi tidak bergeser 1 jam saat transisi DST Maret/Oktober; helper `convert_utc_to_broker_time()` dan `broker_utc_offset_hours()` + 7 unit test DST transition.
 - 14 unit test baru (DST 7 + limit backtester 7). Total 77 passed.
 
+### Diperbaiki
+- **Split IS/OOS di `smc_limit_backtester` mengabaikan `is_start`/`is_end`**: kondisi split 60/40 hanya dibuat saat `oos_start=None`, sehingga panggilan per-tahun (is saja, tanpa oos) selalu memakai 60/40 penuh — semua tahun mengembalikan angka identik. Kini split 60/40 hanya aktif bila semua rentang kosong + 1 test anti-regresi.
+- **Sensitivity + walk-forward merevisi verdict daily**: no-go di lookahead 10 ternyata artefak parameter (mayoritas exit timeout). Dengan `retest_lookahead=20` IS PF 1.11 vs OOS PF 2.82; walk-forward per tahun mengungkap 2023 full-losing (PF 0.63) — 2022/2024/2025 positif. Putusan: promising tapi bergantung rezim, parameter terkunci (lookahead=20, RR=2.0). Total 78 passed.
+
 ## [1.5.0] - 2026-09-21
 
 ### Diubah

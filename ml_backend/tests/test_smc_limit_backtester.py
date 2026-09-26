@@ -133,3 +133,14 @@ def test_slice_by_date_oos():
     assert r["bars"] == 200
     assert r["is"]["signals"] >= 0
     assert r["oos"]["signals"] >= 0
+
+
+def test_slice_disjoint_is_oos():
+    """is_start + is_end tanpa oos harus tidak berefek pada keduanya (anti-regresi
+    bug split 60/40). Tanggal berbeda harus menghasilkan sinyal berbeda."""
+    dates = pd.date_range("2022-01-01", periods=200, freq="D")
+    df = _choch_series()
+    df.index = dates
+    r_first_half = backtest_limit_entries(df, is_start="2022-01-01", is_end="2022-07-01")
+    r_second_half = backtest_limit_entries(df, is_start="2022-07-02", is_end="2022-12-31")
+    assert r_first_half["is"]["signals"] != r_second_half["is"]["signals"]
