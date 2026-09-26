@@ -12,9 +12,11 @@ Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://s
 
 ### Diperbaiki
 - **`smc_limit_backtester.simulate_limit` tidak meneruskan `sl_bars`**: parameter SL window sekarang mengalir dari `backtest_limit_entries` melalui `_run_slice` ke `simulate_limit` — membuat parameter skala jam intraday benar-benar efektif (sebelumnya selalu SL default 20 bar).
+- **Biaya kini masuk mesin**: `backtest_limit_entries(..., cost_r=0.0)` memotong biaya tetap per trade (satuan R) sebelum agregasi — PF/win-rate/avg-R sekarang bisa dihitung net-to-cost tanpa mengubah perilaku default. `_summary` di-refactor (agregasi dari R net), +1 test.
 
 ### Terdokumentasi
 - Falsification log section 6c: bukti pertama di timeframe non-daily; kesimpulan "promising" naik dari rezim-dependent (daily) ke "layak forward-test 60m", anti-curve-fit.
+- Falsification log 6c PUTUSAN A + tabel stress biaya/slippage (`cost_r` 0-0.2 R): pada 0.10 R IS PF 1.198 / OOS PF 1.286 — sinyal 60m bukan artefak biaya; 0.20 R = breakeven tipis.
 - **`research/01_baseline_falsification.md`**: buku catatan laboratorium (falsification log) — dokumentasi jujur hipotesis vs hasil untuk semua setup SMC yang diuji, termasuk "why" dan keputusan yang diambil.
 - **`smc_limit_backtester.py`**: backtest eksekusi *pending limit* — ChoCh (swing-based) + premium/discount, limit istirahat di 50% zona FVG (equilibrium), SL di swing extreme, TP RR 1:2/1:3, split In-Sample/Out-of-Sample. Hasil harian IS 2022-23 (PF 0.68) vs OOS 2024-26 (PF 1.21) mayoritas exit timeout → keputusan no-go untuk daily, prioritas pipeline intraday.
 - **DST-aware session detection**: `detect_session()` kini memakai `zoneinfo` (`Europe/Bucharest`, EET/EEST) sehingga sesi tidak bergeser 1 jam saat transisi DST Maret/Oktober; helper `convert_utc_to_broker_time()` dan `broker_utc_offset_hours()` + 7 unit test DST transition.

@@ -151,6 +151,23 @@ dalam hitungan jam di timeframe intraday, bukan minggu. Praktik langsung:
 divergensi antara 0.39 fill-rate (retrace ke zona ~40% kasus) dan PF sehat itu
 wajar; alpha tidak datang dari frekuensi, tapi dari kualitas menunggu.
 
+**Stress biaya/slippage (sweep `cost_r`, biaya per trade dalam satuan R), 60m:**
+
+| cost_r | IS PF | IS win% | IS avg-R | OOS PF | OOS win% | OOS avg-R |
+|---|---|---|---|---|---|---|
+| 0.00 | 1.436 | 48.4% | +0.202 | 1.540 | 50.5% | +0.244 |
+| 0.05 | 1.310 | 47.9% | +0.152 | 1.407 | 49.5% | +0.194 |
+| 0.10 | 1.198 | 47.7% | +0.102 | 1.286 | 48.5% | +0.144 |
+| 0.20 | 1.003 | 44.5% | +0.002 | 1.079 | 46.5% | +0.044 |
+
+Kalibrasi: untuk gold 1 jam, SL (swing extreme 8 bar) biasanya jauh di atas $10/oz
+sedangkan spread+slippage membulat ~$1/oz (raw) -> `cost_r` realistis sekitar
+**5-10% R**. Pada 0.10 R kedua sesi masih PF > 1.2; bahkan 0.20 R (pesimis dua
+kali) menyisakan breakeven tipis. Artinya sinyal 60m **bukan artefak biaya** —
+edge bertahan di komisi realistis. (Model ini belum memuat slippage dari *fill*
+limit di bid-offer intra-1h serta perbedaan spread news; itu yang dicatat sebagai
+keterbatasan forward-test, bukan alasan menyerah.)
+
 **Jalur B — `GC=F` 30m, 2279 bar (60 hari terakhir):**
 
 | Sesi | Sinyal | Filled | Fill-rate | Win-rate | PF |

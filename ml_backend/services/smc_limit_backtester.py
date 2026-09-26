@@ -204,14 +204,21 @@ def simulate_limit(df, choch: dict, zone: dict, rr: float = RR, lookahead: int =
     return {"filled": True, "r": round((entry - final) / risk, 4), "bars_to_fill": int(fill_j - sig), "exit": "timeout"}
 
 
-def _summary(trades: list[dict]) -> dict:
+def _net_r(trade: dict, cost_r: float) -> float:
+    if not trade["filled"] or trade["r"] is None:
+        return 0.0
+    return float(trade["r"] - cost_r)
+
+
+def _summary(trades: list[dict], cost_r: float = 0.0) -> dict:
     filled = [t for t in trades if t["filled"]]
     total = len(trades)
     n_fill = len(filled)
-    wins = [t for t in filled if (t["r"] or 0) > 0]
-    losses = [t for t in filled if (t["r"] or 0) <= 0]
-    gross_profit = sum(max(t["r"], 0.0) for t in filled)
-    gross_loss = sum(max(-t["r"], 0.0) for t in filled)
+    net = [_net_r(t, cost_r) for t in filled]
+    wins = [r for r in net if r > 0]
+    losses = [r for r in net if r <= 0]
+    gross_profit = sum(r for r in net if r > 0)
+    gross_loss = sum(-r for r in net if r < 0)
     return {
         "signals": total,
         "filled": n_fill,
@@ -222,7 +229,7 @@ def _summary(trades: list[dict]) -> dict:
         "gross_profit_r": round(gross_profit, 3),
         "gross_loss_r": round(gross_loss, 3),
         "profit_factor": round(gross_profit / gross_loss, 3) if gross_loss > 0 else (None if gross_profit > 0 else 0.0),
-        "avg_r": round(sum((t["r"] or 0) for t in filled) / n_fill, 3) if n_fill else 0.0,
+        "avg_r": round(sum(net) / n_fill, 3) if n_fill else 0.0,
         "exits": {k: sum(1 for t in filled if t["exit"] == k) for k in ("target", "timeout", "stop", "no_future", "zero_risk")},
     }
 
@@ -254,7 +261,7 @@ def _run_slice(df: pd.DataFrame, **params) -> dict:
                 sl_bars=params["sl_bars"],
             )
         )
-    return _summary(trades)
+    return _summary(trades, cost_r=params.get("cost_r", 0.0))
 
 
 def backtest_limit_entries(
@@ -268,8 +275,13 @@ def backtest_limit_entries(
     retest_lookahead: int = RETEST_LOOKAHEAD,
     rr: float = RR,
     sl_bars: int = SL_BARS,
+    cost_r: float = 0.0,
 ) -> dict:
     """In-Sample vs Out-of-Sample limit-order backtest.
+
+    ``cost_r``: biaya tetap per trade yang tertinggal (spread + slippage +
+    komisi) dalam satuan R; ``0.0`` = bruto (lihat catatan di bawah). Biaya
+    dipotong dari setiap trade yang tertutup sebelum agregasi.
 
     Slices accept anything ``df.index >= start`` supports (Timestamp strings
     for intraday/daily, or ints for positional splits). When the OOS range is
@@ -283,6 +295,7 @@ def backtest_limit_entries(
         "retest_lookahead": retest_lookahead,
         "rr": rr,
         "sl_bars": sl_bars,
+        "cost_r": cost_r,
     }
     if oos_start is None and oos_end is None and is_start is None and is_end is None:
         split = int(len(df) * 0.6)

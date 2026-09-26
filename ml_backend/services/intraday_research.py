@@ -49,11 +49,12 @@ def fetch_intraday(interval: str = "60m", period: str = "2y") -> pd.DataFrame | 
 
 def run_intraday(interval: str = "60m", period: str = "2y",
                  is_start=None, is_end=None, oos_start=None, oos_end=None,
-                 params: dict | None = None) -> dict:
+                 params: dict | None = None, cost_r: float = 0.0) -> dict:
     """Jalankan limit backtester pada data intraday dengan parameter skala jam.
 
     ``is_./oos_`` diisi string tanggal ISO (naive). Jika semua kosong, mesin
-    memakai split 60/40 default (berguna untuk 60m 2 tahun).
+    memakai split 60/40 default (berguna untuk 60m 2 tahun). ``cost_r`` = biaya
+    per trade dalam satuan R (lihat smc_limit_backtester).
     """
     df = fetch_intraday(interval=interval, period=period)
     if df is None or df.empty:
@@ -64,11 +65,29 @@ def run_intraday(interval: str = "60m", period: str = "2y",
         df,
         is_start=is_start, is_end=is_end,
         oos_start=oos_start, oos_end=oos_end,
-        rr=p["rr"], **kw,
+        rr=p["rr"], cost_r=cost_r, **kw,
     )
     res["interval"] = interval
     res["range"] = [str(df.index[0]), str(df.index[-1])]
     return res
+
+
+def cost_stress(interval: str = "60m", costs: tuple = (0.0, 0.05, 0.10, 0.20)) -> dict:
+    """Sweep biaya per trade (R) untuk menguji bertahan tidaknya PF/win-rate."""
+    table = []
+    for c in costs:
+        r = run_intraday(interval=interval, cost_r=c)
+        table.append({
+            "cost_r": c,
+            "is_pf": r["is"]["profit_factor"],
+            "is_win": r["is"]["win_rate"],
+            "is_avg_r": r["is"]["avg_r"],
+            "oos_pf": r["oos"]["profit_factor"],
+            "oos_win": r["oos"]["win_rate"],
+            "oos_avg_r": r["oos"]["avg_r"],
+            "bars": r["bars"],
+        })
+    return {"interval": interval, "costs": costs, "table": table}
 
 
 def probe() -> dict:

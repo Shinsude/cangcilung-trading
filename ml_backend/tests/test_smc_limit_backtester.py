@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from services.smc_limit_backtester import (
+    _summary,
     backtest_limit_entries,
     detect_choch,
     nearest_zone,
@@ -144,3 +145,20 @@ def test_slice_disjoint_is_oos():
     r_first_half = backtest_limit_entries(df, is_start="2022-01-01", is_end="2022-07-01")
     r_second_half = backtest_limit_entries(df, is_start="2022-07-02", is_end="2022-12-31")
     assert r_first_half["is"]["signals"] != r_second_half["is"]["signals"]
+
+
+def test_cost_r_reduces_pf_and_avg_r():
+    trades = [
+        {"filled": True, "r": 2.0, "exit": "target"},
+        {"filled": True, "r": -1.0, "exit": "stop"},
+        {"filled": True, "r": 0.4, "exit": "timeout"},
+        {"filled": False, "r": None, "exit": "no_zone"},
+    ]
+    gross = _summary(trades, cost_r=0.0)
+    at_cost = _summary(trades, cost_r=0.3)
+    expensive = _summary(trades, cost_r=1.0)
+    assert gross["profit_factor"] == 2.4
+    assert at_cost["profit_factor"] < gross["profit_factor"]
+    assert at_cost["avg_r"] < gross["avg_r"]
+    assert expensive["profit_factor"] < 1.0
+    assert expensive["win_rate"] < gross["win_rate"]
