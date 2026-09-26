@@ -153,7 +153,8 @@ def _sl_level(b: dict, sig_index: int, direction: str, sl_bars: int = SL_BARS):
     return float(seg_hi.max())
 
 
-def simulate_limit(df, choch: dict, zone: dict, rr: float = RR, lookahead: int = RETEST_LOOKAHEAD):
+def simulate_limit(df, choch: dict, zone: dict, rr: float = RR, lookahead: int = RETEST_LOOKAHEAD,
+                   sl_bars: int = SL_BARS):
     """Fill the pending order forward; return PnL in R-multiples (or None)."""
     b = _bars(df)
     n = len(b["close"])
@@ -163,10 +164,10 @@ def simulate_limit(df, choch: dict, zone: dict, rr: float = RR, lookahead: int =
     if sig + 1 >= n:
         return {"filled": False, "r": None, "bars_to_fill": None, "exit": "no_future"}
     if direction == "BULL":
-        sl = _sl_level(b, sig, "BULL")
+        sl = _sl_level(b, sig, "BULL", sl_bars=sl_bars)
         tp = entry + rr * (entry - sl)
     else:
-        sl = _sl_level(b, sig, "BEAR")
+        sl = _sl_level(b, sig, "BEAR", sl_bars=sl_bars)
         tp = entry - rr * (sl - entry)
     risk = abs(entry - sl)
     if risk <= 0:
@@ -245,7 +246,14 @@ def _run_slice(df: pd.DataFrame, **params) -> dict:
         if z is None:
             trades.append({"filled": False, "r": None, "exit": "no_zone"})
             continue
-        trades.append(simulate_limit(df, c, z, rr=params["rr"], lookahead=params["retest_lookahead"]))
+        trades.append(
+            simulate_limit(
+                df, c, z,
+                rr=params["rr"],
+                lookahead=params["retest_lookahead"],
+                sl_bars=params["sl_bars"],
+            )
+        )
     return _summary(trades)
 
 
@@ -259,6 +267,7 @@ def backtest_limit_entries(
     zone_age_bars: int = ZONE_AGE_BARS,
     retest_lookahead: int = RETEST_LOOKAHEAD,
     rr: float = RR,
+    sl_bars: int = SL_BARS,
 ) -> dict:
     """In-Sample vs Out-of-Sample limit-order backtest.
 
@@ -273,6 +282,7 @@ def backtest_limit_entries(
         "zone_age_bars": zone_age_bars,
         "retest_lookahead": retest_lookahead,
         "rr": rr,
+        "sl_bars": sl_bars,
     }
     if oos_start is None and oos_end is None and is_start is None and is_end is None:
         split = int(len(df) * 0.6)

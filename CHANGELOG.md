@@ -5,6 +5,16 @@ Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://s
 ## [Unreleased] - Scientific Record (research/)
 
 ### Ditambahkan
+- **`services/intraday_research.py`**: pipeline probe intraday — fetch 5m/15m/30m (60 hari) dan 60m/1h (730 hari) untuk `GC=F`; memakai mesin `backtest_limit_entries` dengan parameter skala jam (zona 6 bar, SL 8 bar, retest 24 bar, RR 2.0).
+- **Probe intraday 60m (11451 bar, 2024-09-26 -> 2026-09-25)**: IS PF 1.436 / OOS PF 1.54, win-rate OOS 50.5%, exit target 92/57 — hasil terbaik repo, RR 1:2 tercapai di timeframe intraday, tidak runtuh antar-sesi.
+- Probe 30m (60 hari): IS PF 2.314 / OOS PF 1.005 — **runtuh**, sampel tak cukup, dicatat sebagai peringatan metodologis di falsification log (section 6c).
+- 3 unit test intraday (fetch di-mock, tanpa network). Total 81 passed.
+
+### Diperbaiki
+- **`smc_limit_backtester.simulate_limit` tidak meneruskan `sl_bars`**: parameter SL window sekarang mengalir dari `backtest_limit_entries` melalui `_run_slice` ke `simulate_limit` — membuat parameter skala jam intraday benar-benar efektif (sebelumnya selalu SL default 20 bar).
+
+### Terdokumentasi
+- Falsification log section 6c: bukti pertama di timeframe non-daily; kesimpulan "promising" naik dari rezim-dependent (daily) ke "layak forward-test 60m", anti-curve-fit.
 - **`research/01_baseline_falsification.md`**: buku catatan laboratorium (falsification log) — dokumentasi jujur hipotesis vs hasil untuk semua setup SMC yang diuji, termasuk "why" dan keputusan yang diambil.
 - **`smc_limit_backtester.py`**: backtest eksekusi *pending limit* — ChoCh (swing-based) + premium/discount, limit istirahat di 50% zona FVG (equilibrium), SL di swing extreme, TP RR 1:2/1:3, split In-Sample/Out-of-Sample. Hasil harian IS 2022-23 (PF 0.68) vs OOS 2024-26 (PF 1.21) mayoritas exit timeout → keputusan no-go untuk daily, prioritas pipeline intraday.
 - **DST-aware session detection**: `detect_session()` kini memakai `zoneinfo` (`Europe/Bucharest`, EET/EEST) sehingga sesi tidak bergeser 1 jam saat transisi DST Maret/Oktober; helper `convert_utc_to_broker_time()` dan `broker_utc_offset_hours()` + 7 unit test DST transition.

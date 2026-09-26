@@ -129,6 +129,45 @@ news-heavy year menyakitkan), bukan edge statis. Putusan direvisi:
 - **BUKAN "ALPHA TERBUKTI"** — 2023 jelas menutup kasus universal. Parameter sudah
   *terkunci* dan **tidak boleh di-tune terhadap tahun-tahun kalah** (di situ overfit
   dimulai).
+
+### 6c. Verifikasi intraday (60m/30m) — bukti pertama di timeframe non-daily
+
+Pipeline `services/intraday_research.py` mengambil data intraday dari yfinance
+(batasan: 5m/15m/30m = ~60 hari, 60m/1h = ~730 hari) dan menjalankan mesin yang
+sama `backtest_limit_entries` dengan parameter skala jam (zona 6 bar, SL 8 bar,
+retest 24 bar, RR 2.0):
+
+**Jalur A — `GC=F` 60m, 11451 bar (2024-09-26 -> 2026-09-25):**
+
+| Sesi | Sinyal | Filled | Fill-rate | Win-rate | PF | Exit target/timeout/stop |
+|---|---|---|---|---|---|---|
+| IS (60%) | 982 | 384 | 39.1% | 48.4% | **1.436** | 92 / 128 / 164 |
+| OOS (40%) | 477 | 200 | 41.9% | 50.5% | **1.540** | 57 / 55 / 88 |
+
+PUTUSAN A: **hasil terbaik sejauh ini.** PF IS/OOS sejalan (1.44 -> 1.54, tidak
+runtuh seperti 30m di bawah), win-rate OOS di atas 50%, dan exit *target* muncul
+dalam jumlah besar (92/57 vs hanya 2 di daily) — konfirmasi bahwa RR 1:2 selesai
+dalam hitungan jam di timeframe intraday, bukan minggu. Praktik langsung:
+divergensi antara 0.39 fill-rate (retrace ke zona ~40% kasus) dan PF sehat itu
+wajar; alpha tidak datang dari frekuensi, tapi dari kualitas menunggu.
+
+**Jalur B — `GC=F` 30m, 2279 bar (60 hari terakhir):**
+
+| Sesi | Sinyal | Filled | Fill-rate | Win-rate | PF |
+|---|---|---|---|---|---|
+| IS | 241 | 94 | 39.0% | 61.7% | **2.314** |
+| OOS | 142 | 68 | 47.9% | 35.3% | **1.005** |
+
+PUTUSAN B: **runtuh** — PF 2.31 hanya di IS, OOS datar (1.005) dengan win-rate
+35%. Sampel 60 hari terlalu kecil dan satu rezim; statistik 68-94 trade tidak
+cukup untuk mengambil kesimpulan apa pun selain *tidak boleh dipercaya*. Dipakai
+sebagai peringatan metodologis, bukan angka.
+
+**Kesimpulan 6c:** bukti terkuat repo ini ada di **60m (jalur A)**: IS/OOS serasi,
+RR tercapai intraday. Sinyal *promising* naik dari "rezim-dependent" (daily) menjadi
+"layak lanjut ke forward-test sungguhan pada 60m". Belum "alpha terbukti" — belum
+ada biaya/slippage, n OOS = 200, dan jendela 2 tahun mencakup dua rezim. Tidak ada
+penyesuaian parameter yang boleh dilakukan terhadap hasil ini (anti-curve-fit).
 - Prioritas tetap: intraday M30/M5, di sana RR 1:2 selesai dalam jam bukan minggu,
   dan rezim bisa dipisah dari time-of-day.
 
