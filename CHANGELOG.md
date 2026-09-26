@@ -4,6 +4,19 @@ Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://s
 
 ## [Unreleased] - Scientific Record (research/)
 
+### Ditambahkan (inkremental biru: konektor MT5 + forward-test)
+- **`services/mt5_data.py`**: konektor data via terminal MetaTrader 5 lokal (HFM/Markets) — M1/M5/M15/M30/H1/H4/D1/W1, deteksi otomatis `terminal64.exe`, env `MT5_*`. M30 2024→2026 (32k bar) & M5 2026 (52k bar) yang sempat blokir yfinance kini tersedia.
+- **`services/forward_test.py`**: paper forward-test 60m/M30/H1 — log append-only `research/forward_test_log.csv`; sinyal baru ditulis tiap run; resolusi (target/stop/timeout/no_fill) hanya di run berikutnya (tanpa lookahead). CLI `py -m services.forward_test --source yf_60m|mt5_m30|mt5_h1 [--seed]`.
+- **Probe MT5 M30/M5 (data asli)**: hierarki bukti jadi 60m > M30 > M5 — M30 konsisten IS/OOS (PF 1.16/1.13), **M5 runtuh OOS (PF 1.029, avg-R +0.015 ≈ breakeven)** → M5 tidak layak. Falsification log section 6d.
+- 7 unit test MT5/forward hermetic (tanpa terminal/network). Total 89 passed.
+
+### Diperbaiki (inkremental biru)
+- `_clean_mt5`: dedupe kolom saat `tick_volume` dan `real_volume` hadir bersamaan; skala `time` detik (unit="s") dikonversi benar (bug 1970-01-20 dulu).
+- `forward_test.update`: cutoff berbasis posisi bar (bukan `pd.Timedelta(hours)`) supaya benar untuk M30/H1; path log absolut relatif repo root.
+
+### Terdokumentasi
+- Falsification log 6d: bukti M30/M5 nyata dari terminal HFM demo; forward-test dikunci ke 60m/M30, bukan M5.
+
 ### Ditambahkan
 - **`services/intraday_research.py`**: pipeline probe intraday — fetch 5m/15m/30m (60 hari) dan 60m/1h (730 hari) untuk `GC=F`; memakai mesin `backtest_limit_entries` dengan parameter skala jam (zona 6 bar, SL 8 bar, retest 24 bar, RR 2.0).
 - **Probe intraday 60m (11451 bar, 2024-09-26 -> 2026-09-25)**: IS PF 1.436 / OOS PF 1.54, win-rate OOS 50.5%, exit target 92/57 — hasil terbaik repo, RR 1:2 tercapai di timeframe intraday, tidak runtuh antar-sesi.

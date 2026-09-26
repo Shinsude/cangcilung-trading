@@ -185,6 +185,34 @@ RR tercapai intraday. Sinyal *promising* naik dari "rezim-dependent" (daily) men
 "layak lanjut ke forward-test sungguhan pada 60m". Belum "alpha terbukti" — belum
 ada biaya/slippage, n OOS = 200, dan jendela 2 tahun mencakup dua rezim. Tidak ada
 penyesuaian parameter yang boleh dilakukan terhadap hasil ini (anti-curve-fit).
+
+### 6d. Data MT5 asli — M30 & M5 akhirnya tervalidasi (bukan proxy)
+
+Konektor `services/mt5_data.py` (terminal lokal HFM/Markets, akun demo
+235148319@HFMarketsGlobal-Demo4) membuka akses ke M1/M5/M15/M30 yang selama ini
+blokir di yfinance. Data nyata, `copy_rates_range` penuh:
+
+- **M30: 32.279 bar, 2024-01-02 -> 2026-09-25, kontigu 30 menit** (fallback
+  yfinance hanya 60 hari — sekarang jendela 2,7 tahun).
+- **M5: 52.054 bar, 2026-01-01 -> 2026-09-25** (limit server ~50k bar ≈ 8,5 bulan).
+- M15: ~50k bar sejak 2024-08-13; M1 ~50k bar (~7 minggu).
+
+Backtest memakai parameter intraday yang TETAP terkunci (swing 3, zona 6, SL 8,
+retest 24, RR 2) — tidak ada penyesuaian terhadap data baru (anti-curve-fit):
+
+| Timeframe | Sesi | Sinyal | Filled | Fill% | Win% | PF | Avg-R |
+|---|---|---|---|---|---|---|---|
+| M30 (2,7y) | IS | 3049 | 1358 | 44.5% | 42.1% | **1.159** | +0.081 |
+| M30 (2,7y) | OOS | 2029 | 848 | 41.8% | 41.0% | **1.132** | +0.067 |
+| M5 (8,5mo) | IS | 4389 | 2047 | 46.6% | 44.3% | **1.191** | +0.093 |
+| M5 (8,5mo) | OOS | 3098 | 1402 | 45.3% | 40.7% | **1.029** | +0.015 |
+
+PUTUSAN: **hierarki bukti = 60m > M30 > M5.** M30 konsisten positif IS/OOS
+(1.16/1.13) tapi jauh lebih tipis dari 60m (1.44/1.54); frekuensi sinyal 3-5x lipat
+tidak mengompensasi avg-R yang rendah. **M5 menolak dirinya**: OOS PF 1.029 dengan
+avg-R +0.015 ≈ breakeven setelah dipotong biaya sekecil apa pun — narasi "M5 = holy
+grail SMC" **tidak terkonfirmasi** di data 8,5 bulan. Implikasi operasional
+(forward-test dikunci ke **60m/M30**, bukan M5).
 - Prioritas tetap: intraday M30/M5, di sana RR 1:2 selesai dalam jam bukan minggu,
   dan rezim bisa dipisah dari time-of-day.
 

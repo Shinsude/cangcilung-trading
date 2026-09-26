@@ -28,3 +28,10 @@ NEWS_LIMIT = 5
 
 CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "900"))
 TUNE_TTL_SECONDS = int(os.getenv("TUNE_TTL_SECONDS", "21600"))
+
+MT5_TERMINAL_PATH = os.getenv("MT5_TERMINAL_PATH", r"C:\Program Files\HFM Metatrader 5\terminal64.exe")
+MT5_SYMBOL = os.getenv("MT5_SYMBOL", "XAUUSD")
+MT5_TIMEFRAME = os.getenv("MT5_TIMEFRAME", "M30")
+MT5_LOGIN = os.getenv("MT5_LOGIN", "")
+MT5_PASSWORD = os.getenv("MT5_PASSWORD", "")
+MT5_SERVER = os.getenv("MT5_SERVER", "")
