@@ -174,16 +174,57 @@ def _load_source(src: str) -> pd.DataFrame | None:
     return fetch_intraday(interval="60m", period="2y")
 
 
+def summary(log_path: str = DEFAULT_LOG, min_resolved: int = 20) -> dict:
+    """Agregasi status forward-test untuk pemantauan.
+
+    Status 'target'/'stop' disebut *decided* (RR 2 terkunci); 'timeout' dibawa
+    dalam PF/avg-R sebagai nilai R aslinya. Metrik performa tidak dilaporkan
+    bila resolved < ``min_resolved`` (n terlalu kecil -> angka tak bermakna).
+    """
+    log = load_log(log_path)
+    if log.empty:
+        return {"log_path": log_path, "rows": 0, "statuses": {}, "note": "log kosong"}
+    statuses = log["status"].value_counts().to_dict()
+    decided = log[log["status"].isin(["target", "stop"])]
+    resolved = log[log["status"].isin(["target", "stop", "timeout"])]
+    n_resolved = int(len(resolved))
+    out = {
+        "log_path": log_path,
+        "rows": int(len(log)),
+        "statuses": {k: int(v) for k, v in statuses.items()},
+        "n_resolved": n_resolved,
+        "win_rate_decided": (round(len(decided[decided["status"] == "target"]) / len(decided) * 100, 1)
+                             if len(decided) else None),
+        "n_decided": int(len(decided)),
+    }
+    if n_resolved < min_resolved:
+        out["note"] = f"belum cukup untuk evaluasi (min_resolved={min_resolved})"
+        return out
+    r = resolved["r"].dropna().astype(float)
+    gross_profit = float(r[r > 0].sum())
+    gross_loss = float(-r[r < 0].sum())
+    out.update({
+        "profit_factor": round(gross_profit / gross_loss, 3) if gross_loss > 0 else None,
+        "avg_r": round(float(r.mean()), 3) if len(r) else 0.0,
+        "note": "forward-test, bukan alpha terbukti",
+    })
+    return out
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="paper forward-test SMC (60m/M30)")
     ap.add_argument("--source", default="yf_60m", choices=["yf_60m", "mt5_m30", "mt5_h1"])
     ap.add_argument("--seed", action="store_true", help="log jendela terbaru pertama kali")
+    ap.add_argument("--summary", action="store_true", help="cetak agregasi status, bukan update")
     ap.add_argument("--log", default=DEFAULT_LOG)
     args = ap.parse_args()
 
     log_path = args.log
     if not os.path.isabs(log_path):
         log_path = os.path.join(Path(__file__).resolve().parents[2], log_path)
+    if args.summary:
+        print(summary(log_path=log_path))
+        return
     df = _load_source(args.source)
     if df is None or df.empty:
         print("tidak ada data untuk source", args.source)

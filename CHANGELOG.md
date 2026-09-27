@@ -4,6 +4,9 @@ Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://s
 
 ## [Unreleased] - Scientific Record (research/)
 
+### Ditambahkan (inkremental hijau: pemantauan otomatis forward-test)
+- **`forward_test.summary(log_path, min_resolved=20)`** + CLI `--summary`: agregasi status log (pending/target/stop/timeout/no_fill), win-rate decided, PF & avg-R bila resolved >= ambang; wrapper CI kini mencetak ringkasan tiap run harian. 2 unit test (total 91 passed).
+
 ### Ditambahkan (inkremental biru: konektor MT5 + forward-test)
 - **`services/mt5_data.py`**: konektor data via terminal MetaTrader 5 lokal (HFM/Markets) — M1/M5/M15/M30/H1/H4/D1/W1, deteksi otomatis `terminal64.exe`, env `MT5_*`. M30 2024→2026 (32k bar) & M5 2026 (52k bar) yang sempat blokir yfinance kini tersedia.
 - **`services/forward_test.py`**: paper forward-test 60m/M30/H1 — log append-only `research/forward_test_log.csv`; sinyal baru ditulis tiap run; resolusi (target/stop/timeout/no_fill) hanya di run berikutnya (tanpa lookahead). CLI `py -m services.forward_test --source yf_60m|mt5_m30|mt5_h1 [--seed]`.

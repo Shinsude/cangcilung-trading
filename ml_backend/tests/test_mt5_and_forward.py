@@ -95,3 +95,30 @@ def test_update_seed_then_no_dup(tmp_path):
     s2 = ft.update(df, log_path=str(logp), seed=False)
     assert s2["new"] == 0
     assert s2["rows"] == s1["rows"]
+
+
+def test_summary_empty_log(tmp_path):
+    s = ft.summary(log_path=str(tmp_path / "none.csv"))
+    assert s["rows"] == 0
+    assert s["note"] == "log kosong"
+
+
+def test_summary_metrics_and_gate(tmp_path):
+    logp = tmp_path / "ft.csv"
+    pd.DataFrame(
+        {
+            "signal_time": [f"2026-01-0{i % 9 + 1}" for i in range(30)],
+            "found_at": ["2026-01-01"] * 30,
+            "resolved_at": [""] * 30,
+            "status": ["target"] * 12 + ["stop"] * 8 + ["timeout"] * 5 + ["no_fill"] * 3 + ["pending"] * 2,
+            "r": [2.0] * 12 + [-1.0] * 8 + [0.3, 0.1, -0.2, 0.5, -0.4] + [None] * 5,
+        }
+    ).to_csv(logp, index=False)
+    small = ft.summary(log_path=str(logp), min_resolved=100)
+    assert small["note"].startswith("belum cukup")
+    full = ft.summary(log_path=str(logp), min_resolved=20)
+    assert full["n_resolved"] == 25
+    assert full["win_rate_decided"] == 60.0
+    assert full["n_decided"] == 20
+    assert full["avg_r"] > 0
+    assert full["note"] == "forward-test, bukan alpha terbukti"
