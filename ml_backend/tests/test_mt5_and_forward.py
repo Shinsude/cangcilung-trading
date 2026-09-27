@@ -122,3 +122,29 @@ def test_summary_metrics_and_gate(tmp_path):
     assert full["n_decided"] == 20
     assert full["avg_r"] > 0
     assert full["note"] == "forward-test, bukan alpha terbukti"
+    direct = ft.summarize_df(pd.read_csv(logp), min_resolved=20)
+    assert direct["n_resolved"] == 25
+    assert direct["win_rate_decided"] == 60.0
+    assert direct["avg_r"] == full["avg_r"]
+
+
+def test_forward_json_serializable():
+    import json
+
+    from main import _sanitize_json
+
+    df = pd.DataFrame(
+        {
+            "signal_time": pd.to_datetime(["2026-01-01"]),
+            "found_at": pd.to_datetime(["2026-01-01"]),
+            "resolved_at": pd.to_datetime([pd.NaT]),
+            "status": ["pending"],
+            "r": [np.nan],
+        }
+    )
+    record = _sanitize_json(df.to_dict("records"))
+    assert record[0]["resolved_at"] is None
+    assert record[0]["r"] is None
+    assert record[0]["signal_time"] == "2026-01-01T00:00:00Z"
+    body = json.loads(json.dumps(ft.summarize_df(df, min_resolved=5)))
+    assert body["rows"] == 1

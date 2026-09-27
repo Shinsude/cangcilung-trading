@@ -1,7 +1,7 @@
 part of 'package:cangcilung_trading/screens/home_screen.dart';
 
 class _SignalPage extends StatelessWidget {
-  const _SignalPage({required this.data, required this.onRefresh, required this.alertTarget, required this.onSetAlert, required this.onClearAlert, this.confHistory = const [], this.history = const [], this.historyLoading = false, this.historyError = false, this.onRetryHistory, this.digest, this.onSelectSymbol});
+  const _SignalPage({required this.data, required this.onRefresh, required this.alertTarget, required this.onSetAlert, required this.onClearAlert, this.confHistory = const [], this.history = const [], this.historyLoading = false, this.historyError = false, this.onRetryHistory, this.digest, this.onSelectSymbol, this.forward});
 
   final TradingData data;
   final Future<void> Function() onRefresh;
@@ -15,6 +15,7 @@ class _SignalPage extends StatelessWidget {
   final VoidCallback? onRetryHistory;
   final MorningDigest? digest;
   final ValueChanged<String>? onSelectSymbol;
+  final Map<String, dynamic>? forward;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +42,10 @@ class _SignalPage extends StatelessWidget {
           if (digest != null) ...[
             const SizedBox(height: 14),
             _DigestCard(digest: digest!, onSelect: onSelectSymbol),
+          ],
+          if (forward != null) ...[
+            const SizedBox(height: 14),
+            _ForwardTestCard(body: forward!),
           ],
           const SizedBox(height: 14),
           _DetailSection(
@@ -86,6 +91,112 @@ class _DataSourceWarning extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(msg, style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, height: 1.35)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ForwardTestCard extends StatelessWidget {
+  const _ForwardTestCard({required this.body});
+
+  final Map<String, dynamic> body;
+
+  String _fmt(num? v, {int d = 2}) => v == null ? '\u2014' : v.toStringAsFixed(d);
+
+  Color _verdictColor(String v) {
+    switch (v) {
+      case 'layak-lanjut':
+        return AppColors.green;
+      case 'evaluasi-gagal':
+        return AppColors.red;
+      default:
+        return AppColors.amber;
+    }
+  }
+
+  String _label(String v) => v == 'layak-lanjut' ? 'LAYAK LANJUT' : v == 'evaluasi-gagal' ? 'EVALUASI GAGAL' : 'MENUNGGU DATA';
+
+  @override
+  Widget build(BuildContext context) {
+    final logs = (body['logs'] as Map<String, dynamic>?) ?? const {};
+    final params = (body['params'] as Map<String, dynamic>?) ?? const {};
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.science_rounded, size: 15, color: AppColors.purple),
+              const SizedBox(width: 8),
+              const Text('FORWARD TEST', style: TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1)),
+              const Spacer(),
+              const Text('paper', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            params.isEmpty
+                ? 'Eksperimen forward-test strategi limit-entry SMC.'
+                : 'swing ${params['swing']} \u00B7 zone ${params['zone_bars']} bar \u00B7 SL ${params['sl_bars']} bar \u00B7 retest ${params['retest_bars']} bar \u00B7 RR ${params['rr']}',
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 10.5, height: 1.35),
+          ),
+          const SizedBox(height: 10),
+          for (final e in logs.entries)
+            _logRow(name: e.key, v: (e.value as Map<String, dynamic>?)),
+          const SizedBox(height: 8),
+          const Text('Eksperimen untuk pemantauan, bukan rekomendasi trading.',
+              style: TextStyle(color: AppColors.textTertiary, fontSize: 10, height: 1.35)),
+        ],
+      ),
+    );
+  }
+
+  Widget _logRow({required String name, required Map<String, dynamic>? v}) {
+    final err = v == null ? null : v['error'];
+    final vrd = v?['verdict'] as String? ?? 'menunggu-data';
+    final vc = _verdictColor(vrd);
+    final nRes = (v?['n_resolved'] as num?) ?? 0;
+    final win = (v?['win_rate_decided'] as num?);
+    final pf = (v?['profit_factor'] as num?);
+    final avgR = (v?['avg_r'] as num?);
+    final rows = (v?['rows'] as num?) ?? 0;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 40,
+            child: Text(name.toUpperCase(), style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w800)),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(color: vc.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(5)),
+            child: Text(_label(vrd), style: TextStyle(color: vc, fontSize: 9.5, fontWeight: FontWeight.w800)),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: err != null
+                ? Text('$err', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10.5))
+                : Wrap(
+                    spacing: 6,
+                    runSpacing: 2,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text('$nRes resolved', style: const TextStyle(color: AppColors.textSecondary, fontSize: 10.5, fontWeight: FontWeight.w600)),
+                      if (win != null) Text('win ${_fmt(win)}%', style: TextStyle(color: AppColors.green, fontSize: 10.5, fontWeight: FontWeight.w700)),
+                      if (pf != null) Text('PF ${_fmt(pf, d: 3)}', style: TextStyle(color: AppColors.blue, fontSize: 10.5, fontWeight: FontWeight.w700)),
+                      if (avgR != null) Text('R ${_fmt(avgR)}', style: TextStyle(color: AppColors.textPrimary, fontSize: 10.5, fontWeight: FontWeight.w700)),
+                      Text('$rows baris', style: const TextStyle(color: AppColors.textTertiary, fontSize: 10)),
+                    ],
+                  ),
           ),
         ],
       ),

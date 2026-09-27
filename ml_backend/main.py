@@ -27,6 +27,8 @@ _digest_cache: list = [0.0, None]  # [at, body]
 DIGEST_CACHE_TTL = 600
 
 LOG_URL = os.getenv("SIGNALS_LOG_URL", "https://raw.githubusercontent.com/Shinsude/cangcilung-trading/main/flutter_app/web/signals_log.json")
+FT_LOG_URL = os.getenv("FT_LOG_URL", "https://raw.githubusercontent.com/Shinsude/cangcilung-trading/main/research/forward_test_log.csv")
+FT_LOG_M30_URL = os.getenv("FT_LOG_M30_URL", "https://raw.githubusercontent.com/Shinsude/cangcilung-trading/main/research/forward_test_log_m30.csv")
 _real_log_cache: dict = {}
 _signal_history: dict[str, list[str]] = {}  # symbol -> list of recent action strings
 _sim_positions: dict[str, dict] = {}  # symbol -> simulated open position
@@ -509,6 +511,79 @@ def get_backtest(symbol: str, days: int | None = None):
             "total_return": round(tuned_metrics["total_return"] - default_metrics["total_return"], 4),
         },
     }
+
+
+_ft_summary_cache: list = [0.0, None]  # [at, body]
+FT_SUMMARY_CACHE_TTL = 900
+
+
+def _sanitize_json(value):
+    if isinstance(value, dict):
+        return {k: _sanitize_json(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_sanitize_json(v) for v in value]
+    try:
+        if value != value:  # NaN / NaT
+            return None
+    except (TypeError, ValueError):
+        pass
+    if isinstance(value, dt.datetime):
+        return value.isoformat() + "Z"
+    return value
+
+
+def _read_forward_log(url: str, ttl: int) -> list[dict] | None:
+    import io
+    import urllib.request
+
+    import pandas as pd
+
+    try:
+        with urllib.request.urlopen(url, timeout=20) as r:
+            content = r.read().decode("utf-8")
+        log = pd.read_csv(io.StringIO(content), parse_dates=["signal_time", "found_at", "resolved_at"])
+        return _sanitize_json(log.reset_index().to_dict("records"))
+    except Exception:  # noqa: BLE001
+        return None
+
+
+@app.get("/research/forward")
+def get_research_forward():
+    """Status paper forward-test (60m & M30) dari research/*.csv di repo main.
+
+    Read-only, tak menyentuh jalur sinyal. Buka secara jujur sebagai monitor
+    eksperimen, bukan bukti alpha. (Harus didaftarkan sebelum
+    /research/{symbol} agar kata 'forward' tak tertelan sebagai symbol.)
+    """
+    import pandas as pd
+
+    from services.forward_test import summarize_df
+
+    now = time.time()
+    if _ft_summary_cache[0] and now - _ft_summary_cache[0] < FT_SUMMARY_CACHE_TTL:
+        return _ft_summary_cache[1]
+    out: dict[str, dict] = {}
+    for name, url in (("60m", FT_LOG_URL), ("m30", FT_LOG_M30_URL)):
+        rows = _read_forward_log(url, ttl=FT_SUMMARY_CACHE_TTL)
+        if rows is None:
+            out[name] = {"error": "log belum tersedia"}
+            continue
+        summary_ = summarize_df(pd.DataFrame(rows))
+        if summary_.get("n_resolved", 0) >= 20:
+            summary_["verdict"] = ("layak-lanjut" if (summary_.get("win_rate_decided") or 0) >= 45
+                                   else "evaluasi-gagal")
+        else:
+            summary_["verdict"] = "menunggu-data"
+        summary_["recent"] = rows[:min(len(rows), 8)]
+        out[name] = summary_
+    body = {
+        "note": "Paper forward-test (bukan sinyal live, bukan alpha terbukti)",
+        "params": {"swing": 3, "zone_bars": 6, "sl_bars": 8, "retest_bars": 24, "rr": 2.0},
+        "logs": out,
+    }
+    _ft_summary_cache[0] = now
+    _ft_summary_cache[1] = body
+    return body
 
 
 @app.get("/research/{symbol}")

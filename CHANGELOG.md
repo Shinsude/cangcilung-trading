@@ -4,6 +4,12 @@ Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://s
 
 ## [Unreleased] - Scientific Record (research/)
 
+### Ditambahkan (inkremental ungu: UI monitor forward-test read-only)
+- **Endpoint `GET /research/forward`** di `main.py` (terdaftar sebelum `/research/{symbol}`): status paper forward-test 60m & M30 dari `research/*.csv` di repo main (via raw GitHub), verdict `menunggu-data`/`layak-lanjut`/`evaluasi-gagal`, 8 baris terakhir, dan parameter terkunci. Read-only, tak menyentuh jalur sinyal; cache 15 menit.
+- **Card "FORWARD TEST"** di tab Signal (`signal.dart`): menampilkan verdict + n_resolved/win/PF/avg-R per timeframe, tersembunyi bila API tak merespons.
+- `_sanitize_json` di `main.py`: NaN/NaT -> null, Timestamp -> ISO (agar payload JSON kompatibel).
+- 1 unit test serialisasi JSON + `summarize_df` (total 92 passed).
+
 ### Ditambahkan (inkremental hijau: pemantauan otomatis forward-test)
 - **`forward_test.summary(log_path, min_resolved=20)`** + CLI `--summary`: agregasi status log (pending/target/stop/timeout/no_fill), win-rate decided, PF & avg-R bila resolved >= ambang; wrapper CI kini mencetak ringkasan tiap run harian. 2 unit test (total 91 passed).
 

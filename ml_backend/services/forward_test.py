@@ -174,22 +174,14 @@ def _load_source(src: str) -> pd.DataFrame | None:
     return fetch_intraday(interval="60m", period="2y")
 
 
-def summary(log_path: str = DEFAULT_LOG, min_resolved: int = 20) -> dict:
-    """Agregasi status forward-test untuk pemantauan.
-
-    Status 'target'/'stop' disebut *decided* (RR 2 terkunci); 'timeout' dibawa
-    dalam PF/avg-R sebagai nilai R aslinya. Metrik performa tidak dilaporkan
-    bila resolved < ``min_resolved`` (n terlalu kecil -> angka tak bermakna).
-    """
-    log = load_log(log_path)
-    if log.empty:
-        return {"log_path": log_path, "rows": 0, "statuses": {}, "note": "log kosong"}
+def summarize_df(log: pd.DataFrame, min_resolved: int = 20) -> dict:
+    if log is None or log.empty:
+        return {"rows": 0, "statuses": {}, "note": "log kosong"}
     statuses = log["status"].value_counts().to_dict()
     decided = log[log["status"].isin(["target", "stop"])]
     resolved = log[log["status"].isin(["target", "stop", "timeout"])]
     n_resolved = int(len(resolved))
     out = {
-        "log_path": log_path,
         "rows": int(len(log)),
         "statuses": {k: int(v) for k, v in statuses.items()},
         "n_resolved": n_resolved,
@@ -209,6 +201,16 @@ def summary(log_path: str = DEFAULT_LOG, min_resolved: int = 20) -> dict:
         "note": "forward-test, bukan alpha terbukti",
     })
     return out
+
+
+def summary(log_path: str = DEFAULT_LOG, min_resolved: int = 20) -> dict:
+    """Agregasi status forward-test untuk pemantauan.
+
+    Status 'target'/'stop' disebut *decided* (RR 2 terkunci); 'timeout' dibawa
+    dalam PF/avg-R sebagai nilai R aslinya. Metrik performa tidak dilaporkan
+    bila resolved < ``min_resolved`` (n terlalu kecil -> angka tak bermakna).
+    """
+    return summarize_df(load_log(log_path), min_resolved=min_resolved)
 
 
 def main() -> None:

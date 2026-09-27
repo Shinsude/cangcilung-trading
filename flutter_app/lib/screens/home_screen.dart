@@ -51,6 +51,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _historyError = false;
   MorningDigest? _digest;
   bool _digestLoaded = false;
+  Map<String, dynamic>? _forwardResearch;
+  bool _forwardLoaded = false;
 
   @override
   void initState() {
@@ -160,6 +162,19 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } on Exception catch (_) {
       _digestLoaded = true;
+    }
+  }
+
+  Future<void> _loadForward({bool refresh = false}) async {
+    if (_forwardLoaded && !refresh) return;
+    _forwardLoaded = false;
+    try {
+      final f = await _api.fetchForwardResearch();
+      if (f == null || !mounted) return;
+      _forwardLoaded = true;
+      setState(() => _forwardResearch = f);
+    } on Exception catch (_) {
+      _forwardLoaded = true;
     }
   }
 
@@ -350,6 +365,7 @@ class _HomeScreenState extends State<HomeScreen> {
       });
       unawaited(_warmOthers());
       unawaited(_loadDigest());
+      unawaited(_loadForward());
       unawaited(_checkPriceAlert(_selected, data.currentPrice));
     } on Exception catch (e) {
       if (!mounted) return;
@@ -366,7 +382,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _refreshAll() async {
-    await Future.wait([_load(), _loadHistory(_selected), _loadDigest(refresh: true)]);
+    await Future.wait([_load(), _loadHistory(_selected), _loadDigest(refresh: true), _loadForward(refresh: true)]);
   }
 
   void _scheduleCandleRefresh() {
@@ -471,6 +487,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onRetryHistory: () => _loadHistory(d.symbol),
           digest: _digest,
           onSelectSymbol: _selectSymbol,
+          forward: _forwardResearch,
         ),
         _NewsPage(sentiment: d.sentiment, api: _api, onRefresh: _refreshAll),
         _ModelPage(

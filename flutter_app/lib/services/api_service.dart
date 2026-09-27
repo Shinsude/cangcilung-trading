@@ -155,6 +155,17 @@ class ApiService {
     } catch (_) {}
     return null;
   }
+
+  Future<Map<String, dynamic>?> fetchForwardResearch() async {
+    try {
+      final uri = Uri.parse('$baseUrl/research/forward');
+      final response = await http.get(uri).timeout(const Duration(seconds: 60));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return null;
+  }
 }
 
 class ApiException implements Exception {
