@@ -181,12 +181,15 @@ def main() -> None:
     ap.add_argument("--log", default=DEFAULT_LOG)
     args = ap.parse_args()
 
+    log_path = args.log
+    if not os.path.isabs(log_path):
+        log_path = os.path.join(Path(__file__).resolve().parents[2], log_path)
     df = _load_source(args.source)
     if df is None or df.empty:
         print("tidak ada data untuk source", args.source)
         return
     print("bars:", len(df), df.index[0], "->", df.index[-1])
-    res = update(df, log_path=args.log, seed=args.seed)
+    res = update(df, log_path=log_path, seed=args.seed)
     print(res)
 
 

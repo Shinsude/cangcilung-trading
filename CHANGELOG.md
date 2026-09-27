@@ -7,6 +7,7 @@ Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://s
 ### Ditambahkan (inkremental biru: konektor MT5 + forward-test)
 - **`services/mt5_data.py`**: konektor data via terminal MetaTrader 5 lokal (HFM/Markets) — M1/M5/M15/M30/H1/H4/D1/W1, deteksi otomatis `terminal64.exe`, env `MT5_*`. M30 2024→2026 (32k bar) & M5 2026 (52k bar) yang sempat blokir yfinance kini tersedia.
 - **`services/forward_test.py`**: paper forward-test 60m/M30/H1 — log append-only `research/forward_test_log.csv`; sinyal baru ditulis tiap run; resolusi (target/stop/timeout/no_fill) hanya di run berikutnya (tanpa lookahead). CLI `py -m services.forward_test --source yf_60m|mt5_m30|mt5_h1 [--seed]`.
+- **Jadwal otomatis**: step `Forward-test 60m` di workflow `signal-log.yml` (harian UTC 23:00) — jalankan wrapper `.github/scripts/run_forward_test.py` (yfinance, tanpa MT5) lalu commit `research/forward_test_log.csv` bersama log sinyal. Wrapper menyerap resolusi/dup secara idempoten.
 - **Probe MT5 M30/M5 (data asli)**: hierarki bukti jadi 60m > M30 > M5 — M30 konsisten IS/OOS (PF 1.16/1.13), **M5 runtuh OOS (PF 1.029, avg-R +0.015 ≈ breakeven)** → M5 tidak layak. Falsification log section 6d.
 - 7 unit test MT5/forward hermetic (tanpa terminal/network). Total 89 passed.
 
