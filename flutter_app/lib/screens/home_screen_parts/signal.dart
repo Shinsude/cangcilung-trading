@@ -132,13 +132,13 @@ class _ForwardTestCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.science_rounded, size: 15, color: AppColors.purple),
-              const SizedBox(width: 8),
-              const Text('FORWARD TEST', style: TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1)),
-              const Spacer(),
-              const Text('paper', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700)),
+              Icon(Icons.science_rounded, size: 15, color: AppColors.purple),
+              SizedBox(width: 8),
+              Text('FORWARD TEST', style: TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1)),
+              Spacer(),
+              Text('paper', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 8),
@@ -191,9 +191,9 @@ class _ForwardTestCard extends StatelessWidget {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Text('$nRes resolved', style: const TextStyle(color: AppColors.textSecondary, fontSize: 10.5, fontWeight: FontWeight.w600)),
-                      if (win != null) Text('win ${_fmt(win)}%', style: TextStyle(color: AppColors.green, fontSize: 10.5, fontWeight: FontWeight.w700)),
-                      if (pf != null) Text('PF ${_fmt(pf, d: 3)}', style: TextStyle(color: AppColors.blue, fontSize: 10.5, fontWeight: FontWeight.w700)),
-                      if (avgR != null) Text('R ${_fmt(avgR)}', style: TextStyle(color: AppColors.textPrimary, fontSize: 10.5, fontWeight: FontWeight.w700)),
+                      if (win != null) Text('win ${_fmt(win)}%', style: const TextStyle(color: AppColors.green, fontSize: 10.5, fontWeight: FontWeight.w700)),
+                      if (pf != null) Text('PF ${_fmt(pf, d: 3)}', style: const TextStyle(color: AppColors.blue, fontSize: 10.5, fontWeight: FontWeight.w700)),
+                      if (avgR != null) Text('R ${_fmt(avgR)}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 10.5, fontWeight: FontWeight.w700)),
                       Text('$rows baris', style: const TextStyle(color: AppColors.textTertiary, fontSize: 10)),
                     ],
                   ),

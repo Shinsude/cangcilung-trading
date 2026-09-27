@@ -4,6 +4,10 @@ Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://s
 
 ## [Unreleased] - Scientific Record (research/)
 
+### Diperbaiki (v1.6.9, CI hijau)
+- `fetch_mt5`/`_session` guard `ImportError` `MetaTrader5` sebelum validate timeframe — hermetic test kini lolos di CI Linux (tanpa paket MT5 yang hanya Windows) tanpa menyentuh jalur live.
+- Flutter: lint `prefer_const_constructors/literals` di card forward-test (5 info) — `flutter analyze` kembali 0 issue.
+
 ### Ditambahkan (inkremental ungu: UI monitor forward-test read-only)
 - **Endpoint `GET /research/forward`** di `main.py` (terdaftar sebelum `/research/{symbol}`): status paper forward-test 60m & M30 dari `research/*.csv` di repo main (via raw GitHub), verdict `menunggu-data`/`layak-lanjut`/`evaluasi-gagal`, 8 baris terakhir, dan parameter terkunci. Read-only, tak menyentuh jalur sinyal; cache 15 menit.
 - **Card "FORWARD TEST"** di tab Signal (`signal.dart`): menampilkan verdict + n_resolved/win/PF/avg-R per timeframe, tersembunyi bila API tak merespons.

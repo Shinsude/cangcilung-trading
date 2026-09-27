@@ -65,7 +65,10 @@ def discover_terminal() -> str | None:
 
 
 def _session(terminal: str | None = None):
-    import MetaTrader5 as mt5
+    try:
+        import MetaTrader5 as mt5
+    except ImportError:
+        return None, "MetaTrader5 tidak terpasang"
 
     path = terminal or discover_terminal()
     if path is None or not Path(path).is_file():
@@ -130,13 +133,20 @@ def fetch_mt5(symbol: str = MT5_SYMBOL, timeframe: str = MT5_TIMEFRAME,
 
     ``start/end`` menerima string/``datetime``; kosong = sebanyak yang terminal
     sediakan. Timeframe masuk akal: M1/M5/M15/M30/H1/H4/D1/W1.
-    """
-    import MetaTrader5 as mt5
 
+    Validasi timeframe dilakukan sebelum import ``MetaTrader5`` supaya fungsi
+    menurunkan diri (None) bahkan tanpa paket terpasang (Linux/CI).
+    """
     key = TF_MAP.get(str(timeframe).upper())
     if key is None:
         logger.warning("timeframe tidak dikenal: %s", timeframe)
         return None
+    try:
+        import MetaTrader5 as mt5
+    except ImportError:
+        logger.warning("MetaTrader5 tidak terpasang")
+        return None
+
     mt5_session, err = _session(terminal)
     if mt5_session is None:
         logger.warning("MT5 tidak tersedia: %s", err)
