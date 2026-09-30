@@ -4,6 +4,13 @@ Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://s
 
 ## [Unreleased] - Scientific Record (research/)
 
+### Diperbaiki (UI/UX review, prioritas tinggi)
+- Tab Sinyal: hero ditukar — **sinyal di atas** (tier-1: gradient + border/glow aksen), harga jadi sub-baris 28px (dulu 44px di posisi paling atas).
+- `_AdvancedBadges` dipangkas dari 10+ chip jadi ringkas: MTF alignment, regime, grade, sesi, SMC warn + 2 weakness; detail penuh tetap di kartu Analisis Lanjutan.
+- Kartu forward-test: **progress bar menuju ambang** (`n_resolved/20`), label 60M/M30 jelas, hint "Butuh N sinyal lagi menuju evaluasi", font naik 10→11.
+- Aksesibilitas: text scale clamp dinaikkan 1.4 → 2.0.
+- Backend: payload `/research/forward` kini membawa `min_resolved: 20`.
+
 ### Ditambahkan (inkremental: hierarki intraday dipertegas)
 - **Probe MT5 M15 & M1 (data asli, param tetap terkunci)**: hierarki final intraday **60m > M30 > M5(-) > M15(-) ≈ M1**. M15 (64.5k bar, 2,7 th) **gagal bahkan di IS (PF 0.930)**; M1 (55k bar, 38 hari) breakeven tipis (PF 1.06-1.09) dengan eksekusi tidak realistis. Falsification log section 6e; hasil `research/probe_m15_m1_result.json`, data `research/data_xau_m{15,1}.csv`.
 - **Konektor MT5 di-hardening**: `fetch_mt5` kini `symbol_select` sebelum `copy_rates_range` + `time.sleep(1)` settle setelah initialize, dan fallback start berjenjang (2015→2026-08) agar jendela penuh M15/M1 tidak balik "Invalid params".

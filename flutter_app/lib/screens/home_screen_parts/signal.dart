@@ -26,13 +26,13 @@ class _SignalPage extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
+          _SignalHero(signal: data.signal, prediction: data.prediction, price: data.currentPrice, decimals: data.decimals, advanced: data.advanced, confHistory: confHistory),
+          const SizedBox(height: 14),
           _PriceHero(data: data),
           if (data.dataSource != 'live') ...[
             const SizedBox(height: 8),
             _DataSourceWarning(source: data.dataSource),
           ],
-          const SizedBox(height: 14),
-          _SignalHero(signal: data.signal, prediction: data.prediction, price: data.currentPrice, decimals: data.decimals, advanced: data.advanced, confHistory: confHistory),
           const SizedBox(height: 14),
           _LevelCard(risk: data.risk, position: data.position, decimals: data.decimals, alertTarget: alertTarget, price: data.currentPrice, onSetAlert: onSetAlert, onClearAlert: onClearAlert),
           if (data.market != null) ...[
@@ -103,6 +103,8 @@ class _ForwardTestCard extends StatelessWidget {
 
   final Map<String, dynamic> body;
 
+  int get _minResolved => (body['min_resolved'] as num?)?.toInt() ?? 20;
+
   String _fmt(num? v, {int d = 2}) => v == null ? '\u2014' : v.toStringAsFixed(d);
 
   Color _verdictColor(String v) {
@@ -117,6 +119,8 @@ class _ForwardTestCard extends StatelessWidget {
   }
 
   String _label(String v) => v == 'layak-lanjut' ? 'LAYAK LANJUT' : v == 'evaluasi-gagal' ? 'EVALUASI GAGAL' : 'MENUNGGU DATA';
+
+  String _tfLabel(String name) => name == '60m' ? '60M' : name.toUpperCase();
 
   @override
   Widget build(BuildContext context) {
@@ -146,14 +150,13 @@ class _ForwardTestCard extends StatelessWidget {
             params.isEmpty
                 ? 'Eksperimen forward-test strategi limit-entry SMC.'
                 : 'swing ${params['swing']} \u00B7 zone ${params['zone_bars']} bar \u00B7 SL ${params['sl_bars']} bar \u00B7 retest ${params['retest_bars']} bar \u00B7 RR ${params['rr']}',
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 10.5, height: 1.35),
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, height: 1.35),
           ),
-          const SizedBox(height: 10),
-          for (final e in logs.entries)
-            _logRow(name: e.key, v: (e.value as Map<String, dynamic>?)),
+          const SizedBox(height: 12),
+          for (final e in logs.entries) _logRow(name: e.key, v: (e.value as Map<String, dynamic>?)),
           const SizedBox(height: 8),
           const Text('Eksperimen untuk pemantauan, bukan rekomendasi trading.',
-              style: TextStyle(color: AppColors.textTertiary, fontSize: 10, height: 1.35)),
+              style: TextStyle(color: AppColors.textTertiary, fontSize: 10.5, height: 1.35)),
         ],
       ),
     );
@@ -163,41 +166,65 @@ class _ForwardTestCard extends StatelessWidget {
     final err = v == null ? null : v['error'];
     final vrd = v?['verdict'] as String? ?? 'menunggu-data';
     final vc = _verdictColor(vrd);
-    final nRes = (v?['n_resolved'] as num?) ?? 0;
+    final nRes = (v?['n_resolved'] as num?)?.toInt() ?? 0;
     final win = (v?['win_rate_decided'] as num?);
     final pf = (v?['profit_factor'] as num?);
     final avgR = (v?['avg_r'] as num?);
     final rows = (v?['rows'] as num?) ?? 0;
+    final remaining = _minResolved - nRes;
+    final progress = (nRes / _minResolved).clamp(0.0, 1.0).toDouble();
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 40,
-            child: Text(name.toUpperCase(), style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w800)),
+          Row(
+            children: [
+              SizedBox(
+                width: 42,
+                child: Text(_tfLabel(name), style: const TextStyle(color: AppColors.textSecondary, fontSize: 11.5, fontWeight: FontWeight.w800)),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(color: vc.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(5)),
+                child: Text(_label(vrd), style: TextStyle(color: vc, fontSize: 10.5, fontWeight: FontWeight.w800)),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: err != null
+                    ? Text(err, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11))
+                    : Wrap(
+                        spacing: 6,
+                        runSpacing: 2,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text('$nRes/$_minResolved resolved', style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600)),
+                          if (win != null) Text('win ${_fmt(win)}%', style: const TextStyle(color: AppColors.green, fontSize: 11, fontWeight: FontWeight.w700)),
+                          if (pf != null) Text('PF ${_fmt(pf, d: 3)}', style: const TextStyle(color: AppColors.blue, fontSize: 11, fontWeight: FontWeight.w700)),
+                          if (avgR != null) Text('R ${_fmt(avgR)}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w700)),
+                          Text('$rows baris', style: const TextStyle(color: AppColors.textTertiary, fontSize: 10.5)),
+                        ],
+                      ),
+              ),
+            ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(color: vc.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(5)),
-            child: Text(_label(vrd), style: TextStyle(color: vc, fontSize: 9.5, fontWeight: FontWeight.w800)),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: err != null
-                ? Text('$err', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10.5))
-                : Wrap(
-                    spacing: 6,
-                    runSpacing: 2,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Text('$nRes resolved', style: const TextStyle(color: AppColors.textSecondary, fontSize: 10.5, fontWeight: FontWeight.w600)),
-                      if (win != null) Text('win ${_fmt(win)}%', style: const TextStyle(color: AppColors.green, fontSize: 10.5, fontWeight: FontWeight.w700)),
-                      if (pf != null) Text('PF ${_fmt(pf, d: 3)}', style: const TextStyle(color: AppColors.blue, fontSize: 10.5, fontWeight: FontWeight.w700)),
-                      if (avgR != null) Text('R ${_fmt(avgR)}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 10.5, fontWeight: FontWeight.w700)),
-                      Text('$rows baris', style: const TextStyle(color: AppColors.textTertiary, fontSize: 10)),
-                    ],
-                  ),
-          ),
+          if (err == null) ...[
+            const SizedBox(height: 5),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 4,
+                backgroundColor: AppColors.surfaceAlt,
+                color: vc,
+              ),
+            ),
+            if (remaining > 0) ...[
+              const SizedBox(height: 3),
+              Text('Butuh $remaining sinyal selesai lagi menuju evaluasi (ambang $_minResolved).',
+                  style: const TextStyle(color: AppColors.textTertiary, fontSize: 10.5, height: 1.3)),
+            ],
+          ],
         ],
       ),
     );
@@ -433,12 +460,12 @@ class _PriceHero extends StatelessWidget {
             child: Text(
               priceStr,
               style: TextStyle(
-                fontSize: 44,
-                fontWeight: FontWeight.w900,
-                color: accent,
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
                 fontFeatures: const [FontFeature.tabularFigures()],
-                letterSpacing: -1,
-                height: 1,
+                letterSpacing: -0.5,
+                height: 1.05,
               ),
             ),
           ),
@@ -602,9 +629,14 @@ class _SignalHero extends StatelessWidget {
     return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppColors.surface,
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: AppColors.border),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.surface, AppColors.surfaceAlt],
+          ),
+          border: Border.all(color: sigColor.withValues(alpha: 0.4)),
+          boxShadow: [BoxShadow(color: sigColor.withValues(alpha: 0.10), blurRadius: 24, offset: const Offset(0, 8))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -739,33 +771,19 @@ class _AdvancedBadges extends StatelessWidget {
   Widget build(BuildContext context) {
     final regimeColor = adv.regime.contains('BULL') ? Colors.green : adv.regime.contains('BEAR') ? Colors.red : adv.regime == 'RANGING' ? Colors.amber : Colors.grey;
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Wrap(
-          spacing: 4,
-          runSpacing: 4,
-          children: [
-            _mtfBadge('D1', adv.mtfD1Dir),
-            _mtfBadge('H4', adv.mtfH4Dir),
-            _mtfBadge('H1', adv.mtfH1Dir),
-            _mtfBadge('M30', adv.mtfM30Dir),
-            _mtfBadge('M15', adv.mtfM15Dir),
-            _pill('ALIGN', '${(adv.mtfAlignment * 100).toInt()}%', adv.mtfAlignment > 0.3 ? Colors.green : adv.mtfAlignment < -0.3 ? Colors.red : Colors.grey),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
+          spacing: 6,
           runSpacing: 4,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
+            _pill('MTF', '${adv.mtfAlignment >= 0 ? '+' : ''}${(adv.mtfAlignment * 100).toInt()}%', adv.mtfAlignment > 0.3 ? Colors.green : adv.mtfAlignment < -0.3 ? Colors.red : Colors.grey),
             _pill('REGIME', adv.regime, regimeColor),
-            _pill('VOL', adv.volatilityRegime, adv.volatilityRegime == 'HIGH' ? Colors.orange : adv.volatilityRegime == 'LOW' ? Colors.cyan : Colors.grey),
-            _sessionBadge(adv.session),
             _pill('GRADE', adv.grade, _gradeColor(adv.grade)),
-            _pill('STAB', adv.stability, adv.stability == 'HIGH' ? Colors.green : adv.stability == 'MEDIUM' ? Colors.amber : Colors.red),
-            if (adv.smcWarning) ...[
+            _sessionBadge(adv.session),
+            if (adv.smcWarning)
               _pill('SMC', 'WARN', Colors.orange),
-            ],
           ],
         ),
         if (adv.weaknesses.isNotEmpty) ...[
@@ -773,7 +791,7 @@ class _AdvancedBadges extends StatelessWidget {
           Wrap(
             spacing: 4,
             runSpacing: 4,
-            children: adv.weaknesses.take(3).map((w) => Container(
+            children: adv.weaknesses.take(2).map((w) => Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
               child: Text(w, style: const TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.w700)),
@@ -781,15 +799,6 @@ class _AdvancedBadges extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-
-  Widget _mtfBadge(String tf, String dir) {
-    final c = dir == 'BULLISH' ? Colors.green : dir == 'BEARISH' ? Colors.red : Colors.grey;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: c.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
-      child: Text('$tf $dir', style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w700)),
     );
   }
 

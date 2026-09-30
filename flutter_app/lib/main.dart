@@ -22,7 +22,7 @@ class CangcilungApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       builder: (context, child) => MediaQuery.withClampedTextScaling(
-        maxScaleFactor: 1.4,
+        maxScaleFactor: 2.0,
         child: child!,
       ),
       home: const HomeScreen(),

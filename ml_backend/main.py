@@ -579,6 +579,7 @@ def get_research_forward():
     body = {
         "note": "Paper forward-test (bukan sinyal live, bukan alpha terbukti)",
         "params": {"swing": 3, "zone_bars": 6, "sl_bars": 8, "retest_bars": 24, "rr": 2.0},
+        "min_resolved": 20,
         "logs": out,
     }
     _ft_summary_cache[0] = now
