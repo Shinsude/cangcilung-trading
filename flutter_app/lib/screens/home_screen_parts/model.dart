@@ -142,6 +142,21 @@ class _ModelPageState extends State<_ModelPage> {
         const SizedBox(height: 8),
         _NotifSetting(on: widget.notifyOn, onToggle: widget.onToggleNotify),
         const SizedBox(height: 14),
+        const _SectionLabel('STATUS MODEL'),
+        for (final e in entries) ...[
+          _ModelCard(symbol: e.key, stats: e.value),
+          const SizedBox(height: 12),
+        ],
+        if ((widget.pipeline?.tracked ?? 0) > 0) ...[
+          const SizedBox(height: 2),
+          _PipelineCard(pipeline: widget.pipeline!),
+        ],
+        if (widget.system != null) ...[
+          const SizedBox(height: 14),
+          _SystemHealthCard(system: widget.system!),
+        ],
+        const SizedBox(height: 18),
+        const _SectionLabel('ALAT RISET & LOG'),
         _BacktestExplorer(
           symbols: _btSymbols,
           symbol: _btSymbol,
@@ -177,19 +192,6 @@ class _ModelPageState extends State<_ModelPage> {
             hasError: _historyError,
             onRetry: _loadHistory,
           ),
-        ],
-        const SizedBox(height: 14),
-        for (final e in entries) ...[
-          _ModelCard(symbol: e.key, stats: e.value),
-          const SizedBox(height: 12),
-        ],
-        if ((widget.pipeline?.tracked ?? 0) > 0) ...[
-          const SizedBox(height: 14),
-          _PipelineCard(pipeline: widget.pipeline!),
-        ],
-        if (widget.system != null) ...[
-          const SizedBox(height: 14),
-          _SystemHealthCard(system: widget.system!),
         ],
       ],
     );
@@ -864,6 +866,20 @@ class _ResearchCard extends StatelessWidget {
           Expanded(child: Text(strict, textAlign: TextAlign.right, style: TextStyle(color: strictColor, fontSize: 12, fontWeight: FontWeight.w800))),
         ],
       ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 2, 0, 8),
+      child: Text(text, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1)),
     );
   }
 }

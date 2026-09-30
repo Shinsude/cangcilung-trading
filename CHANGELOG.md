@@ -4,6 +4,11 @@ Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://s
 
 ## [Unreleased] - Scientific Record (research/)
 
+### Diperbaiki (UI/UX review, prioritas sedang)
+- **Scoreboard sinyal** keluar dari `_DetailSection` jadi kartu ringkas (WIN/LOSS/PENDING + win rate) yang selalu terlihat di tab Sinyal; daftar per-sinyal dihapus (redundant dgn "RIWAYAT SINYAL" di tab Model) dengan petunjuk ke sana.
+- **Timer idle dihentikan**: `_CandleTimer` (1s), `_SessionTimeline` (30s), dan `_UpdatedLabel` (30s) hanya berdetak saat tab Sinyal aktif — via `_TabActive` (InheritedWidget). Stop boros baterai saat app di tab Berita/Model.
+- **Tab Model dipisah** jadi section "STATUS MODEL" (kartu model, pipeline, health) di atas, lalu "ALAT RISET & LOG" (backtest, riset, riwayat sinyal) — power-user tools tidak lagi mendahului status model.
+
 ### Diperbaiki (UI/UX review, prioritas tinggi)
 - Tab Sinyal: hero ditukar — **sinyal di atas** (tier-1: gradient + border/glow aksen), harga jadi sub-baris 28px (dulu 44px di posisi paling atas).
 - `_AdvancedBadges` dipangkas dari 10+ chip jadi ringkas: MTF alignment, regime, grade, sesi, SMC warn + 2 weakness; detail penuh tetap di kartu Analisis Lanjutan.

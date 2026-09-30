@@ -471,9 +471,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildBody() {
     final d = _data!;
-    return _TabStack(
-      index: _tab,
-      children: [
+    return _TabActive(
+      active: _tab == 0,
+      child: _TabStack(
+        index: _tab,
+        children: [
         _SignalPage(
           data: d,
           onRefresh: _refreshAll,
@@ -501,7 +503,8 @@ class _HomeScreenState extends State<HomeScreen> {
           system: d.system,
           pipeline: d.pipeline,
         ),
-      ],
+        ],
+      ),
     );
   }
 }

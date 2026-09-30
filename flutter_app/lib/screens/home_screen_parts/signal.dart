@@ -48,11 +48,12 @@ class _SignalPage extends StatelessWidget {
             _ForwardTestCard(body: forward!),
           ],
           const SizedBox(height: 14),
+          _MiniScoreboard(loading: historyLoading, entries: history, hasError: historyError, onRetry: onRetryHistory),
+          const SizedBox(height: 14),
           _DetailSection(
             children: [
               const _CandleTimer(),
               const _SessionTimeline(),
-              _MiniScoreboard(loading: historyLoading, entries: history, hasError: historyError, onRetry: onRetryHistory),
               _IndicatorBlock(ind: data.indicators, vp: data.institutional?.vp, decimals: data.decimals),
               if (data.institutional != null) _VolumeProfileCard(inst: data.institutional!, decimals: data.decimals),
               if (data.institutional?.smc != null && data.institutional!.smc!.available) _SmcCard(smc: data.institutional!.smc!, decimals: data.decimals),
@@ -514,13 +515,23 @@ class _UpdatedLabel extends StatefulWidget {
 
 class _UpdatedLabelState extends State<_UpdatedLabel> {
   Timer? _t;
+  bool _active = false;
 
   @override
-  void initState() {
-    super.initState();
-    _t = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) setState(() {});
-    });
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final act = _TabActive.of(context);
+    if (act == _active) return;
+    _active = act;
+    if (act) {
+      _t?.cancel();
+      _t = Timer.periodic(const Duration(seconds: 30), (_) {
+        if (mounted) setState(() {});
+      });
+    } else {
+      _t?.cancel();
+      _t = null;
+    }
   }
 
   @override

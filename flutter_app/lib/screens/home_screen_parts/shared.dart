@@ -1,5 +1,17 @@
 part of 'package:cangcilung_trading/screens/home_screen.dart';
 
+class _TabActive extends InheritedWidget {
+  const _TabActive({required this.active, required super.child});
+
+  final bool active;
+
+  static bool of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_TabActive>()?.active ?? true;
+
+  @override
+  bool updateShouldNotify(_TabActive oldWidget) => oldWidget.active != active;
+}
+
 class _LoadingView extends StatefulWidget {
   const _LoadingView();
   @override
@@ -138,13 +150,27 @@ class _CandleTimer extends StatefulWidget {
 
 class _CandleTimerState extends State<_CandleTimer> {
   Timer? _t;
+  bool _active = false;
   Duration _remaining = Duration.zero;
   double _progress = 0;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final act = _TabActive.of(context);
+    if (act == _active) return;
+    _active = act;
+    if (act) {
+      _start();
+    } else {
+      _t?.cancel();
+      _t = null;
+    }
+  }
+
+  void _start() {
     _tick();
+    _t?.cancel();
     _t = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
   }
 
@@ -315,12 +341,26 @@ class _SessionTimeline extends StatefulWidget {
 
 class _SessionTimelineState extends State<_SessionTimeline> {
   Timer? _t;
+  bool _active = false;
   DateTime _now = DateTime.now().toUtc();
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final act = _TabActive.of(context);
+    if (act == _active) return;
+    _active = act;
+    if (act) {
+      _start();
+    } else {
+      _t?.cancel();
+      _t = null;
+    }
+  }
+
+  void _start() {
     _tick();
+    _t?.cancel();
     _t = Timer.periodic(const Duration(seconds: 30), (_) => _tick());
   }
 

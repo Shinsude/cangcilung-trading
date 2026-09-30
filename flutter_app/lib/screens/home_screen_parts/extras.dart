@@ -73,42 +73,9 @@ class _MiniScoreboard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            ...entries.take(6).map((e) {
-              final action = (e['action'] as String?) ?? 'HOLD';
-              final outcome = (e['outcome'] as String?) ?? 'pending';
-              final date = (e['date'] as String?) ?? '';
-              final cThen = (e['close_then'] as num?)?.toDouble();
-              final cNext = (e['close_next'] as num?)?.toDouble();
-              final oc = outcome == 'win' ? AppColors.green : (outcome == 'loss' ? AppColors.red : AppColors.textSecondary);
-              final ac = action == 'BUY' ? AppColors.green : (action == 'SELL' ? AppColors.red : AppColors.textSecondary);
-              return Container(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5))),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 56,
-                      child: Text(date.length > 5 ? date.substring(5) : date, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                      decoration: BoxDecoration(color: ac.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                      child: Text(action, style: TextStyle(color: ac, fontSize: 11, fontWeight: FontWeight.w800)),
-                    ),
-                    const Spacer(),
-                    if (cThen != null && cNext != null)
-                      Text('${cThen.toStringAsFixed(cThen > 100 ? 0 : 5)} -> ${cNext.toStringAsFixed(cNext > 100 ? 0 : 5)}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                      decoration: BoxDecoration(color: oc.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                      child: Text(outcome.toUpperCase(), style: TextStyle(color: oc, fontSize: 11, fontWeight: FontWeight.w800)),
-                    ),
-                  ],
-                ),
-              );
-            }),
+            const SizedBox(height: 6),
+            const Text('Log akurasi tiap sinyal selengkapnya di tab Model.',
+                style: TextStyle(color: AppColors.textTertiary, fontSize: 10.5, height: 1.3)),
           ],
         ],
       ),
