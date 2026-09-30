@@ -216,6 +216,32 @@ grail SMC" **tidak terkonfirmasi** di data 8,5 bulan. Implikasi operasional
 - Prioritas tetap: intraday M30/M5, di sana RR 1:2 selesai dalam jam bukan minggu,
   dan rezim bisa dipisah dari time-of-day.
 
+### 6e. Ekor intraday M15 & M1 (MT5 asli) — menyempurnakan hierarki
+
+Melengkapi bagian di bawah ambang. Data nyata MT5 (fallback start otomatis:
+`symbol_select` + settle + start berjenjang 2015→2026-08 agar tak kembali
+"Invalid params" pada jendela yang lebih penuh dari batas server):
+
+- **M15: 64.545 bar, 2024-01-02 -> 2026-09-28** (lebih penuh dari perkiraan ~50k),
+  disimpan `research/data_xau_m15.csv`.
+- **M1: 55.299 bar, 2026-08-03 -> 2026-09-28 (~38 hari)**, `research/data_xau_m1.csv`.
+
+Backtest param intraday TETAP terkunci (swing 3, zona 6, SL 8, retest 24, RR 2):
+
+| Timeframe | Sesi | Sinyal | Filled | Fill% | Win% | PF | Avg-R |
+|---|---|---|---|---|---|---|---|
+| M15 (2,7y) | IS | 6180 | 2904 | 47.0% | 36.6% | **0.930** | -0.039 |
+| M15 (2,7y) | OOS | 4072 | 1771 | 43.5% | 39.2% | **0.903** | -0.051 |
+| M1 (38 hari) | IS | 5095 | 2420 | 47.5% | 40.9% | **1.057** | +0.030 |
+| M1 (38 hari) | OOS | 3150 | 1554 | 49.3% | 41.1% | **1.094** | +0.049 |
+
+PUTUSAN: **M15 gagal bahkan di IS (PF 0.93)** — tidak beralasan dioptimasi; M1
+berada tepat di garis breakeven (PF 1.06-1.09) dengan jendela HANYA 38 hari dan
+spread/slippage M1 yang tidak realistis untuk dieksekusi. Hierarki final intraday:
+**60m > M30 > M5(-) > M15(-) ≈ M1** — edge yang layak hanya hidup di 60m (dan
+marginally M30); M15/M1 = zona noise. Hasil lengkap `research/probe_m15_m1_result.json`.
+Eksekusinya lambat (mesin O(n^1.8)); ulang via `ml_backend/services/probe_m15_m1.py`.
+
 ## 7. Reproduksi
 
 ```bash

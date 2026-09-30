@@ -1,0 +1,70 @@
+{
+  "M15": {
+    "tf": "M15",
+    "span": "2024-01-02 .. 2026-09-28",
+    "bars": 64545,
+    "note": "WARNING: pada data harian, perlakukan angka ini sebagai alur kerja \u2014 bukan alpha final. Validasi statistik yang jujur butuh konfirmasi OOS bahwa PF/win-rate IS tidak runtuh. R dihitung dalam satuan risk (R=1 = satu SL).",
+    "is": {
+      "win": 36.6,
+      "pf": 0.93,
+      "fills": 47.0,
+      "n": 2904,
+      "avg_r": -0.039,
+      "exits": {
+        "target": 616,
+        "timeout": 784,
+        "stop": 1504,
+        "no_future": 0,
+        "zero_risk": 0
+      }
+    },
+    "oos": {
+      "win": 39.2,
+      "pf": 0.903,
+      "fills": 43.5,
+      "n": 1771,
+      "avg_r": -0.051,
+      "exits": {
+        "target": 307,
+        "timeout": 595,
+        "stop": 869,
+        "no_future": 0,
+        "zero_risk": 0
+      }
+    }
+  },
+  "M1": {
+    "tf": "M1",
+    "span": "2026-08-03 .. 2026-09-28",
+    "bars": 55299,
+    "note": "WARNING: pada data harian, perlakukan angka ini sebagai alur kerja \u2014 bukan alpha final. Validasi statistik yang jujur butuh konfirmasi OOS bahwa PF/win-rate IS tidak runtuh. R dihitung dalam satuan risk (R=1 = satu SL).",
+    "is": {
+      "win": 40.9,
+      "pf": 1.057,
+      "fills": 47.5,
+      "n": 2420,
+      "avg_r": 0.03,
+      "exits": {
+        "target": 503,
+        "timeout": 718,
+        "stop": 1199,
+        "no_future": 0,
+        "zero_risk": 0
+      }
+    },
+    "oos": {
+      "win": 41.1,
+      "pf": 1.094,
+      "fills": 49.3,
+      "n": 1554,
+      "avg_r": 0.049,
+      "exits": {
+        "target": 331,
+        "timeout": 476,
+        "stop": 747,
+        "no_future": 0,
+        "zero_risk": 0
+      }
+    }
+  }
+}

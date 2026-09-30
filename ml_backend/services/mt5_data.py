@@ -65,6 +65,8 @@ def discover_terminal() -> str | None:
 
 
 def _session(terminal: str | None = None):
+    import time
+
     try:
         import MetaTrader5 as mt5
     except ImportError:
@@ -75,6 +77,7 @@ def _session(terminal: str | None = None):
         return None, "terminal64.exe tidak ditemukan"
     if not mt5.initialize(path):
         return None, f"mt5.initialize gagal (rc={mt5.last_error()})"
+    time.sleep(1)  # biarkan terminal settle, hindari "Invalid params" sesaat
     if MT5_LOGIN and MT5_PASSWORD:
         ok = mt5.login(MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER or None)
         if not ok:
@@ -152,9 +155,21 @@ def fetch_mt5(symbol: str = MT5_SYMBOL, timeframe: str = MT5_TIMEFRAME,
         logger.warning("MT5 tidak tersedia: %s", err)
         return None
     try:
-        dt_from = pd.Timestamp(start) if start is not None else pd.Timestamp("2015-01-01")
+        if not mt5_session.symbol_select(symbol, True):
+            logger.warning("MT5 symbol_select gagal untuk %s (rc=%s)", symbol, mt5_session.last_error())
+            return None
         dt_to = pd.Timestamp(end) if end is not None else pd.Timestamp.now()
-        rates = mt5_session.copy_rates_range(symbol, getattr(mt5_session, key), dt_from, dt_to)
+        if start is not None:
+            starts = [pd.Timestamp(start)]
+        else:
+            starts = [pd.Timestamp(x) for x in
+                      ("2015-01-01", "2023-01-01", "2024-01-01", "2025-01-01",
+                       "2026-01-01", "2026-08-01")]
+        rates = None
+        for s in starts:
+            rates = mt5_session.copy_rates_range(symbol, getattr(mt5_session, key), s, dt_to)
+            if rates is not None and len(rates) > 0:
+                break
         if rates is None or len(rates) == 0:
             logger.warning("MT5 kosong untuk %s %s", symbol, timeframe)
             return None

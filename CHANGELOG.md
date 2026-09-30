@@ -4,6 +4,11 @@ Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://s
 
 ## [Unreleased] - Scientific Record (research/)
 
+### Ditambahkan (inkremental: hierarki intraday dipertegas)
+- **Probe MT5 M15 & M1 (data asli, param tetap terkunci)**: hierarki final intraday **60m > M30 > M5(-) > M15(-) ≈ M1**. M15 (64.5k bar, 2,7 th) **gagal bahkan di IS (PF 0.930)**; M1 (55k bar, 38 hari) breakeven tipis (PF 1.06-1.09) dengan eksekusi tidak realistis. Falsification log section 6e; hasil `research/probe_m15_m1_result.json`, data `research/data_xau_m{15,1}.csv`.
+- **Konektor MT5 di-hardening**: `fetch_mt5` kini `symbol_select` sebelum `copy_rates_range` + `time.sleep(1)` settle setelah initialize, dan fallback start berjenjang (2015→2026-08) agar jendela penuh M15/M1 tidak balik "Invalid params".
+- 1 penyesuaian: skrip `mt5_data.fetch_mt5` memakai kandidat start, M15/M1 penuh tersedia. Total test tetap 92 passed.
+
 ### Diperbaiki (v1.6.9, CI hijau)
 - `fetch_mt5`/`_session` guard `ImportError` `MetaTrader5` sebelum validate timeframe — hermetic test kini lolos di CI Linux (tanpa paket MT5 yang hanya Windows) tanpa menyentuh jalur live.
 - Flutter: lint `prefer_const_constructors/literals` di card forward-test (5 info) — `flutter analyze` kembali 0 issue.
