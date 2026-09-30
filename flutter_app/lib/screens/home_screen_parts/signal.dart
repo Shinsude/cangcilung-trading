@@ -459,11 +459,11 @@ class _PriceHero extends StatelessWidget {
             ),
             child: Text(
               priceStr,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
-                fontFeatures: const [FontFeature.tabularFigures()],
+                fontFeatures: [FontFeature.tabularFigures()],
                 letterSpacing: -0.5,
                 height: 1.05,
               ),
