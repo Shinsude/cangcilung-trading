@@ -2019,14 +2019,18 @@ class _EducationPanelState extends State<_EducationPanel> {
   ];
 
   static const _rowsEO = <(String, String)>[
-    ('Buy-side & sell-side', 'Buy-side = pemilik dana (manajer investasi, hedge fund, dana pensiun). Sell-side = bank investasi & broker-dealer penyedia likuiditas/eksekusi. PM memutuskan apa dibeli; trader buy-side yang mengeksekusi.'),
-    ('Alur order', 'Keputusan portofolio \u2192 OMS (ukuran, harga, benchmark) \u2192 cek risiko/kepatuhan (limit, restricted list, mandat, kas) \u2192 EMS + protokol FIX \u2192 venue (lit, dark pool, OTC) \u2192 eksekusi \u2192 alokasi, clearing, settlement, TCA.'),
-    ('High-touch', 'Order besar/ilikuid: lewat sales trader bank \u2014 cari natural liquidity, kirim IOI, negosiasi block trade di luar order book; kadang broker jadi principal (beli dulu, jual dengan spread).'),
-    ('Low-touch', 'Saham likuid/FX/futures pakai algoritma: order dipecah kecil ke banyak venue \u2014 lit exchange, dark pool/ATS (tak terlihat), OTC/RFQ (obligasi, derivatif), internalization broker.'),
-    ('Algoritma', 'VWAP ikuti volume; TWAP bagi rata waktu; POV persen volume pasar; Implementation Shortfall tekan selisih harga; Liquidity Seeking cari dark pool; Iceberg sembunyikan ukuran; Smart Order Router pilih venue terbaik.'),
-    ('Contoh nyata', 'Fund beli 5 juta lembar: \u00b130% block trade, \u00b150% VWAP selama jam, \u00b120% dark pool; diperlambat bila harga melonjak, dijeda saat berita buruk; lalu TCA membandingkan hasil vs VWAP/arrival price.'),
-    ('Jejak di chart', 'Volume besar tapi harga rata = absorption; order besar lalu hilang = iceberg (spoofing ilegal); gerak pelan konsisten = algoritma; block di luar bursa = kesepakatan institusi.'),
-    ('Kesimpulan', 'Eksekusi institusi: keputusan \u2192 manajemen risiko \u2192 eksekusi algoritmik/negosiasi \u2192 banyak venue \u2192 settlement \u2192 evaluasi. Mengelola dampak pasar, biaya, risiko, kepatuhan \u2014 skala tak terjangkau retail.'),
+    ('Buy-side & sell-side', 'Buy-side = pemilik dana (manajer investasi, hedge fund, dana pensiun); PM memutuskan, trader buy-side mengeksekusi. Sell-side = bank investasi & broker-dealer penyedia likuiditas & eksekusi.'),
+    ('1. Keputusan investasi', 'PM/analis putuskan beli/jual berdasar riset, alokasi portofolio & mandat klien: apa yang dibeli, berapa besar, timeframe, benchmark eksekusi (VWAP, arrival price, limit). Masih intent / parent order, bukan order final.'),
+    ('2. Order ticket & OMS', 'Parent order masuk OMS (Order Management System): simbol, sisi, kuantitas, tipe order (limit/market/VWAP/TWAP/POV), batas harga, akun klien, benchmark & urgensi.'),
+    ('3. Pre-trade compliance', 'Cek otomatis sebelum keluar: mandat klien, restricted list, position limit/exposure, kas/margin, short locate (bila jual), regulasi (MiFID II, best execution). Lolos \u2192 kirim ke EMS.'),
+    ('4. Strategi eksekusi', 'High-touch (sales trader manusia: block trade, IOI, RFQ) untuk order besar/ilikuid; low-touch (algo VWAP/TWAP/POV/IS/Liquidity Seeking) untuk likuid. Tentukan venue: lit, dark pool, OTC.'),
+    ('5. Routing & SOR', 'EMS kirim via protokol FIX ke broker/algo. Parent order dipecah jadi banyak child order; Smart Order Router menyalurkan tiap child ke lit, dark pool/ATS, internalizer, atau venue OTC.'),
+    ('6. Masuk market', 'Child order masuk matching engine: limit, market, IOC/FOK, hidden/iceberg, pegged. Lit dicocokkan price-time priority di order book; dark pool tanpa ditampilkan; obligasi/FX/derivatif lewat RFQ ke dealer.'),
+    ('7. Fill & monitoring', 'Setiap fill mengirim execution report ke broker \u2192 EMS/OMS. Trader pantau harga rata-rata, slippage, market impact, sisa kuantitas; algoritma lanjut sampai penuh atau batas waktu.'),
+    ('8. Post-trade & TCA', 'Alokasi hasil ke akun klien, konfirmasi & clearing, settlement T+1/T+2, lalu TCA (Transaction Cost Analysis) membandingkan harga eksekusi vs benchmark. Rekonsiliasi & laporan ke klien/regulator.'),
+    ('Contoh nyata', 'PM beli 2.000.000 saham BBCA: parent order \u2192 compliance lolos \u2192 algo VWAP 20% POV \u2192 dipecah ratusan child \u2192 SOR kirim ke bursa + dark pool \u2192 tiap fill kembali ke OMS \u2192 alokasi & TCA.'),
+    ('Jejak di chart', 'Volume besar tapi harga rata = absorption; order besar lalu hilang = iceberg (spoofing ilegal); gerak pelan konsisten = algoritma bekerja; block di luar bursa = kesepakatan institusi.'),
+    ('Catatan', 'Alur tak selalu linear: algoritma adaptif, high-touch bisa negosiasi, order bisa dibatalkan/diubah di tengah jalan. Itulah perjalanan order institusional dari keputusan BUY sampai masuk market.'),
   ];
 
   @override
