@@ -2033,12 +2033,22 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Catatan', 'Alur tak selalu linear: algoritma adaptif, high-touch bisa negosiasi, order bisa dibatalkan/diubah di tengah jalan. Itulah perjalanan order institusional dari keputusan BUY sampai masuk market.'),
   ];
 
+  static const _rowsPA = <(String, String)>[
+    ('Prinsip sama', 'Parent order \u2192 risk check \u2192 algo/high-touch \u2192 child order \u2192 venue \u2192 fill \u2192 settlement \u2192 TCA. Yang beda antar-aset: venue dan mekanismenya.'),
+    ('XAUUSD (gold)', 'OTC tanpa bursa terpusat: likuiditas dari bank besar, ECN, & London (LBMA); ada juga futures COMEX. Butuh prime brokerage (PB) untuk kredit. High-touch = RFQ/block ke bank (HSBC, JPM, UBS); low-touch = algo ke EBS, LMAX, Currenex, FXall. Last look bisa menolak order dalam milidetik. Settlement T+2 Loco London.'),
+    ('AUDUSD (FX)', 'OTC terdesentralisasi: likuiditas bank, hedge fund, korporasi, ECN; kredit via FX prime brokerage. RFQ ke Citi/Deutsche/Barclays atau algo ke EBS, LMAX, Currenex, Hotspot, FXall. SOR pilih ECN terbaik; child bisa hidden/iceberg; last look sering. Settlement T+2 via CLS/bilateral. Paling likuid setelah EURUSD/USDJPY/GBPUSD.'),
+    ('NASDAQ', 'Indeks, bukan aset langsung. Yang diperdagangkan: futures NQ (CME Globex), ETF QQQ & saham Nasdaq (bursa lit + dark pool, T+1), atau CFD retail. Future: margin via FCM, block di CME, matching engine terpusat tanpa last look, mark-to-market harian. Block saham lewat upstairs/RFQ.'),
+    ('Ringkasan', 'Venue utama: ECN/bank/LBMA (gold), ECN FX (AUDUSD), Globex/bursa saham (NASDAQ). Settlement: T+2 Loco London / T+2 CLS / T+1-harian. Algo umum: VWAP-TWAP-RFQ (gold), TWAP-VWAP-POV (FX), VWAP-TWAP-IS (ekuitas). Last look hanya di OTC.'),
+    ('Relevansi app', 'Aplikasi fokus XAUUSD (spot). Sinyal dihitung dari data harga harian \u2014 proxy & simulasi (bukan order flow, bukan CFD B-book). Tujuannya belajar membaca jejak institusi, bukan mengklaim eksekusi otomatis.'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
       0 => _rows,
       1 => _rowsSM,
-      _ => _rowsEO,
+      2 => _rowsEO,
+      _ => _rowsPA,
     };
     return Container(
       padding: const EdgeInsets.all(16),
@@ -2106,6 +2116,7 @@ class _EducationPanelState extends State<_EducationPanel> {
           _topicBtn(0, 'BACA SINYAL'),
           _topicBtn(1, 'SMART MONEY'),
           _topicBtn(2, 'ALUR ORDER'),
+          _topicBtn(3, 'PER ASET'),
         ],
       ),
     );
@@ -2130,9 +2141,9 @@ class _EducationPanelState extends State<_EducationPanel> {
             textAlign: TextAlign.center,
             style: TextStyle(
               color: selected ? AppColors.blue : AppColors.textTertiary,
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: FontWeight.w800,
-              letterSpacing: 0.4,
+              letterSpacing: 0.3,
             ),
           ),
         ),

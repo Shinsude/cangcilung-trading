@@ -5,6 +5,7 @@ Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://s
 ## [Unreleased] - Scientific Record (research/)
 
 ### Ditambahkan
+- **Panel edukasi: topik "PER ASET".** `_EducationPanel` kini punya 4 topik (BACA SINYAL | SMART MONEY | ALUR ORDER | PER ASET): perbandingan alur order institusional antar-kelas aset \u2014 XAUUSD (spot OTC + futures COMEX), AUDUSD (spot FX OTC), dan NASDAQ (futures CME / saham-ETF / CFD) \u2014 plus ringkasan venue, settlement, algo, last look, dan relevansinya untuk sinyal aplikasi.
 - **Panel edukasi: topik "ALUR ORDER".** `_EducationPanel` kini punya 3 topik (BACA SINYAL | SMART MONEY | ALUR ORDER): alur lengkap order institusional 8 langkah (keputusan \u2192 OMS \u2192 compliance \u2192 strategi \u2192 routing/SOR \u2192 market \u2192 fill & monitor \u2192 post-trade/TCA), contoh nyata, jejak institusi di chart, dan catatan.
 - **Panel edukasi: topik "SMART MONEY".** Siapa trader institusional, perbedaan utama vs retail, strategi eksekusi (VWAP/TWAP, arbitrase, StatArb), dan tautannya dengan bacaan SMC.
 
