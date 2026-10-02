@@ -4,6 +4,9 @@ Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://s
 
 ## [Unreleased] - Scientific Record (research/)
 
+### Ditambahkan
+- **Panel edukasi: topik "SMART MONEY".** `_EducationPanel` kini punya toggle dua topik (BACA SINYAL | SMART MONEY): siapa trader institusional, perbedaan utama vs retail, strategi eksekusi (VWAP/TWAP, arbitrase, StatArb), dan tautannya dengan bacaan SMC yang sudah dihitung aplikasi.
+
 ### Performansi & response time
 - **Backend: tuning tanpa menahan request.** Grid-search bobot sinyal (~3,8 dtk, 162 backtest) tidak lagi menghitung inline saat TTL kedaluwarsa: versi lama dilayani seketika (stale-while-revalidate) lalu dihitung ulang di thread latar; single-flight mencegah request paralel menghitung dua kali (`services/tuner.py`).
 - **Backend: `/signal` & `/warm` selalu balas cepat.** Payload kedaluwarsa dilayani versi lama + rebuild background (kunci per-simbol); cold-cache pertama tetap menghitung sekali (dedup). Cocok untuk cron `/warm` tiap 10 menit.

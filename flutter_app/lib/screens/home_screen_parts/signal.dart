@@ -1992,6 +1992,7 @@ class _EducationPanel extends StatefulWidget {
 
 class _EducationPanelState extends State<_EducationPanel> {
   bool _open = false;
+  int _topic = 0;
 
   static const _rows = <(String, String)>[
     ('Regime', 'Kondisi pasar: trending (bergerak teratur) vs choppy (acak/gorak-gorok). Pahami dulu regime sebelum eksekusi.'),
@@ -2008,8 +2009,18 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Momentum 20 hari', 'Perubahan harga 20 hari terakhir. Bisa menimbang "mempercepat", "melambat", atau "membalik".'),
   ];
 
+  static const _rowsSM = <(String, String)>[
+    ('Siapa mereka', 'Trader institusional: profesional bervolume besar atas nama institusi (bank investasi, hedge fund, dana pensiun, manajer aset, ETF). Uang milik nasabah, bukan pribadi; disebut juga \u201cSmart Money\u201d.'),
+    ('vs Trader retail', 'Skala: miliaran dolar vs modal pribadi \u2014 gerak mereka saja bisa menggeser harga. Tujuan: return tahunan konsisten vs untung cepat. Akses: order flow & terminal makro vs data publik. Produk: swaps, forwards, IPO vs spot.'),
+    ('VWAP / TWAP', 'Eksekusi raksasa dipecah kecil sepanjang hari untuk rata-rata harga terbaik tanpa mengguncang pasar.'),
+    ('Arbitrase', 'Ambil selisih harga aset yang sama di bursa berbeda, mengandalkan kecepatan teknologi.'),
+    ('StatArb', 'Cari penyimpangan korelasi historis antar aset lewat model statistik untuk profit.'),
+    ('Bacaan SMC', 'Jejak mereka terlihat di likuiditas (di luar level penting), break of structure + order block, dan FVG. Panel SMC di aplikasi ini mengukur versi modular dari jejak itu.'),
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final rows = _topic == 0 ? _rows : _rowsSM;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -2030,20 +2041,15 @@ class _EducationPanelState extends State<_EducationPanel> {
                 const Expanded(
                   child: Text('PANEL EDUKASI BACA PASAR', style: TextStyle(color: AppColors.blue, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('CARA BACA SINYAL', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w700)),
-                    const SizedBox(width: 4),
-                    Icon(_open ? Icons.expand_less : Icons.expand_more, size: 18, color: AppColors.textSecondary),
-                  ],
-                ),
+                Icon(_open ? Icons.expand_less : Icons.expand_more, size: 18, color: AppColors.textSecondary),
               ],
             ),
           ),
           if (_open) ...[
+            const SizedBox(height: 10),
+            _topicToggle(),
             const SizedBox(height: 12),
-            for (final r in _rows)
+            for (final r in rows)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
@@ -2057,9 +2063,59 @@ class _EducationPanelState extends State<_EducationPanel> {
                   ],
                 ),
               ),
-            const Text('Semua angka berasal dari data harian, bukan saran trading. Verifikasi selalu dengan disiplin risiko.', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontStyle: FontStyle.italic)),
+            const SizedBox(height: 4),
+            if (_topic == 0)
+              const Text('Semua angka berasal dari data harian, bukan saran trading. Verifikasi selalu dengan disiplin risiko.', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontStyle: FontStyle.italic))
+            else
+              const Text('Sinyal dihitung dari data harga, bukan order flow institusi \u2014 probabilitas, bukan kepastian. Edukasi, bukan saran.', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontStyle: FontStyle.italic)),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _topicToggle() {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          _topicBtn(0, 'BACA SINYAL'),
+          _topicBtn(1, 'SMART MONEY'),
+        ],
+      ),
+    );
+  }
+
+  Widget _topicBtn(int t, String label) {
+    final selected = _topic == t;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() {
+          _topic = t;
+          _open = true;
+        }),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.blue.withValues(alpha: 0.15) : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: selected ? AppColors.blue : AppColors.textTertiary,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.4,
+            ),
+          ),
+        ),
       ),
     );
   }
