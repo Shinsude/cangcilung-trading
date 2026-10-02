@@ -2018,9 +2018,24 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Bacaan SMC', 'Jejak mereka terlihat di likuiditas (di luar level penting), break of structure + order block, dan FVG. Panel SMC di aplikasi ini mengukur versi modular dari jejak itu.'),
   ];
 
+  static const _rowsEO = <(String, String)>[
+    ('Buy-side & sell-side', 'Buy-side = pemilik dana (manajer investasi, hedge fund, dana pensiun). Sell-side = bank investasi & broker-dealer penyedia likuiditas/eksekusi. PM memutuskan apa dibeli; trader buy-side yang mengeksekusi.'),
+    ('Alur order', 'Keputusan portofolio \u2192 OMS (ukuran, harga, benchmark) \u2192 cek risiko/kepatuhan (limit, restricted list, mandat, kas) \u2192 EMS + protokol FIX \u2192 venue (lit, dark pool, OTC) \u2192 eksekusi \u2192 alokasi, clearing, settlement, TCA.'),
+    ('High-touch', 'Order besar/ilikuid: lewat sales trader bank \u2014 cari natural liquidity, kirim IOI, negosiasi block trade di luar order book; kadang broker jadi principal (beli dulu, jual dengan spread).'),
+    ('Low-touch', 'Saham likuid/FX/futures pakai algoritma: order dipecah kecil ke banyak venue \u2014 lit exchange, dark pool/ATS (tak terlihat), OTC/RFQ (obligasi, derivatif), internalization broker.'),
+    ('Algoritma', 'VWAP ikuti volume; TWAP bagi rata waktu; POV persen volume pasar; Implementation Shortfall tekan selisih harga; Liquidity Seeking cari dark pool; Iceberg sembunyikan ukuran; Smart Order Router pilih venue terbaik.'),
+    ('Contoh nyata', 'Fund beli 5 juta lembar: \u00b130% block trade, \u00b150% VWAP selama jam, \u00b120% dark pool; diperlambat bila harga melonjak, dijeda saat berita buruk; lalu TCA membandingkan hasil vs VWAP/arrival price.'),
+    ('Jejak di chart', 'Volume besar tapi harga rata = absorption; order besar lalu hilang = iceberg (spoofing ilegal); gerak pelan konsisten = algoritma; block di luar bursa = kesepakatan institusi.'),
+    ('Kesimpulan', 'Eksekusi institusi: keputusan \u2192 manajemen risiko \u2192 eksekusi algoritmik/negosiasi \u2192 banyak venue \u2192 settlement \u2192 evaluasi. Mengelola dampak pasar, biaya, risiko, kepatuhan \u2014 skala tak terjangkau retail.'),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final rows = _topic == 0 ? _rows : _rowsSM;
+    final rows = switch (_topic) {
+      0 => _rows,
+      1 => _rowsSM,
+      _ => _rowsEO,
+    };
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -2086,6 +2101,7 @@ class _EducationPanelState extends State<_EducationPanel> {
         children: [
           _topicBtn(0, 'BACA SINYAL'),
           _topicBtn(1, 'SMART MONEY'),
+          _topicBtn(2, 'ALUR ORDER'),
         ],
       ),
     );

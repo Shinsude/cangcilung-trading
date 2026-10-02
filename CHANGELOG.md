@@ -5,7 +5,8 @@ Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://s
 ## [Unreleased] - Scientific Record (research/)
 
 ### Ditambahkan
-- **Panel edukasi: topik "SMART MONEY".** `_EducationPanel` kini punya toggle dua topik (BACA SINYAL | SMART MONEY): siapa trader institusional, perbedaan utama vs retail, strategi eksekusi (VWAP/TWAP, arbitrase, StatArb), dan tautannya dengan bacaan SMC yang sudah dihitung aplikasi.
+- **Panel edukasi: topik "ALUR ORDER".** `_EducationPanel` kini punya 3 topik (BACA SINYAL | SMART MONEY | ALUR ORDER): buy-side vs sell-side, alur order (OMS → FIX → venue), high-touch vs low-touch, algoritma eksekusi, contoh nyata, jejak institusi di chart, dan kesimpulan.
+- **Panel edukasi: topik "SMART MONEY".** Siapa trader institusional, perbedaan utama vs retail, strategi eksekusi (VWAP/TWAP, arbitrase, StatArb), dan tautannya dengan bacaan SMC.
 
 ### Performansi & response time
 - **Backend: tuning tanpa menahan request.** Grid-search bobot sinyal (~3,8 dtk, 162 backtest) tidak lagi menghitung inline saat TTL kedaluwarsa: versi lama dilayani seketika (stale-while-revalidate) lalu dihitung ulang di thread latar; single-flight mencegah request paralel menghitung dua kali (`services/tuner.py`).
