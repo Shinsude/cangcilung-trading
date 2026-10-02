@@ -1,9 +1,13 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/models.dart';
+
+TradingData _decodeSignal(String raw) =>
+    TradingData.fromJson(jsonDecode(raw) as Map<String, dynamic>);
 
 class ApiService {
   ApiService({String? baseUrl}) : baseUrl = baseUrl ?? defaultBaseUrl;
@@ -34,8 +38,7 @@ class ApiService {
     final uri = Uri.parse('$baseUrl/signal/$upper');
     final response = await http.get(uri).timeout(const Duration(seconds: 90));
     if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final data = TradingData.fromJson(json);
+      final data = await compute(_decodeSignal, response.body);
       await _writeCache(upper, response.body);
       return data;
     }
@@ -47,8 +50,7 @@ class ApiService {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_cacheKey(symbol.toUpperCase()));
       if (raw == null || raw.isEmpty) return null;
-      final json = jsonDecode(raw) as Map<String, dynamic>;
-      return TradingData.fromJson(json);
+      return await compute(_decodeSignal, raw);
     } catch (_) {
       return null;
     }

@@ -53,6 +53,10 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _digestLoaded = false;
   Map<String, dynamic>? _forwardResearch;
   bool _forwardLoaded = false;
+  Future<void>? _loadOp;
+  final Map<String, Future<void>> _historyOps = {};
+  Future<void>? _digestOp;
+  Future<void>? _forwardOp;
 
   @override
   void initState() {
@@ -62,6 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _initNotifPref();
     _loadAlerts();
     _loadHistory(_selected);
+    unawaited(_api.warmup());
   }
 
   @override
@@ -119,7 +124,18 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (_) {}
   }
 
-  Future<void> _loadHistory(String symbol) async {
+  Future<void> _loadHistory(String symbol) {
+    final op = _historyOps[symbol];
+    if (op != null) return op;
+    final f = _doLoadHistory(symbol);
+    _historyOps[symbol] = f;
+    f.whenComplete(() {
+      if (identical(_historyOps[symbol], f)) _historyOps.remove(symbol);
+    });
+    return f;
+  }
+
+  Future<void> _doLoadHistory(String symbol) async {
     setState(() {
       _historyLoading = true;
       _historyError = false;
@@ -141,7 +157,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadDigest({bool refresh = false}) async {
+  Future<void> _loadDigest({bool refresh = false}) {
+    final op = _digestOp;
+    if (op != null) return op;
+    final f = _doLoadDigest(refresh: refresh);
+    _digestOp = f;
+    f.whenComplete(() {
+      if (identical(_digestOp, f)) _digestOp = null;
+    });
+    return f;
+  }
+
+  Future<void> _doLoadDigest({bool refresh = false}) async {
     if (_digestLoaded && !refresh) return;
     _digestLoaded = false;
     try {
@@ -165,7 +192,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadForward({bool refresh = false}) async {
+  Future<void> _loadForward({bool refresh = false}) {
+    final op = _forwardOp;
+    if (op != null) return op;
+    final f = _doLoadForward(refresh: refresh);
+    _forwardOp = f;
+    f.whenComplete(() {
+      if (identical(_forwardOp, f)) _forwardOp = null;
+    });
+    return f;
+  }
+
+  Future<void> _doLoadForward({bool refresh = false}) async {
     if (_forwardLoaded && !refresh) return;
     _forwardLoaded = false;
     try {
@@ -333,7 +371,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _load() async {
+  Future<void> _load() {
+    final op = _loadOp;
+    if (op != null) return op;
+    final f = _doLoad();
+    _loadOp = f;
+    f.whenComplete(() {
+      if (identical(_loadOp, f)) _loadOp = null;
+    });
+    return f;
+  }
+
+  Future<void> _doLoad() async {
     if (_data == null) {
       setState(() {
         _loading = true;

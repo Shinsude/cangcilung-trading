@@ -3,7 +3,13 @@
 Strategi: grid search multiplier grup (oscillator/trend/prediksi/sentimen)
 terhadap data historis, memaksimalkan metrik kualitas backtest.
 Hasil per simbol di-cache (in-memory) dengan TTL.
+
+Performansi: grid search mahal (~162 backtest). Saat entri kedaluwarsa, versi
+lama tetap diberikan sinkron (stale-while-revalidate) dan hitung ulang berjalan
+di thread latar — request pertama setelah TTL tidak pernah menunggu tuning.
+Deduplikasi multi-thread (single-flight) mencegah dua request menghitung dua kali.
 """
+import threading
 import time
 
 from services import backtest
@@ -13,6 +19,8 @@ _grid = (0.6, 1.0, 1.4)
 _GROUP = ("oscillator", "trend", "prediction", "sentiment")
 
 _tuned_cache: dict[str, dict] = {}  # symbol -> {"weights":..., "at": ts, "metrics":...}
+_tune_lock = threading.Lock()
+_recompute_in_flight: set[str] = set()
 
 
 def _weights_from(multipliers: dict) -> dict:
@@ -66,16 +74,45 @@ def _best_weights(df) -> dict:
     return {"weights": weights, "metrics": best, "multipliers": best_mult}
 
 
+def _recompute_async(df, symbol: str) -> None:
+    if symbol in _recompute_in_flight:
+        return
+    _recompute_in_flight.add(symbol)
+
+    def _worker() -> None:
+        try:
+            res = _best_weights(df)
+            res["at"] = time.time()
+            res["symbol"] = symbol
+            with _tune_lock:
+                _tuned_cache[symbol] = res
+        except Exception:  # noqa: BLE001
+            pass
+        finally:
+            _recompute_in_flight.discard(symbol)
+
+    threading.Thread(target=_worker, daemon=True).start()
+
+
 def tuned(df, symbol: str, force: bool = False, ttl: int | None = None) -> dict:
     now = time.time()
+    ttl = TUNE_TTL_SECONDS if ttl is None else ttl
     hit = _tuned_cache.get(symbol)
-    ttl = ttl or TUNE_TTL_SECONDS
     if hit and not force and (now - hit["at"] < ttl):
         return hit
-    res = _best_weights(df)
-    res["at"] = now
-    res["symbol"] = symbol
-    _tuned_cache[symbol] = res
+    if hit is not None and not force:
+        # Entri kedaluwarsa tapi masih ada: layani versi lama seketika, segarkan
+        # di background sehingga request berikutnya melihat nilai baru.
+        _recompute_async(df, symbol)
+        return hit
+    with _tune_lock:
+        hit = _tuned_cache.get(symbol)
+        if hit and not force and (now - hit["at"] < ttl):
+            return hit
+        res = _best_weights(df)
+        res["at"] = time.time()
+        res["symbol"] = symbol
+        _tuned_cache[symbol] = res
     return res
 
 

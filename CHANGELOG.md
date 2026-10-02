@@ -4,6 +4,13 @@ Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://s
 
 ## [Unreleased] - Scientific Record (research/)
 
+### Performansi & response time
+- **Backend: tuning tanpa menahan request.** Grid-search bobot sinyal (~3,8 dtk, 162 backtest) tidak lagi menghitung inline saat TTL kedaluwarsa: versi lama dilayani seketika (stale-while-revalidate) lalu dihitung ulang di thread latar; single-flight mencegah request paralel menghitung dua kali (`services/tuner.py`).
+- **Backend: `/signal` & `/warm` selalu balas cepat.** Payload kedaluwarsa dilayani versi lama + rebuild background (kunci per-simbol); cold-cache pertama tetap menghitung sekali (dedup). Cocok untuk cron `/warm` tiap 10 menit.
+- **Flutter: parsing JSON di luar UI thread** lewat `compute()` di `fetchSignal`/`readCachedSignal` — decode + parse payload besar tidak lagi jank di main isolate (web & mobile).
+- **Flutter: refresh non-duplikat.** `_load`, `_loadHistory`, `_loadDigest`, `_loadForward` punya single-flight in-flight, jadi pull-to-refresh/batas candle tidak memicu request ganda.
+- **Flutter: warm-up otomatis.** `warmup()` dipicu saat app start agar instance backend hangat sebelum `/signal` pertama.
+
 ### Diperbaiki (UI/UX review, prioritas sedang)
 - **Scoreboard sinyal** keluar dari `_DetailSection` jadi kartu ringkas (WIN/LOSS/PENDING + win rate) yang selalu terlihat di tab Sinyal; daftar per-sinyal dihapus (redundant dgn "RIWAYAT SINYAL" di tab Model) dengan petunjuk ke sana.
 - **Timer idle dihentikan**: `_CandleTimer` (1s), `_SessionTimeline` (30s), dan `_UpdatedLabel` (30s) hanya berdetak saat tab Sinyal aktif — via `_TabActive` (InheritedWidget). Stop boros baterai saat app di tab Berita/Model.

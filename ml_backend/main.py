@@ -3,6 +3,7 @@ import datetime as dt
 import json
 import logging
 import os
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 
@@ -23,6 +24,8 @@ PORT = int(os.getenv("PORT", "8000"))
 
 RESPONSE_CACHE_TTL_SECONDS = int(os.getenv("RESPONSE_CACHE_TTL_SECONDS", "600"))
 _response_cache: dict[str, dict] = {}
+_signal_build_locks: dict[str, threading.Lock] = {}  # symbol -> lock (single-flight build)
+_signal_locks_guard = threading.Lock()
 _digest_cache: list = [0.0, None]  # [at, body]
 DIGEST_CACHE_TTL = 600
 
@@ -850,34 +853,63 @@ def check_alerts():
     return {"checked_at": dt.datetime.utcnow().isoformat() + "Z", "triggered": triggered, "active": len(still_active) + len(triggered)}
 
 
+def _build_signal_cached(symbol: str) -> dict:
+    """Payload sinyal ber-cache dengan single-flight + stale-while-revalidate.
+
+    - Cache hangat -> balas seketika.
+    - Cache kedaluwarsa tapi masih ada -> balas versi lama seketika, hitung ulang
+      di thread latar (request tidak pernah menunggu rebuild yang mahal).
+    - Tanpa cache sama sekali (cold) -> kunci per-simbol agar pembangunan paralel
+      (mis. cron /warm + pengguna) tidak menghitung dua kali.
+    """
+    now = time.time()
+    cached = _response_cache.get(symbol)
+    if cached and cached["expires"] > now:
+        return cached["payload"]
+
+    with _signal_locks_guard:
+        lock = _signal_build_locks.setdefault(symbol, threading.Lock())
+
+    if cached is not None:
+
+        def _worker() -> None:
+            with lock:
+                re_checked = _response_cache.get(symbol)
+                if re_checked and re_checked["expires"] > time.time():
+                    return
+                try:
+                    payload = _build_payload(symbol)
+                    _response_cache[symbol] = {"expires": time.time() + RESPONSE_CACHE_TTL_SECONDS, "payload": payload}
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning("background rebuild %s failed: %s", symbol, exc)
+
+        threading.Thread(target=_worker, daemon=True).start()
+        return cached["payload"]
+
+    with lock:
+        cached = _response_cache.get(symbol)
+        if cached and cached["expires"] > time.time():
+            return cached["payload"]
+        payload = _build_payload(symbol)
+        _response_cache[symbol] = {"expires": time.time() + RESPONSE_CACHE_TTL_SECONDS, "payload": payload}
+        return payload
+
+
 @app.get("/signal/{symbol}")
 def get_signal(symbol: str):
     symbol = symbol.upper()
     if symbol not in SYMBOLS:
         raise HTTPException(status_code=404, detail=f"Symbol tidak didukung. Gunakan: {', '.join(SYMBOLS)}")
 
-    now = time.time()
-    cached = _response_cache.get(symbol)
-    if cached and cached["expires"] > now:
-        return cached["payload"]
-
-    payload = _build_payload(symbol)
-    _response_cache[symbol] = {"expires": time.time() + RESPONSE_CACHE_TTL_SECONDS, "payload": payload}
-    return payload
+    return _build_signal_cached(symbol)
 
 
 @app.get("/warm")
 def warmup():
     results = {}
     for symbol in SYMBOLS:
-        now = time.time()
-        cached = _response_cache.get(symbol)
-        if cached and cached["expires"] > now:
-            results[symbol] = "cached"
-            continue
         try:
-            payload = _build_payload(symbol)
-            _response_cache[symbol] = {"expires": time.time() + RESPONSE_CACHE_TTL_SECONDS, "payload": payload}
+            _build_signal_cached(symbol)
             results[symbol] = "ok"
         except Exception as exc:  # noqa: BLE001
             logger.warning("warmup %s failed: %s", symbol, exc)
