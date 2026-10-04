@@ -2155,6 +2155,18 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Backup & verifikasi', 'scripts/backup.ps1 harian 03:00 via Scheduled Task (SYSTEM service account), Compress-Archive isi folder C:/trading, retensi hapus > 30 hari. Docs: setup.md + broker_info.md (server, simbol, spread per sesi, swap long -8 / short -5 USD per lot, model eksekusi). Troubleshooting: MT5 initialize failed (path terminal / terminal belum jalan); import MetaTrader5 gagal (wajib Python 3.11); vectorbt (upgrade numba + pip install --no-deps); simbol tak ketemu (cek Market Watch); MCP tak connect (curl http://127.0.0.1:9090/health); latency tinggi (pindah lokasi VPS/broker). Total ~13 jam. Checklist 5 pertanyaan: health check, OpenCode bisa jalankan, .env aman, backup terjadwal, dokumen lengkap \u2192 semua Ya = Sprint 0 selesai.'),
   ];
 
+  static const _rowsSP1 = <(String, String)>[
+    ('Tujuan', 'Fase 1: OpenCode bisa baca data MT5 & kirim order via MCP. Estimasi 10-15 jam (2 minggu). Deliverables: metatrader-mcp-server terinstal & berjalan, config OpenCode terhubung, health_check.py + symbol_resolver.py, log pertama di logs/. Milestone: tanya "Berapa harga XAUUSD sekarang?" dapat jawaban real-time.'),
+    ('Sebelum mulai', 'Pastikan dari Sprint 0: MT5 login demo + AutoTrading ON (80% kegagalan sprint ini karena tombol AutoTrading OFF), Python 3.11 + venv aktif, config/.env berisi MT5_LOGIN/PASSWORD/SERVER/PATH, port MCP 9090 dibuka (localhost only), NSSM terinstal. Pilihan server: metatrader-mcp-server (self-host) \u2014 atau SYNX (managed) utk pemula yang kurang nyaman self-host.'),
+    ('Cara kerja MCP', 'MCP (Model Context Protocol) menjembatani OpenCode \u2192 tool MCP \u2192 MT5. Arsitektur: terminal MT5 di belakang (AutoTrading ON, EA OFF); MCP server ekspos endpoint (SSE untuk produksi, STDIO untuk dev); config opencode.json mendaftarkan tool "metatrader" sbg remote http://127.0.0.1:9090/sse. Tool yang muncul: account, price, market data, order, position, dsb.'),
+    ('Install & run', 'Jalankan MCP server dari venv Python 3.11. Mode STDIO utk dev cepat; mode SSE utk produksi 24/7. Verifikasi: curl http://127.0.0.1:9090/health -> status OK; curl endpoint /sse -> handshake MCP terbuka. Log pertama di logs/mcp/server.log dgn level INFO dan meta tiap tool call.'),
+    ('Windows Service', 'Agar jalan 24/7 saat login/logout RDP: NSSM install MT5MCP dgn command python -m metatrader_mcp_server --login <id> --password <pass> --server <broker> --host 127.0.0.1 --port 9090; AppDirectory C:/trading; AppStdout/AppStderr ke logs/mcp dengan rotation 10 MB; AppExit Default Restart + AppRestartDelay 5000 (auto-restart saat crash = graceful); nssm start MT5MCP.'),
+    ('symbol_resolver', 'Jangan hardcode nama simbol: broker bisa memakai XAUUSD, XAUUSDm, XAUUSDc, GOLD, GOLD_USD, XAUUSD.pro, XAU/USD \u2014 total ~44 varian. Resolver: coba daftar alternatif via mt5.symbol_info; fallback scan mt5.symbols_get() yang mengandung XAU/GOLD; cache hasil; simpan nama terpilih di config/settings.yaml + catat di docs/broker_info.md.'),
+    ('Test query', 'Suite minimal: terminal_info() is not None; account_info() balance > 0; symbol_info_tick(bid) > 0. Test order KECIL di demo (0.01 lot) lalu close \u2014 verifikasi fill & log tercatat. Semua query lewat audit log (event_type=query, symbol, latency) supaya bisa di-debug.'),
+    ('OpenCode natural language', 'Config opencode.json: mcp.metatrader remote dengan timeout 30000. Agent instructions: perintah didukung \u2014 Health check, Show account info, Show XAUUSD price, Open positions. Uji: minta OpenCode jalankan health check dan pastikan jawabannya dari MCP (data real), bukan data statis.'),
+    ('Verifikasi & troubleshoot', 'Checklist: service auto-start saat reboot, restart-on-failure aktif, query account/price/positions jalan dari OpenCode, simbol ter-resolve di broker, logging tiap tool call, .env tidak ter-commit. Troubleshooting: MCP tak connect (curl health, restart service); MT5 initialize failed (terminal belum berjalan / path salah); timeout 30s (cek jarak VPS-broker / port firewall); symbol not found (cek Market Watch, tambah alternatif); AutoTrading OFF (tombol toolbar harus hijau).'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
@@ -2172,6 +2184,7 @@ class _EducationPanelState extends State<_EducationPanel> {
        11 => _rowsDP,
        12 => _rowsRM,
        13 => _rowsSP0,
+       14 => _rowsSP1,
        _ => _rowsOP,
     };
     return Container(
@@ -2253,6 +2266,7 @@ class _EducationPanelState extends State<_EducationPanel> {
              _topicBtn(11, 'DEPLOY'),
              _topicBtn(12, 'ROADMAP'),
              _topicBtn(13, 'SPRINT 0'),
+             _topicBtn(14, 'SPRINT 1'),
           ],
         ),
       ),
