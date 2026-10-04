@@ -2119,6 +2119,18 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Anti-overfit & live', 'Ciri overfit: Sharpe IS >> OOS, parameter aneh (mis. lookback 7.3), banyak rule, performa berubah drastis utk perubahan \u00b15%, kurva terlalu mulus. Deflated Sharpe (koreksi multiple testing) > 0.95; CPCV utk validasi lebih dalam. Backtest wajib pakai risk engine yang SAMA dgn live. Transisi: paper 2-3 bulan (deviasi > 20% = masalah eksekusi) \u2192 small live 10-20% \u2192 full setelah konsisten; pantau TCA.'),
   ];
 
+  static const _rowsDP = <(String, String)>[
+    ('Filosofi', 'Tiga prinsip: reproducibility (bangun ulang environment identik dalam hitungan menit), observability (semua keputusan & error tercatat dan bisa di-query), graceful degradation (komponen gagal \u2192 pause trading, bukan panic-close). Institusi mengalokasikan 40-60% sumber daya engineering di fase ini.'),
+    ('VPS 24/7', 'Windows Server di lokasi dekat broker (latency < 20ms; 5ms vs 50ms = slippage 0.05 vs 0.20). Spesifikasi: 4 vCPU, 8 GB. Matikan Windows Update otomatis (bisa restart tengah malam saat posisi buka), sleep/hibernate, screensaver; timezone UTC; auto-login; MT5 via Task Scheduler; Python 3.11 (bukan 3.12+ utk kompatibilitas MT5).'),
+    ('Service layer', 'Jalankan MCP server & OpenCode runtime sbg Windows Service via NSSM: auto start, log stdout/stderr, rotation, restart-on-failure (delay 5-10 dtk). Wrapper loop PowerShell utk auto-restart saat crash.'),
+    ('Logging', 'Level DEBUG/INFO/WARNING/ERROR/CRITICAL; structured JSON (bukan print), tiap peristiwa bertipe (signal, risk_check, order, fill, equity, error). Audit trail = hash-chain append-only (tamper-evident) + verifikasi integrity. Rotation: per 100 MB (10 backup) atau harian (30 hari).'),
+    ('Monitoring', 'Prometheus/Grafana di VPS sekunder: metrik trading (equity, floating P/L, margin, DD, posisi per simbol), sistem (uptime, latency MT5/broker, CPU/RAM/disk, order & error per jam), eksekusi (spread, slippage, fill rate, waktu eksekusi). 5 panel: account overview, P/L & DD, aktivitas, kualitas eksekusi, system health.'),
+    ('Alert', 'CRITICAL (crash, MT5 disconnect, kill switch, DD 20%) \u2192 Telegram + Email + SMS; HIGH (daily loss >2%, DD >10%) \u2192 Telegram + Email; MEDIUM (spread >1.00, slippage >0.30, 3+ penolakan risk) \u2192 Telegram; LOW (order rejected) \u2192 log saja.'),
+    ('TCA', 'Kewajiban institusional: Implementation Shortfall (<0.20), VWAP slippage (<0.10), Arrival slippage (<0.15), spread cost, market impact, opportunity cost. Laporan harian & bulanan (avg, median, P95). Review berkala: slippage naik? eksekusi lambat? dampak besar? \u2192 ganti algo/broker/filter.'),
+    ('Runbook & insiden', '10 runbook: MT5 disconnect, MCP crash, OpenCode crash, VPS unreachable, kill switch, daily loss, max drawdown, spread aneh, order rejected, broker outage. Severity: P1 (5 menit, telepon+SMS) \u2192 P2 (30 menit) \u2192 P3 (4 jam) \u2192 P4 (24 jam, log). Post-mortem wajib utk P1/P2: timeline, root cause, dampak, tindakan.'),
+    ('Backup & DR', 'Backup: config (tiap perubahan), kode (git), state (tiap jam), log (harian, 90 hari), audit & TCA (permanen), MT5 profile (mingguan). Off-site S3 + cleanup 30 hari. DR: VPS mati \u2192 rebuild ~2 jam; data corrupt \u2192 ~30 menit; broker outage \u2192 pause & failover bila > 2 jam. Setelah 6 fase: multi-aset, multi-strategi, portfolio optimization, scale up, tim, regulasi.'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
@@ -2132,8 +2144,9 @@ class _EducationPanelState extends State<_EducationPanel> {
       7 => _rowsDATA,
       8 => _rowsST,
       9 => _rowsRK,
-      10 => _rowsBT,
-      _ => _rowsOP,
+10 => _rowsBT,
+       11 => _rowsDP,
+       _ => _rowsOP,
     };
     return Container(
       padding: const EdgeInsets.all(16),
@@ -2211,6 +2224,7 @@ class _EducationPanelState extends State<_EducationPanel> {
             _topicBtn(8, 'STRATEGI'),
             _topicBtn(9, 'RISIKO'),
             _topicBtn(10, 'BACKTEST'),
+             _topicBtn(11, 'DEPLOY'),
           ],
         ),
       ),
