@@ -2227,6 +2227,18 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Checklist & integrasi', 'Unit test wajib: sizing utk 10.000/SL 5 menghasilkan 0.18-0.22; daily_limits memblokir loss 3.5%; drawdown_guard memberi reduce_25 di DD 8%. Integrasi: sinyal (Sprint 4) \u2192 risk engine \u2192 router (Sprint 5). Checklist: 8 modul + test lulus; state harian persisten; kill switch teruji; docs diperbarui.'),
   ];
 
+  static const _rowsSP7 = <(String, String)>[
+    ('Tujuan', 'Fase 5a: sistem diuji pada data historis dengan biaya realistis. Estimasi 40-50 jam. Deliverables: data XAUUSD M15 2020-2025 dari MT5, cost_model.py, custom engine.py, metrics.py, vectorbt_runner.py, laporan backtest pertama. Milestone: laporan berisi Sharpe, Max DD, dan Profit Factor.'),
+    ('Data historis', 'Download dari MT5: XAUUSD M15 2020-2025, pastikan bersih (gap weekend, harga salah), simpan parquet/sqlite. Sumber data SAMA dgn yang dipakai pas trading (broker yang sama) supaya hasil konsisten. 5 tahun M15 berukuran besar \u2014 butuh storage & pipeline download bertahap.'),
+    ('Cost model', 'cost_model.py menghitung biaya per trade: spread/2 x lot x contract size, komisi per lot, slippage per fill, swap bila overnight. Uji unit: spread 0.30/2 x 0.20 x 100 = 3.00; komisi 5 x 0.20 = 1.00; slippage 0.10 x 0.20 x 100 = 2.00 \u2192 total 6.00 (diterima 5.5-6.5). Tanpa cost model, backtest = hasil fiktif.'),
+    ('Engine', 'engine.py: jalankan strategi pada bar chart \u2014 feed sinyal \u2192 risk engine \u2192 eksekusi \u2192 hasilkan equity curve & daftar trade. WAJIB memakai risk engine yang sama persis dgn live (bukan versi ringan). Test: equity_curve len > 0 dan daftar trade tidak kosong.'),
+    ('Metrik', 'metrics.py: Sharpe, Sortino, Max DD (absolut & %), Profit Factor, win rate, avg R, exposure, turnover. Simpan metrik beserta config parameter tiap run supaya perbandingan antar run konsisten. Laporan pertama: tabel metrik + grafik equity curve & drawdown.'),
+    ('VectorBT', 'vectorbt_runner.py utk EKSPLORASI cepat (param sweep, portfolio) \u2014 bukan pengganti engine kustom utk keputusan. VectorBT kurang fleksibel utk mapping risk engine & kustomisasi eksekusi; setiap hasil menarik dari VectorBT harus divalidasi ulang di engine.py.'),
+    ('Backtest = batas', 'Pitfall #1: terlalu optimis. Ingat: backtest adalah LOWER BOUND (estimasi kasus terbaik), bukan prediksi. Cek: slippage & spread model realistis; tidak ada data snooping; biaya tidak diabaikan; hasil "ajaib" (Sharpe 10+) lebih sering bug atau overfit daripada keunggulan nyata.'),
+    ('Pipeline reproducible', 'Repetisi yang konsisten: data bersih \u2192 engine \u2192 metrik \u2192 laporan (dgn config & seed). Simpan semua run di backtest/results supaya siap dibandingkan di WFO (Sprint 8). Reproducible: seed tetap, versi data & parameter tercatat. Setiap perubahan kode strategi = run baru.'),
+    ('Checklist & integrasi', 'Checklist: data M15 2020-2025 tersimpan & bersih; cost model lulus uji 6.00; engine memakai risk engine nyata; metrik lengkap; laporan pertama selesai; VectorBT siap utk eksplorasi. Integrasi utk Sprint 8: struktur output sudah dirancang utk WFO & Monte Carlo (trades + equity curve + params).'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
@@ -2250,6 +2262,7 @@ class _EducationPanelState extends State<_EducationPanel> {
        17 => _rowsSP4,
        18 => _rowsSP5,
        19 => _rowsSP6,
+       20 => _rowsSP7,
        _ => _rowsOP,
     };
     return Container(
@@ -2337,6 +2350,7 @@ class _EducationPanelState extends State<_EducationPanel> {
              _topicBtn(17, 'SPRINT 4'),
              _topicBtn(18, 'SPRINT 5'),
              _topicBtn(19, 'SPRINT 6'),
+             _topicBtn(20, 'SPRINT 7'),
           ],
         ),
       ),
