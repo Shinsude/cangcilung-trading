@@ -2073,6 +2073,17 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Troubleshoot', '"initialize() failed" = MT5 tak berjalan (+cek --path); "No data returned" = jaringan/server broker; "Trading is not enabled" = aktifkan algoritmik trading; "Symbol not found" = cek Market Watch  Specification; "MCP Connection Lost" = restart sesi & cek port 9090.'),
   ];
 
+  static const _rowsDATA = <(String, String)>[
+    ('Kenapa makro?', 'Emas didorong 4 pilar: Dolar (DXY, korelasi negatif \u2248 -0.63), suku bunga riil TIPS (-0.82, inverse terkuat), risiko pasar (VIX positif \u2014 safe haven), likuiditas global (positif). Tanpa konteks ini sinyal teknikal rawan false signal \u2014 misal sinyal BUY tepat saat DXY rally kuat.'),
+    ('Gold-MCP', 'Rekomendasi utama; free tier fungsional (13 tools): get_gold_price, get_gold_ohlcv, get_macro_context (DXY, US10Y/02Y, SPX, VIX, BTC, silver, oil), get_gold_correlations, get_gold_seasonality, gold_market_snapshot. Instal: pip install gold-mcp; adapter MT5 BYOK: gold-mcp[mt5].'),
+    ('xaudaily', 'MCP zero-dependency (standard library saja): COMEX gold + Au99.99 Shanghai, US CPI/core PCE/NFP/PPI, DXY, Treasury 10Y/30Y, VIX, SPDR holdings, FOMC odds, IMF gold buying, crude, US debt, gold driver score. Tiap field bawa source + asOf/stale flag. Update 2x/hari \u2014 daily readings, bukan tick.'),
+    ('FXMacroData', 'Data makro historis + COT positioning (CFTC): release_calendar, indicator_query (CPI/NFP/PCE), cot_data, commodities, forex, market_sessions. Data USD 90 hari gratis tanpa API key: uvx mcp-server-fxmacrodata.'),
+    ('Arsitektur data', 'Kombinasi, bukan satu sumber: MT5 (live & eksekusi, real-time) + Gold-MCP (konteks makro on-demand) + xaudaily (brief harian CPI/NFP/FOMC) + FXMacroData (COT + kalender rilis, mingguan/harian). Verifikasi silang minimal 2 sumber independen.'),
+    ('Filter makro', 'Sebelum eksekusi BUY: DXY tak rally >0.5%/hari; US10Y tak melonjak tajam; VIX tak rendah ekstrem (risk-on). Musiman: bulan bearish \u2192 kecilkan/lewati. Regime korelasi (Gold-MCP Pro): deteksi decoupling DXY-Emas \u2014 saat ter-decouple, sinyal teknikal lebih layak dipercaya.'),
+    ('Event risk', 'release_calendar utk menghindari CPI/NFP/FOMC: tidak trading (atau kurangi ukuran) di sekitar rilis besar. Contoh: sweep SMC + DXY turun + US10Y turun + VIX naik + musiman bullish + 4 jam tanpa rilis \u2192 eksekusi penuh; filter gagal \u2192 lewati atau ukuran dikurangi 50%.'),
+    ('Verifikasi', 'Checklist: semua MCP connected (cek daftar MCP); get_macro_context / get_gold_seasonality / get_gold_correlations / release_calendar berfungsi; korelasi silang minimal dua sumber; filter makro terintegrasi ke logika strategi (minimal sebagai konsep).'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
@@ -2083,6 +2094,7 @@ class _EducationPanelState extends State<_EducationPanel> {
       4 => _rowsIM,
       5 => _rowsOP,
       6 => _rowsMT,
+      7 => _rowsDATA,
       _ => _rowsOP,
     };
     return Container(
@@ -2162,6 +2174,7 @@ class _EducationPanelState extends State<_EducationPanel> {
               _topicBtn(4, 'OPERASI'),
               _topicBtn(5, 'IMPLEMENTASI'),
               _topicBtn(6, 'SETUP MT5'),
+              _topicBtn(7, 'SETUP DATA'),
             ],
           ),
         ],
