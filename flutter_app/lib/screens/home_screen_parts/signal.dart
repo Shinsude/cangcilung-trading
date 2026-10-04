@@ -2084,6 +2084,17 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Verifikasi', 'Checklist: semua MCP connected (cek daftar MCP); get_macro_context / get_gold_seasonality / get_gold_correlations / release_calendar berfungsi; korelasi silang minimal dua sumber; filter makro terintegrasi ke logika strategi (minimal sebagai konsep).'),
   ];
 
+  static const _rowsST = <(String, String)>[
+    ('Filosofi', 'Retail menembak market order; institusi membaca jejak likuiditas & ketidakseimbangan order. Otak = sinyal SMC; tangan = eksekusi VWAP/TWAP + filter spread + proteksi slippage. Struktur: strategy/ (detector, sweep, sesi, sinyal), execution/ (VWAP, TWAP, spread, router), risk/, data/.'),
+    ('SMC: swing & OB', 'Dasar SMC = swing high/low (lookback N candle). Order Block = candle berlawanan arah terakhir sebelum displacement (body > ATR x1.5), bertindak sbg support/resistance dinamis. Pakai default wajar (lookback 5-10); jangan over-optimasi parameter.'),
+    ('SMC: FVG & struktur', 'Fair Value Gap = ketidakseimbangan 3 candle berturut-turut (gap), harga cenderung mengisinya sebelum lanjut tren. BOS = tembus swing searah tren (konfirmasi lanjut); CHoCH = tembus berlawanan tren (sinyal potensi reversal).'),
+    ('Liquidity sweep', 'Harga menyapu SL ritel di atas swing high / di bawah swing low, lalu close kembali dalam N candle = jebakan likuiditas. Setup terbaik: London sweeping akumulasi Asia, lalu New York melanjutkan tren.'),
+    ('Sesi & generator', 'Asia (07-15 WIB): hindari entry, observasi range. London (15-23): window sweep. London-NY overlap (20-23): window tren. Sinyal = sweep + bias struktur + filter makro + musiman + event risk; entry OB-mid, SL di luar OB, TP RR 1:3, confidence naik bila ada FVG.'),
+    ('VWAP executor', 'Pecah parent order jadi child sesuai profil volume historis per menit (fallback TWAP). Kirim selisih target vs tereksekusi (shortfall); interval ~30 dtk; participation maks ~15%; deviation maks 20 poin; magic id unik; filling IOC; spread dicek sebelum tiap child.'),
+    ('Spread filter', 'Tolak eksekusi bila spread > 0.30 (normal) / 0.60 (volatil; deteksi via ATR 2x rata-rata). Pantau hist spread: tolak bila melebar kuat vs rata-rata 10 terakhir. Router: order kecil (<0.10 lot) = market langsung; besar = VWAP.'),
+    ('Kesalahan umum', 'Over-optimasi lookback swing; backtest tanpa spread (0.30 normal, 1.00+ saat news) = ilusi profit; market order utk ukuran besar; tanpa filter sesi (Asia banyak false signal); abaikan slippage (selalu set deviation & monitor).'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
@@ -2095,6 +2106,7 @@ class _EducationPanelState extends State<_EducationPanel> {
       5 => _rowsOP,
       6 => _rowsMT,
       7 => _rowsDATA,
+      8 => _rowsST,
       _ => _rowsOP,
     };
     return Container(
@@ -2158,40 +2170,36 @@ class _EducationPanelState extends State<_EducationPanel> {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.border),
       ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              _topicBtn(0, 'BACA SINYAL'),
-              _topicBtn(1, 'SMART MONEY'),
-              _topicBtn(2, 'ALUR ORDER'),
-              _topicBtn(3, 'PER ASET'),
-            ],
-          ),
-          const SizedBox(height: 3),
-          Row(
-            children: [
-              _topicBtn(4, 'OPERASI'),
-              _topicBtn(5, 'IMPLEMENTASI'),
-              _topicBtn(6, 'SETUP MT5'),
-              _topicBtn(7, 'SETUP DATA'),
-            ],
-          ),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _topicBtn(0, 'BACA SINYAL'),
+            _topicBtn(1, 'SMART MONEY'),
+            _topicBtn(2, 'ALUR ORDER'),
+            _topicBtn(3, 'PER ASET'),
+            _topicBtn(4, 'OPERASI'),
+            _topicBtn(5, 'IMPLEMENTASI'),
+            _topicBtn(6, 'SETUP MT5'),
+            _topicBtn(7, 'SETUP DATA'),
+            _topicBtn(8, 'STRATEGI'),
+          ],
+        ),
       ),
     );
   }
 
   Widget _topicBtn(int t, String label) {
     final selected = _topic == t;
-    return Expanded(
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
       child: GestureDetector(
         onTap: () => setState(() {
           _topic = t;
           _open = true;
         }),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
           decoration: BoxDecoration(
             color: selected ? AppColors.blue.withValues(alpha: 0.15) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
@@ -2201,7 +2209,7 @@ class _EducationPanelState extends State<_EducationPanel> {
             textAlign: TextAlign.center,
             style: TextStyle(
               color: selected ? AppColors.blue : AppColors.textTertiary,
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.3,
             ),
