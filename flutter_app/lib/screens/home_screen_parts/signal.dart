@@ -2215,6 +2215,18 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Checklist & integrasi', 'Aturan dari agent_instructions: JANGAN market order utk size > 0.10 lot \u2014 wajib lewat algo. Checklist: 5 modul selesai; test demo lulus (kirim, fill, close); slippage & fill rate terekam; max_participation ditaati; docs diperbarui. Keluar sprint saat eksekusi konsisten dan tercatat, bukan hanya "bisa kirim order".'),
   ];
 
+  static const _rowsSP6 = <(String, String)>[
+    ('Tujuan', 'Fase 4: pertahanan berlapis SEBELUM eksekusi. Estimasi 30-40 jam. Deliverables: position_sizing, daily_limits, drawdown_guard, correlation_monitor, news_filter, kill_switch, recovery_protocol + risk_engine orkestrator + unit test tiap modul. Milestone: tidak ada order yang lolos tanpa validasi risk.'),
+    ('Position sizing', 'Sizing berbasis ATR: volume = (equity x risk_per_trade) / (jarak SL x contract size). Contoh unit test: risk 1%, equity 10.000 USD, entry 2345, SL 2340 (jarak 5) \u2192 100 / (5 x 100) = 0.20 lot \u2014 test menerima 0.18-0.22. Risk per trade default 1%, maksimal 2%.'),
+    ('Daily limits', 'daily_limits.py: max_daily_loss 3%, max_daily_profit 6%, max_trades 10/hari; initialize_day saat sesi dibuka; can_trade(equity) \u2192 bool + alasan. Test: equity turun 3.5% dari 10.000 \u2192 can_trade False dgn alasan mengandung "loss limit". State harian harus persisten (tidak hilang saat restart).'),
+    ('Drawdown guard', 'drawdown_guard.py: circuit breaker 4 level dari equity peak \u2014 5% \u2192 kurangi size 25%, 10% \u2192 size 50%, 15% \u2192 pause trading, 20% (level 4) \u2192 KILL SWITCH: tutup semua posisi & setop. Test: DD 8% \u2192 action reduce_25. Peak equity dilacak sejak start dan hanya naik (ratchet).'),
+    ('Correlation & news', 'correlation_monitor.py: cek exposure agregat bila holding beberapa aset (XAU vs XAG vs US10Y); batasi risiko satu arah. news_filter.py: window rilis high impact dari release_calendar (Sprint 2) \u2192 blok entry 30-60 menit sebelum; ini yang membuat bot pause PADA WAKTUNYA, bukan reaktif.'),
+    ('Kill switch & recovery', 'kill_switch.py: flag kill_switch.json \u2014 saat aktif, semua eksekusi diblok & posisi ditutup; hanya bisa dinonaktifkan lewat prosedur manual setelah root cause jelas. recovery_protocol.py: setelah insiden DD, resume trading dgn size 25% dulu lalu naik bertahap sampai pulih normal \u2014 bukan langsung size penuh.'),
+    ('Risk engine', 'risk_engine.py sbg orkestrator: urutan gate per sinyal \u2014 sizing \u2192 daily limits \u2192 drawdown \u2192 correlation \u2192 news filter \u2192 kill switch. Output: approved(volume) atau rejected(reason). OrderRouter HANYA menerima hasil engine \u2014 tak ada jalur pintas. Log tiap keputusan ke audit trail.'),
+    ('Pitfall & tuning', 'Pitfall: terlalu ketat \u2192 tidak ada trade; terlalu longgar \u2192 tidak berguna. Mulai dari nilai default (risk 1%, DD 5/10/15/20), lalu tuning HANYA SETELAH minimal 100 trade (beberapa siklus cukup). Tuning tiap 5 trade = curve-fitting terhadap risk engine. Catat setiap perubahan parameter di docs.'),
+    ('Checklist & integrasi', 'Unit test wajib: sizing utk 10.000/SL 5 menghasilkan 0.18-0.22; daily_limits memblokir loss 3.5%; drawdown_guard memberi reduce_25 di DD 8%. Integrasi: sinyal (Sprint 4) \u2192 risk engine \u2192 router (Sprint 5). Checklist: 8 modul + test lulus; state harian persisten; kill switch teruji; docs diperbarui.'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
@@ -2237,6 +2249,7 @@ class _EducationPanelState extends State<_EducationPanel> {
        16 => _rowsSP3,
        17 => _rowsSP4,
        18 => _rowsSP5,
+       19 => _rowsSP6,
        _ => _rowsOP,
     };
     return Container(
@@ -2323,6 +2336,7 @@ class _EducationPanelState extends State<_EducationPanel> {
              _topicBtn(16, 'SPRINT 3'),
              _topicBtn(17, 'SPRINT 4'),
              _topicBtn(18, 'SPRINT 5'),
+             _topicBtn(19, 'SPRINT 6'),
           ],
         ),
       ),
