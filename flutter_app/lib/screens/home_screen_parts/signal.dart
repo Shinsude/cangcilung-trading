@@ -2095,6 +2095,18 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Kesalahan umum', 'Over-optimasi lookback swing; backtest tanpa spread (0.30 normal, 1.00+ saat news) = ilusi profit; market order utk ukuran besar; tanpa filter sesi (Asia banyak false signal); abaikan slippage (selalu set deviation & monitor).'),
   ];
 
+  static const _rowsRK = <(String, String)>[
+    ('Filosofi', 'Institusi bertanya "berapa bisa rugi sebelum berhenti", bukan "berapa bisa untung". Risk first, profit second; defense in depth (tak ada satu lapisan pun jadi single point of failure); risiko diukur kuantitatif, bukan feeling. Retail: "rasa aman 0.10 lot" vs institusi: formula.'),
+    ('Sizing (ATR)', 'Ukuran selalu dari jarak SL, bukan feeling: Volume = (Equity x risk%) / (SL distance x value/point). Contoh equity 10k, risk 1% = 100, SL 5, value 100/lot \u2192 0.20 lot. SL dinamis = ATR x 1.5; ATR >1.5x rata2 \u2192 \u00d70.7, >2x \u2192 \u00d70.5, <0.7x \u2192 +20%. Bulatkan ke volume step.'),
+    ('Daily limits', 'Stop bila daily loss -\u22653% atau profit +\u22656% (kunci profit), maks 10 trade/hari. State disimpan ke file agar survive restart \u2014 jangan reset tiap restart.'),
+    ('Drawdown guard', 'Circuit breaker 4 level: DD <5% normal (multiplier 1.0); 5-10% \u2192 x0.75; 10-15% \u2192 x0.5; 15-20% \u2192 stop trading; >20% \u2192 full shutdown.'),
+    ('Correlation', 'Risiko agregat, bukan per posisi: XAU-XAG 0.85, XAU-XPT 0.70, XAU-AUD 0.55, XAU-DXY -0.63, XAU-US10Y -0.82. Maks eksposur terkorelasi ~5% equity. Tiga posisi BUY emas-perak-platinum = satu posisi besar, bukan diversifikasi.'),
+    ('News filter', 'Blokir trading 15 menit sebelum & sesudah high-impact XAUUSD: FOMC/Fed rate, NFP, CPI, PPI, core PCE, GDP, unemployment, pidato Powell, retail sales, ISM PMI. Hitung menit ke event berikutnya utk menyesuaikan ukuran.'),
+    ('Kill switch', 'Emergency stop manual/otomatis untuk langsung menutup semua posisi (deviation ~50, magic khusus, comment KILL_SWITCH). Wajib ada \u2014 saat bug atau kondisi ekstrem, Anda butuh tombol darurat.'),
+    ('Recovery', 'Setelah DD >15%: pemulihan bertahap \u2014 fase 1 size x0.25 (syarat 10 trade, winrate \u22650.5) \u2192 x0.5 (20 trade) \u2192 x0.75 (20 trade, WR \u22650.55) \u2192 x1.0 penuh. Mencegah revenge trading pasca rugi.'),
+    ('Orkestrasi', 'Risk engine dipanggil OrderRouter SEBELUM order dikirim; strategi hanya mengirim sinyal. Alur: kill switch \u2192 daily limit \u2192 drawdown \u2192 news \u2192 korelasi \u2192 sizing \u2192 multiplier (DD x recovery x volatilitas). Kesalahan umum: fixed lot, abaikan ATR, state tak disimpan, risk menyatu dgn strategi, tanpa kill switch, full size langsung pasca DD.'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
@@ -2107,6 +2119,7 @@ class _EducationPanelState extends State<_EducationPanel> {
       6 => _rowsMT,
       7 => _rowsDATA,
       8 => _rowsST,
+      9 => _rowsRK,
       _ => _rowsOP,
     };
     return Container(
@@ -2183,6 +2196,7 @@ class _EducationPanelState extends State<_EducationPanel> {
             _topicBtn(6, 'SETUP MT5'),
             _topicBtn(7, 'SETUP DATA'),
             _topicBtn(8, 'STRATEGI'),
+            _topicBtn(9, 'RISIKO'),
           ],
         ),
       ),
