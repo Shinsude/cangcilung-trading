@@ -2107,6 +2107,18 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Orkestrasi', 'Risk engine dipanggil OrderRouter SEBELUM order dikirim; strategi hanya mengirim sinyal. Alur: kill switch \u2192 daily limit \u2192 drawdown \u2192 news \u2192 korelasi \u2192 sizing \u2192 multiplier (DD x recovery x volatilitas). Kesalahan umum: fixed lot, abaikan ATR, state tak disimpan, risk menyatu dgn strategi, tanpa kill switch, full size langsung pasca DD.'),
   ];
 
+  static const _rowsBT = <(String, String)>[
+    ('Filosofi', 'Tiga pertanyaan: edge nyata? bertahan di semua regime? cukup besar setelah biaya? Jebakan retail: backtest tanpa spread (+30-50% profit ilusi), overfitting, slippage, look-ahead, survivorship, curve fitting, tanpa walk-forward, abai swap overnight.'),
+    ('Framework & data', 'VectorBT (vectorized, cepat, grid search + QuantStats) utk eksplorasi; Backtrader/custom engine utk event-driven realistis (SMC + child order VWAP). Data terbaik: tick/M1 dari MT5 broker sendiri (spread asli); alternatif Dukascopy/HistData/Tickstory. Cek kualitas: gap, spread 0.2-0.5, UTC, duplikasi, cakup 2020 COVID & 2022 rate hike.'),
+    ('Model biaya', 'Spread 0.30 normal / 0.80 volatil; komisi per lot; slippage 0.05-0.20; swap malam untuk posisi swing; requote/rejection 1-3%. Contoh: 200 trade/tahun, 0.20 lot; biaya total ~9 per trade = ~1800/tahun \u2014 profit 10/trade tanpa biaya menjadi hanya 1.'),
+    ('VectorBT & grid', 'Backtest dasar memakai sinyal entry/exit + fees + slippage; grid search lookback/ATR/RR \u2014 memilih parameter terbaik historis dari ribuan kombinasi = overfitting. Jangan pernah pilih yang terbaik tanpa Walk-Forward.'),
+    ('Walk-forward', 'Standar emas: optimasi di IS (in-sample), uji di OOS (out-of-sample), lalu roll forward. Kriteria layak: OOS Sharpe > 0.5, >60% window positif, OOS max DD < 20%, OOS/IS Sharpe > 0.5, parameter tidak berubah drastis \u2014 IS 2.0 vs OOS 0.3 berarti overfit.'),
+    ('Monte Carlo', 'Trade shuffling (acak urutan): P95 max DD > 30% = terlalu berisiko; prob profit < 80% = edge lemah. Bootstrap return utk simulasi setahun ke depan. Parameter perturbation \u00b110%: Sharpe tak boleh turun > 30%.'),
+    ('Metrik', 'Target institusional: Sharpe > 1.0 (excellent > 2.0), Sortino > 1.5, Calmar > 1.0, Profit Factor > 1.5, Win Rate > 45% (dgn RR > 1.5), Max DD < 20%, Recovery Factor > 3, ulser rendah; total trades > 100 utk signifikansi statistik. Report QuantStats utk analisis visual.'),
+    ('Regime & sesi', 'Per regime (trending up/down, ranging, vol tinggi/rendah): profit minimal 3 dari 5 regime = robust. Per sesi (asia/london/nY): bila London untung dan Asia rugi, pertimbangkan trading hanya di sesi menguntungkan.'),
+    ('Anti-overfit & live', 'Ciri overfit: Sharpe IS >> OOS, parameter aneh (mis. lookback 7.3), banyak rule, performa berubah drastis utk perubahan \u00b15%, kurva terlalu mulus. Deflated Sharpe (koreksi multiple testing) > 0.95; CPCV utk validasi lebih dalam. Backtest wajib pakai risk engine yang SAMA dgn live. Transisi: paper 2-3 bulan (deviasi > 20% = masalah eksekusi) \u2192 small live 10-20% \u2192 full setelah konsisten; pantau TCA.'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
@@ -2120,6 +2132,7 @@ class _EducationPanelState extends State<_EducationPanel> {
       7 => _rowsDATA,
       8 => _rowsST,
       9 => _rowsRK,
+      10 => _rowsBT,
       _ => _rowsOP,
     };
     return Container(
@@ -2197,6 +2210,7 @@ class _EducationPanelState extends State<_EducationPanel> {
             _topicBtn(7, 'SETUP DATA'),
             _topicBtn(8, 'STRATEGI'),
             _topicBtn(9, 'RISIKO'),
+            _topicBtn(10, 'BACKTEST'),
           ],
         ),
       ),
