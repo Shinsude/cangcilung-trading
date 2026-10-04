@@ -2191,6 +2191,18 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Checklist', 'Checklist keluar sprint: 6 modul selesai; unit test lulus; visualisasi masuk akal di chart; false positive sudah diturunkan dgn catatan tuning; docs diperbarui. Sprint 3 dinyatakan selesai saat deteksi STABIL, bukan saat modul pertama jalan.'),
   ];
 
+  static const _rowsSP4 = <(String, String)>[
+    ('Tujuan', 'Fase 3b: gabungkan semua deteksi + konteks menjadi sinyal trading. Estimasi 15-20 jam. Deliverables: signal_generator.py, signal_validator.py, logging sinyal ke logs/signals/, backtest sederhana utk hitung frekuensi sinyal/hari. Milestone: tanya "Apakah ada sinyal BUY XAUUSD sekarang?" \u2192 jawaban entry, SL, TP + alasan.'),
+    ('Pipeline', 'Data harga + deteksi SMC (Sprint 3) + makro/musiman (Sprint 2) \u2192 signal_generator \u2192 signal_validator \u2192 log. Generator fokus pada kelengkapan & konsistensi sinyal; validator fokus pada kelayakan eksekusi (spread, sesi, konflik makro). Keluaran: action BUY/SELL/HOLD + entry/SL/TP/RR + confidence + reason (daftar alasan).'),
+    ('Aturan sinyal', 'HOLD adalah default \u2014 sistem proaktif hanya saat setup kuat. Sinyal hanya bila: OB/FVG valid + BOS/CHoCH konfirmasi + sesi London/NY + tidak konflik bias makro. Entry: OB-mid (bukan harga pasar pas); SL: di luar struktur dgn buffer; TP: RR 1:3, bukan angka acak.'),
+    ('Confidence', 'Skor 0-1 dari bobot: konfluensi SMC (OB+FVG+sweep), konfirmasi BOS/CHoCH, dukungan makro (DXY/VIX), bias musiman/sesi, dan jarak ke event risk. Contoh: OB+FVG+sweep+BOS + makro netral = confidence tinggi. Cutoff di validator (mis. >= 0.6). Reason wajib tercantum supaya keputusan bisa diaudit.'),
+    ('Validator', 'signal_validator.py menolak bila: sesi tidak aktif; spread > 0.60 saat akan market order; jam < 30-60 menit sebelum rilis berita; konflik makro kuat (bias bulanan / korelasi DXY berlawanan); sudah lewat daily trade limit. Hasil: approved / rejected + alasan \u2014 semua terekam di audit trail.'),
+    ('Logging sinyal', 'Setiap sinyal \u2192 logs/signals/ dgn event_type=signal, action, entry, SL, TP, confidence, session, reason[]. Log BOTH approved & rejected. Ini bahan backtest dan forward-test nanti \u2014 format harus bisa dibaca ulang & di-query (JSON), bukan sekadar print ke terminal.'),
+    ('Backtest frekuensi', 'Jalankan generator pada data historis utk lihat: berapa sinyal/hari? Distribusi per sesi? Target 1-3 sinyal/hari. Terlalu banyak (10+) = permisif; terlalu sedikit (nol dalam seminggu) = terlalu ketat. Frekuensi dijaga lewat ambang confidence & jumlah konfluensi, bukan hardcode banyak rule.'),
+    ('Integrasi & uji', 'Uji: "Apakah ada sinyal BUY XAUUSD sekarang?" \u2192 OpenCode menjalankan pipeline dan menjawab dgn angka. Test: action dalam BUY/SELL/HOLD; jika bukan HOLD, entry/SL/TP tidak None dgn SL di bawah entry utk BUY (dan sebaliknya utk SELL); confidence > 0. Rantai lengkap: data \u2192 deteksi \u2192 konfirmasi \u2192 output yang siap dieksekusi di Sprint 5.'),
+    ('Pitfall & checklist', 'Pitfall #1: generator terlalu permisif \u2192 noise. Pitfall #2: terlalu ketat \u2192 sistem nganggur tak bertransaksi. Tuning lewat confidence threshold & jumlah konfluensi, ukur dgn backtest frekuensi 20-30 hari. Checklist: generator + validator selesai; log JSON benar; target 1-3 sinyal/hari tercapai; uji lulus; docs diperbarui.'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
@@ -2211,6 +2223,7 @@ class _EducationPanelState extends State<_EducationPanel> {
        14 => _rowsSP1,
        15 => _rowsSP2,
        16 => _rowsSP3,
+       17 => _rowsSP4,
        _ => _rowsOP,
     };
     return Container(
@@ -2295,6 +2308,7 @@ class _EducationPanelState extends State<_EducationPanel> {
              _topicBtn(14, 'SPRINT 1'),
              _topicBtn(15, 'SPRINT 2'),
              _topicBtn(16, 'SPRINT 3'),
+             _topicBtn(17, 'SPRINT 4'),
           ],
         ),
       ),
