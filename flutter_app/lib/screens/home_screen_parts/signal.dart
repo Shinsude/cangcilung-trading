@@ -2167,6 +2167,18 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Verifikasi & troubleshoot', 'Checklist: service auto-start saat reboot, restart-on-failure aktif, query account/price/positions jalan dari OpenCode, simbol ter-resolve di broker, logging tiap tool call, .env tidak ter-commit. Troubleshooting: MCP tak connect (curl health, restart service); MT5 initialize failed (terminal belum berjalan / path salah); timeout 30s (cek jarak VPS-broker / port firewall); symbol not found (cek Market Watch, tambah alternatif); AutoTrading OFF (tombol toolbar harus hijau).'),
   ];
 
+  static const _rowsSP2 = <(String, String)>[
+    ('Tujuan', 'Fase 2: OpenCode punya konteks makro XAUUSD. Estimasi 12-18 jam. Deliverables: gold-mcp + xaudaily/fxmacrodata terhubung, macro_context.py, seasonality.py, release_calendar.py, cache lokal. Milestone: tanya "Bagaimana konteks makro emas hari ini?" dpt jawaban lengkap: DXY, US10Y, VIX, bias musiman, jadwal rilis.'),
+    ('4 pilar makro', 'Emas digerakkan oleh: DXY (korelasi -0.63), TIPS yield + US10Y riil (-0.82), VIX & likuiditas, dan siklus kebijakan Fed. Konteks sebelum keputusan WAJIB memuat 4 ini. Setup: gold-mcp jadi dasar (harga + bias emas); tambahkan xaudaily/fxmacrodata khusus jadwal rilis.'),
+    ('Gold-MCP', 'Aturan anti-overload: mulai dari Gold-MCP SAJA. Fitur: harga emas historis & harian, bias musiman bulanan (current_month_bias), support/resistance. Integrasi: ekspos tool data untuk OpenCode. Jangan pasang banyak sumber sekaligus \u2014 tambah hanya saat strategi terbukti butuh.'),
+    ('Macro context', 'src/data/macro_context.py: ambil DXY, US10Y, VIX; kembalikan dict berisi 4 pilar; verifikasi silang 2 sumber utk akurasi; cache TTL (mis. 5 menit) supaya tidak hit API berulang. Refresh sebelum sesi London & New York (kanvas keputusan selalu segar).'),
+    ('Seasonality', 'src/data/seasonality.py: bias musiman bulanan (current_month_bias) dari data historis; bias per sesi & hari dalam pekan (weekday effect). Dipakai sbg FILTER, bukan sinyal tunggal: jika bias bulanan kontra sinyal SMC \u2192 kecilkan size atau skip trade.'),
+    ('Release calendar', 'src/data/release_calendar.py: jadwal 7 hari ke depan (ECB/FOMC, NFP, CPI, dsb.) utk event-risk. Filter impact high/medium; windows larangan buka posisi 30-60 menit sebelum jam rilis. Fungsinya bukan membaca berita, tapi MENGHINDARI window volatilitas \u2014 bot pause duluan.'),
+    ('Cache & test', 'Cache lokal (sqlite/parquet) utk hindari API call berulang: refresh per TTL, simpan riwayat utk backtest nanti. Test minimal: get_macro_context mengandung DXY/US10Y/VIX; get_seasonality punya current_month_bias; get_release_calendar(days_ahead=7) berupa list; cache tidak expire sebelum TTL.'),
+    ('Integrasi OpenCode', 'OpenCode menggabungkan konteks: sinyal SMC + makro + musiman + kalender \u2192 skor konfirmasi (bukan sekadar rangkuman). Uji: "Konteks makro emas hari ini?" \u2192 angka nyata + timing; "Bias bulan ini?" \u2192 data dari gold-mcp, bukan hafalan model. Log tiap fetch (event_type=data, source, latency, cache_hit).'),
+    ('Pitfall & checklist', 'Pitfall #1: overload informasi \u2014 banyak API = noise, bukan sinyal. Checklist: gold-mcp berjalan; macro_context/seasonality/calendar lulus test; cache aktif; API key di .env (bukan di kode); docs diperbarui; refresh terjadwal sebelum sesi.'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
@@ -2185,6 +2197,7 @@ class _EducationPanelState extends State<_EducationPanel> {
        12 => _rowsRM,
        13 => _rowsSP0,
        14 => _rowsSP1,
+       15 => _rowsSP2,
        _ => _rowsOP,
     };
     return Container(
@@ -2267,6 +2280,7 @@ class _EducationPanelState extends State<_EducationPanel> {
              _topicBtn(12, 'ROADMAP'),
              _topicBtn(13, 'SPRINT 0'),
              _topicBtn(14, 'SPRINT 1'),
+             _topicBtn(15, 'SPRINT 2'),
           ],
         ),
       ),
