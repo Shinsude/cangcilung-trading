@@ -2131,6 +2131,18 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Backup & DR', 'Backup: config (tiap perubahan), kode (git), state (tiap jam), log (harian, 90 hari), audit & TCA (permanen), MT5 profile (mingguan). Off-site S3 + cleanup 30 hari. DR: VPS mati \u2192 rebuild ~2 jam; data corrupt \u2192 ~30 menit; broker outage \u2192 pause & failover bila > 2 jam. Setelah 6 fase: multi-aset, multi-strategi, portfolio optimization, scale up, tim, regulasi.'),
   ];
 
+  static const _rowsRM = <(String, String)>[
+    ('Prinsip', 'Empat aturan: (1) jangan bangun semua sekaligus \u2014 tiap sprint = satu komponen berfungsi penuh & teruji; (2) paper trading dulu, live kemudian, jangan pernah skip; (3) 10 jam/minggu \u2248 9-12 bulan, itu normal \u2014 institusi butuh bertahun-tahun; (4) dokumentasikan saat membangun (yang dibangun, gagal, dipelajari).'),
+    ('Proses > strategi', 'Pembeda institusional bukan strategi tapi proses & infrastruktur. Realitas: return 15-30%/tahun, Sharpe 1.5-2.5, Max DD 10-20%, win rate 45-55%, profit konsisten 1-2 tahun. Jika mencari 1000%/bulan, roadmap ini bukan untuk Anda.'),
+    ('Sprint 0-1', 'Minggu 1 persiapan (8-12 jam): VPS Windows + Python 3.11 + MT5 demo + git repo + OpenCode + struktur folder (config/src/tests/logs/audit/backtest/docs). Minggu 2-3 koneksi MT5 (10-15 jam): metatrader-mcp-server, health_check.py, symbol_resolver, log pertama. Pitfall #1: lupa AutoTrading ON \u2014 80% kegagalan sprint ini.'),
+    ('Sprint 2', 'Minggu 4-5 data & intelijen (12-18 jam): gold-mcp, macro_context (DXY, US10Y, VIX), seasonality, release_calendar, cache lokal utk hindari API berulang. Pitfall: overload informasi \u2014 mulai Gold-MCP saja, tambah sumber lain nanti.'),
+    ('Sprint 3-4', 'Minggu 6-8 deteksi SMC + generator sinyal (35-50 jam): swing_detector, order_block, FVG, BOS/CHoCH, liquidity_sweep, session_filter, visualisasi chart; signal_generator (gabung SMC+makro+musiman) + validator, target 1-3 sinyal/hari. Pitfall: banyak false positive (tuning displacement_atr_mult & lookback); generator terlalu permisif/ketat.'),
+    ('Sprint 5', 'Minggu 9-10 algoritma eksekusi (25-35 jam): spread_filter, VWAP/TWAP executor, order_router, slippage_monitor; uji order kecil 0.10 lot di demo. Pitfall: terlalu cepat = market impact; terlalu lambat = harga bergerak jauh \u2014 tuning interval child order.'),
+    ('Sprint 6', 'Minggu 11-12 manajemen risiko (30-40 jam): position_sizing ATR, daily_limits, drawdown_guard, correlation_monitor, news_filter, kill_switch, recovery_protocol, risk_engine orkestrator. Pitfall: terlalu ketat = no trade; terlalu longgar = tidak berguna \u2014 mulai default, tuning setelah 100 trade.'),
+    ('Sprint 7-8', 'Minggu 13-18 backtest & validasi (70-90 jam): data M15 2020-2025, cost_model realistis, custom engine + metrics, eksplorasi VectorBT; WFO minimal 4 window OOS (mean OOS Sharpe > 0.5, 60% window positif), Monte Carlo 10.000 sim (prob profit > 0.8, p95 DD < 30%), DSR, analisis per regime & sesi. Pitfall: skip WFO karena hasil IS sudah bagus.'),
+    ('Sprint 9-13', 'Minggu 19+ deploy & live: Sprint 9-10 deploy 24/7 + TCA + runbook (45-65 jam); Sprint 11 paper 2 bulan (target Sharpe > 0.8, DD < 15%, trade > 50, deviasi vs backtest < 30%); Sprint 12 small live 10-20% modal (DD > 10% \u2192 kembali ke demo, slippage > 2x model \u2192 review broker); Sprint 13 full live naik 25%/bulan jika Sharpe rolling 3 bulan > 1.0. Total ~9-10 bulan (15-20 jam/minggu); biaya operasional 85-180 USD/bulan.'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
@@ -2146,6 +2158,7 @@ class _EducationPanelState extends State<_EducationPanel> {
       9 => _rowsRK,
 10 => _rowsBT,
        11 => _rowsDP,
+       12 => _rowsRM,
        _ => _rowsOP,
     };
     return Container(
@@ -2225,6 +2238,7 @@ class _EducationPanelState extends State<_EducationPanel> {
             _topicBtn(9, 'RISIKO'),
             _topicBtn(10, 'BACKTEST'),
              _topicBtn(11, 'DEPLOY'),
+             _topicBtn(12, 'ROADMAP'),
           ],
         ),
       ),
