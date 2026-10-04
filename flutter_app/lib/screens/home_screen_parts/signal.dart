@@ -2042,13 +2042,23 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Relevansi app', 'Aplikasi fokus XAUUSD (spot). Sinyal dihitung dari data harga harian \u2014 proxy & simulasi (bukan order flow, bukan CFD B-book). Tujuannya belajar membaca jejak institusi, bukan mengklaim eksekusi otomatis.'),
   ];
 
+  static const _rowsOP = <(String, String)>[
+    ('Fondasi legal', 'Emas institusional di RI: OJK via POJK 17/2024 Bulion (modal min Rp14 triliun utk emas fisik) vs Bappebti (Perba 4 & 13/2019, jaminan 1:1 utk pedagang emas digital di bursa berjangka). Buy-side ke pasar global butuh entitas hukum internasional (Singapura, Inggris, Cayman) utk akses prime broker.'),
+    ('Prime brokerage', 'PB/PoP (ADSS, Marex) = satu pintu ke likuiditas Tier-1 bank (StanChart, NatWest), non-bank HFT, ECN. Agregasi jadi satu harga executable; smart order routing anonim; cross-margining efisien. Butuh dokumen legal, audit, profil risiko, dan credit line.'),
+    ('Tumpukan teknologi', 'Backend Python + data tick MT5/API broker; API layer Flask utk siaran data/alert; execution FIX API ke broker/ECN (standar institusi); risk engine TERPISAH dari logika sinyal \u2014 daily loss limit, max drawdown, position sizing otomatis.'),
+    ('Strategi SMC', 'Membaca jejak institusi: order block, liquidity sweep (jebakan SL ritel), FVG. Model auction gold: akumulasi Asia \u2192 manipulasi London \u2192 distribusi NY \u2014 trading hanya setelah sweep + displacement + dukungan VWAP. XGBoost dipakai memfilter setup (bukan prediksi arah); validasi Walk-Forward anti-overfit.'),
+    ('Risiko & eksekusi', 'Pecah order: VWAP/TWAP. Filter spread: batalkan/delay saat spread lebar (alpha terlindungi dari slippage). Ukuran posisi dinamis berbasis ATR. Failsafe berlapis: daily loss limit ~3%, max drawdown ~10%, news filter.'),
+    ('Siklus lengkap', 'Hukum & regulasi \u2192 konektivitas likuiditas (PB) \u2192 arsitektur teknologi \u2192 logika strategi (SMC) \u2192 manajemen risiko & eksekusi (TCA). Prioritas bukan profit strategi, tapi keandalan infrastruktur dan disiplin risiko.'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
       0 => _rows,
       1 => _rowsSM,
       2 => _rowsEO,
-      _ => _rowsPA,
+      3 => _rowsPA,
+      _ => _rowsOP,
     };
     return Container(
       padding: const EdgeInsets.all(16),
@@ -2111,12 +2121,22 @@ class _EducationPanelState extends State<_EducationPanel> {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.border),
       ),
-      child: Row(
+      child: Column(
         children: [
-          _topicBtn(0, 'BACA SINYAL'),
-          _topicBtn(1, 'SMART MONEY'),
-          _topicBtn(2, 'ALUR ORDER'),
-          _topicBtn(3, 'PER ASET'),
+          Row(
+            children: [
+              _topicBtn(0, 'BACA SINYAL'),
+              _topicBtn(1, 'SMART MONEY'),
+              _topicBtn(2, 'ALUR ORDER'),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Row(
+            children: [
+              _topicBtn(3, 'PER ASET'),
+              _topicBtn(4, 'OPERASI'),
+            ],
+          ),
         ],
       ),
     );
@@ -2141,9 +2161,9 @@ class _EducationPanelState extends State<_EducationPanel> {
             textAlign: TextAlign.center,
             style: TextStyle(
               color: selected ? AppColors.blue : AppColors.textTertiary,
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: FontWeight.w800,
-              letterSpacing: 0.3,
+              letterSpacing: 0.4,
             ),
           ),
         ),
