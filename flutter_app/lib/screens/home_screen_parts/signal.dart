@@ -2062,6 +2062,17 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Iteratif', 'Fase-fase iteratif, bukan linear kaku: boleh kembali ke fase lebih awal saat ada perbaikan strategi atau risiko. Verifikasi & audit terus berjalan di tiap siklus.'),
   ];
 
+  static const _rowsMT = <(String, String)>[
+    ('Arsitektur', 'OpenCode \u2192 MCP server (SSE/REST atau STDIO) \u2192 Python API \u2192 MT5 terminal \u2192 broker/market. Prasyarat: Python 3.10+, MT5 berjalan di Windows, akun MT5 (demo/live), OpenCode dengan dukungan MCP.'),
+    ('Install MCP', 'pip install metatrader-mcp-server (paling mudah) — atau SYNX-MT5-MCP untuk 68+ tools + pre-flight risk, credential vault (OS keyring), drawdown circuit breaker, audit trail kriptografis (git clone lalu pip install -e .).'),
+    ('Aktifkan algo', 'Langkah paling sering terlewat: Tools \u2192 Options \u2192 Expert Advisors \u2192 centang "Allow algorithmic trading"; tombol AutoTrading di toolbar harus hijau. Bila pakai EA, centang juga "Allow DLL imports".'),
+    ('Jalankan MCP', 'STDIO utk lokal: --login --password --server --transport stdio. HTTP/SSE utk remote: tambah --path "path terminal64.exe" --host 0.0.0.0 --port 9090. Sukses = log "Uvicorn running on 0.0.0.0:9090". MT5 harus jalan dulu.'),
+    ('Konfig OpenCode', 'opencode.json: type "remote" + url 127.0.0.1:9090/sse (SSE), atau type "local" + command/environment (STDIO). Verifikasi via cek daftar MCP: "metatrader connected". Simpan kredensial di env/vault, jangan di file.'),
+    ('Simbol XAUUSD', 'Jangan hardcode "XAUUSD": 230+ broker punya 44 varian nama (XAUUSD, GOLD, XAUUSDm/c, XAUUSD.m, GOLD_USD). Kontrak: 1 lot = 100 oz, tick 0.01, gerak $1 = $100/lot. Hitung risiko dlm dollar, bukan pips \u2014 spread 0.30 ≠ 3 pips.'),
+    ('Keamanan', 'Batasi server ke 127.0.0.1 (bukan 0.0.0.0) bila sekelas; audit trail append-only; capability level read_only \u2192 analyst \u2192 executor \u2192 full (mulai read_only); human-in-the-loop utk order besar/ekstrem; vet kode sumber MCP sebelum instal.'),
+    ('Troubleshoot', '"initialize() failed" = MT5 tak berjalan (+cek --path); "No data returned" = jaringan/server broker; "Trading is not enabled" = aktifkan algoritmik trading; "Symbol not found" = cek Market Watch  Specification; "MCP Connection Lost" = restart sesi & cek port 9090.'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
@@ -2070,6 +2081,8 @@ class _EducationPanelState extends State<_EducationPanel> {
       2 => _rowsEO,
       3 => _rowsPA,
       4 => _rowsIM,
+      5 => _rowsOP,
+      6 => _rowsMT,
       _ => _rowsOP,
     };
     return Container(
@@ -2140,14 +2153,15 @@ class _EducationPanelState extends State<_EducationPanel> {
               _topicBtn(0, 'BACA SINYAL'),
               _topicBtn(1, 'SMART MONEY'),
               _topicBtn(2, 'ALUR ORDER'),
+              _topicBtn(3, 'PER ASET'),
             ],
           ),
           const SizedBox(height: 3),
           Row(
             children: [
-              _topicBtn(3, 'PER ASET'),
               _topicBtn(4, 'OPERASI'),
               _topicBtn(5, 'IMPLEMENTASI'),
+              _topicBtn(6, 'SETUP MT5'),
             ],
           ),
         ],
@@ -2174,9 +2188,9 @@ class _EducationPanelState extends State<_EducationPanel> {
             textAlign: TextAlign.center,
             style: TextStyle(
               color: selected ? AppColors.blue : AppColors.textTertiary,
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: FontWeight.w800,
-              letterSpacing: 0.4,
+              letterSpacing: 0.3,
             ),
           ),
         ),
