@@ -2179,6 +2179,18 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Pitfall & checklist', 'Pitfall #1: overload informasi \u2014 banyak API = noise, bukan sinyal. Checklist: gold-mcp berjalan; macro_context/seasonality/calendar lulus test; cache aktif; API key di .env (bukan di kode); docs diperbarui; refresh terjadwal sebelum sesi.'),
   ];
 
+  static const _rowsSP3 = <(String, String)>[
+    ('Tujuan', 'Fase 3a: modul deteksi SMC berfungsi dan tervalidasi. Estimasi 20-30 jam. Deliverables: swing_detector, order_block, fvg, bos_choch, liquidity_sweep, session_filter + unit test tiap modul + visualisasi chart. Milestone: chart XAUUSD menampilkan OB, FVG, dan sweep yang terdeteksi otomatis (bukan manual).'),
+    ('Swing detector', 'src/strategy/swing_detector.py: deteksi swing high/low dengan pivot lookback (default swing_lookback 5 \u2014 butuh 5 bar kiri & 5 bar kanan utk validasi titik puncak/lembah). Tuning: makin kecil lookback = makin banyak swing (noise); makin besar = makin sedikit (terlambat). Selalu visualkan titik swing sebelum lanjut.'),
+    ('Order block & FVG', 'order_block.py: OB = candle atau zona terakhir sebelum impulse move yang kuat; top/bottom zona dipakai utk entry (ideal OB-mid) dan SL. fvg.py: celah antar candle (fair value gap), minimum gap = fvg_min_gap_atr 0.3; FVG ter-fill = peluang entry. False positive dominan berasal dr parameter displacement & lookback \u2014 tuning displacement_atr_mult (default 1.5).'),
+    ('BOS/CHoCH & sweep', 'bos_choch.py: Break of Structure (kelanjutan tren) vs Change of Character (indikasi pembalikan). liquidity_sweep.py: sapuan likuiditas di atas swing high / bawah swing low sbg setup; validasi: sweep_high > level yang disapu ATAU sweep_low < level yang disapu. session_filter: sesi London/NY aktif, Asia observasi saja.'),
+    ('Data & visualisasi', 'Uji pada data historis yang sama dgn sumber backtest (M15/H1). Visualisasi itu wajib, bukan opsional: gambarkan OB (kotak), FVG (isi celah), sweep (panah), BOS/CHoCH (label) di chart \u2014 evaluasi pakai mata dulu, angka kemudian. Sistem yang "terlihat benar" tapi gagal angka = parameter belum konsisten.'),
+    ('Unit test', 'test_order_block_detection: pakai sample data historis dengan OB yang sudah diketahui \u2192 len > 0 dan semua OB punya top & bottom. test_liquidity_sweep: tiap sweep valid (sweep_high > swept_level atau sweep_low < swept_level). Tambah test regresi setiap ada perubahan parameter supaya perilaku lama tidak rusak diam-diam.'),
+    ('Pitfall & tuning', 'Pitfall #1: terlalu banyak false positive. Tuning bertahap: displacement_atr_mult (kekuatan impuls), lookback (lebar swing), fvg_min_gap_atr. Aturan: ubah SATU parameter, amati dampak di chart + test, lalu catat di docs apa yang berubah dan kenapa \u2014 bukan trial-and-error tanpa jejak.'),
+    ('Integrasi OpenCode', 'Perintah: "Analyze XAUUSD" \u2192 deteksi SMC berjalan; "Show order blocks" \u2192 tampilkan OB terakhir. Log: event_type=smc, symbol, timeframe, jumlah OB/FVG/sweep per run. Fokus sprint ini hanya DETEKSI yang akurat \u2014 penggabungan menjadi sinyal = Sprint 4.'),
+    ('Checklist', 'Checklist keluar sprint: 6 modul selesai; unit test lulus; visualisasi masuk akal di chart; false positive sudah diturunkan dgn catatan tuning; docs diperbarui. Sprint 3 dinyatakan selesai saat deteksi STABIL, bukan saat modul pertama jalan.'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
@@ -2198,6 +2210,7 @@ class _EducationPanelState extends State<_EducationPanel> {
        13 => _rowsSP0,
        14 => _rowsSP1,
        15 => _rowsSP2,
+       16 => _rowsSP3,
        _ => _rowsOP,
     };
     return Container(
@@ -2281,6 +2294,7 @@ class _EducationPanelState extends State<_EducationPanel> {
              _topicBtn(13, 'SPRINT 0'),
              _topicBtn(14, 'SPRINT 1'),
              _topicBtn(15, 'SPRINT 2'),
+             _topicBtn(16, 'SPRINT 3'),
           ],
         ),
       ),
