@@ -2058,6 +2058,8 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Strategi & eksekusi', 'Kode SMC (order block, liquidity sweep, FVG) dari OHLCV MT5. Eksekusi pecah parent jadi child order (VWAP sepanjang hari, filter spread otomatis). Alur: sinyal \u2192 parent \u2192 VWAP pecah child \u2192 MT5 via MCP \u2192 fill kembali utk manajemen posisi.'),
     ('Risk & backtest', 'Risk engine independen: pre-trade check (margin, exposure, sizing), ATR dynamic sizing, daily loss 3%, max drawdown 10%, news filter. Validasi: VectorBT + Walk-Forward Optimization anti-overfit; laporan QuantStats.'),
     ('Deploy & audit', 'VPS utk uptime 24/7, dashboard monitoring, audit trail append-only (tamper-evident) \u2014 mis. SYNX-MT5-MCP. OpenCode = pusat komando: kode, eksekusi, monitoring dalam satu proyek.'),
+    ('Peta fase', '5 fase institusional (kepatuhan \u2192 likuiditas \u2192 teknologi \u2192 strategi \u2192 risiko) dipecah OpenCode jadi 6 langkah teknis: MT5 MCP \u2192 intelijen data \u2192 strategi & eksekusi \u2192 risiko berlapis \u2192 backtest & validasi \u2192 deploy & monitoring.'),
+    ('Iteratif', 'Fase-fase iteratif, bukan linear kaku: boleh kembali ke fase lebih awal saat ada perbaikan strategi atau risiko. Verifikasi & audit terus berjalan di tiap siklus.'),
   ];
 
   @override
