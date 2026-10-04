@@ -2143,6 +2143,18 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Sprint 9-13', 'Minggu 19+ deploy & live: Sprint 9-10 deploy 24/7 + TCA + runbook (45-65 jam); Sprint 11 paper 2 bulan (target Sharpe > 0.8, DD < 15%, trade > 50, deviasi vs backtest < 30%); Sprint 12 small live 10-20% modal (DD > 10% \u2192 kembali ke demo, slippage > 2x model \u2192 review broker); Sprint 13 full live naik 25%/bulan jika Sharpe rolling 3 bulan > 1.0. Total ~9-10 bulan (15-20 jam/minggu); biaya operasional 85-180 USD/bulan.'),
   ];
 
+  static const _rowsSP0 = <(String, String)>[
+    ('Tujuan', 'Fondasi lingkungan yang siap & teruji: VPS \u2192 MT5 \u2192 OpenCode \u2192 Git. Estimasi 8-12 jam (bisa 2 hari). Checklist awal: VPS Windows, akun demo MT5 (Exness/IC Markets/Pepperstone), kredensial login & server, akun Telegram + GitHub, budget 85-180 USD/bulan, waktu 10-20 jam/minggu selama 6-12 bulan.'),
+    ('Pilih VPS', 'Windows Server 2019/2022 (MT5 native Windows); 2-4 vCPU; 4-8 GB RAM; 80-160 GB NVMe; lokasi dekat broker utk latency < 20ms; SLA 99.9%+. Pemula: Vultr/Contabo (40-80 USD/bln); saat profitable upgrade ke ForexVPS (50-100 USD/bln) atau Beeks (colocation, 200+ USD). Simpan kredensial di password manager (Bitwarden/1Password).'),
+    ('Setup Windows', 'RDP pertama; Set-TimeZone UTC; update sekali pake PSWindowsUpdate. KRUSIAL: matikan Windows Update otomatis (wuauserv Manual, WaaSMedicSvc Start=4, disable scheduled tasks UpdateOrchestrator/WindowsUpdate) \u2014 bisa restart VPS tengah malam saat posisi buka. Matikan hibernate/sleep/screensaver (powercfg -h off; standby & monitor timeout 0). Auto-login via netplwiz atau Sysinternals AutoLogon. Defender exclusion C:\trading + folder MT5; firewall buka port 9090 & 8000 khusus 127.0.0.1.'),
+    ('Instal software', 'Python 3.11 (PENTING: bukan 3.12+ \u2014 library MetaTrader5 belum kompatibel), 3.11.9 amd64 silent + PrependPath; Visual C++ Redistributable; Git 2.44; Chocolatey (notepadplusplus, 7zip, curl, nssm, vscode). MT5 di-download dari WEBSITE BROKER (bukan MetaQuotes) supaya terhubung ke server broker; login demo; aktifkan AutoTrading (Tools\u2192Options\u2192Expert Advisors\u2192Allow algorithmic trading + tombol toolbar hijau); cari simbol XAUUSD/GOLD di Market Watch, catat nama asli di docs/broker_info.md. AutoTrading OFF = 80% kegagalan Sprint 0.'),
+    ('Struktur & git', 'Folder C:\trading lengkap: config; src/{connection,strategy,execution,risk,data,utils,monitoring}; tests/{unit,integration}; logs/{signals,orders,errors}; audit; backtest/{data,results,reports}; docs; incidents; runbook; scripts. git init + .gitignore (JANGAN commit .env, *.key, *credentials*, config/secrets.yaml; exclude logs, backtest/data, daily_state.json, kill_switch.json); requirements.txt (MetaTrader5 5.0.45, pandas, numpy, scipy, scikit-learn, vectorbt, quantstats, prometheus-client, python-telegram-bot, tenacity, dll.); python -m venv venv + pip install.'),
+    ('Config', 'config/settings.yaml: system (env demo, timezone UTC); mt5 symbol + alternatif (XAUUSDm, GOLD, 44 varian) + timeframe M15 + magic; risk (1% per trade, daily loss 3%, daily profit 6%, 10 trade/hari, DD 4 level 5/10/15/20%); execution (algo vwap, horizon 60 menit, spread normal 0.30 / volatile 0.60, slippage 20 pts); strategy SMC (swing_lookback 5, displacement 1.5 ATR, FVG 0.3 ATR, sesi London/NY); logging json. config/.env.example (MT5 login/pass/server/path, MCP host/port, TELEGRAM, FXMACRODATA API key, S3). config/opencode.json (mcp remote http://127.0.0.1:9090/sse).'),
+    ('Health check', 'src/connection/health_check.py: mt5.initialize(path,login,password,server) \u2192 account_info (balance, equity, leverage, trade_mode DEMO/REAL) \u2192 resolve_xauusd_symbol (coba daftar alternatif, fallback scan semua simbol berisi XAU/GOLD) \u2192 symbol_info_tick (bid, ask, spread+points, digits, contract size, min/max lot, lot step). Output: ALL CHECKS PASSED. Jalankan: .\venv\Scripts\Activate.ps1; python -m src.connection.health_check.'),
+    ('OpenCode & git remote', 'Install opencode di VPS (npm via choco nodejs) atau di lokal (irm https://opencode.ai/install.ps1) + tunnel SSH ke MCP. Config: opencode.json (mcp remote) + docs/agent_instructions.md (risk first; jangan market order > 0.10 lot \u2014 wajib VWAP/TWAP; cek spread dulu; log tiap keputusan; jangan simpan password di log; jangan commit kredensial). Test via natural language: Health check, Show account info, Show XAUUSD price. GitHub repo PRIVATE, push pakai Personal Access Token; pre-commit hook blokir .env/credentials.'),
+    ('Backup & verifikasi', 'scripts/backup.ps1 harian 03:00 via Scheduled Task (SYSTEM service account), Compress-Archive C:\trading, retensi hapus > 30 hari. Docs: setup.md + broker_info.md (server, simbol, spread per sesi, swap long -8 / short -5 USD per lot, model eksekusi). Troubleshooting: MT5 initialize failed (path terminal / terminal belum jalan); import MetaTrader5 gagal (wajib Python 3.11); vectorbt (upgrade numba + pip install --no-deps); simbol tak ketemu (cek Market Watch); MCP tak connect (curl http://127.0.0.1:9090/health); latency tinggi (pindah lokasi VPS/broker). Total ~13 jam. Checklist 5 pertanyaan: health check, OpenCode bisa jalankan, .env aman, backup terjadwal, dokumen lengkap \u2192 semua Ya = Sprint 0 selesai.'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
@@ -2159,6 +2171,7 @@ class _EducationPanelState extends State<_EducationPanel> {
 10 => _rowsBT,
        11 => _rowsDP,
        12 => _rowsRM,
+       13 => _rowsSP0,
        _ => _rowsOP,
     };
     return Container(
@@ -2239,6 +2252,7 @@ class _EducationPanelState extends State<_EducationPanel> {
             _topicBtn(10, 'BACKTEST'),
              _topicBtn(11, 'DEPLOY'),
              _topicBtn(12, 'ROADMAP'),
+             _topicBtn(13, 'SPRINT 0'),
           ],
         ),
       ),
