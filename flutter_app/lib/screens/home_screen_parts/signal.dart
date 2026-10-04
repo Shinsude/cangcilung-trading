@@ -2203,6 +2203,18 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Pitfall & checklist', 'Pitfall #1: generator terlalu permisif \u2192 noise. Pitfall #2: terlalu ketat \u2192 sistem nganggur tak bertransaksi. Tuning lewat confidence threshold & jumlah konfluensi, ukur dgn backtest frekuensi 20-30 hari. Checklist: generator + validator selesai; log JSON benar; target 1-3 sinyal/hari tercapai; uji lulus; docs diperbarui.'),
   ];
 
+  static const _rowsSP5 = <(String, String)>[
+    ('Tujuan', 'Fase 3c: order besar dipecah dan dieksekusi tanpa merusak harga. Estimasi 25-35 jam. Deliverables: spread_filter, vwap_algo, twap_algo, order_router, slippage_monitor + test di demo (order kecil, verifikasi fill). Milestone: eksekusi order 0.10 lot XAUUSD di demo via VWAP dalam 5 menit.'),
+    ('Mengapa split', 'Market order besar = market impact (harga bergerak melawan). Solusi: parent order dipecah jadi child order kecil terjadwal oleh algoritma. Dua pola: VWAP (eksekusi seiring volume pasar) dan TWAP (bagi merata per waktu). Default kita: VWAP horizon 60 menit utk size lebih dari 0.10 lot.'),
+    ('Spread filter', 'spread_filter.py: cek spread saat ini vs ambang normal (0.30) dan volatile (0.60); blokir eksekusi jika melebar (menjelang berita/gap); output can_execute bool + reason. Spread adalah biaya tersembunyi XAUUSD \u2014 jangan eksekusi saat biayanya mahal.'),
+    ('VWAP/TWAP algo', 'vwap_algo.py: hitung VWAP pasar pada horizon, pecahkan child order saat harga menguntungkan relatif VWAP. twap_algo.py: bagi volume merata per interval (default 5-10 menit). Keduanya kirim limit/pending, hindari market order. Parameter utama: total_volume, horizon, interval child, max_participation 0.15.'),
+    ('Order router', 'order_router.py: jembatan tunggal ke MT5 \u2014 kirim child order dgn magic number khusus (label sistem), tangani retry & partial fill, laporkan status ke log. Semua order wajib lewat router supaya monitoring slippage & TCA terpusat, bukan order tersebar di banyak fungsi.'),
+    ('Slippage monitor', 'slippage_monitor.py: catat slippage tiap fill = harga fill vs harga acuan (arrival); simpan dgn ukuran volume. Ambang: slippage > 0.30 \u2192 alert MEDIUM; konsisten lebih dari 2x model \u2192 review broker/algo. Data slippage adalah input utama TCA di Sprint 10.'),
+    ('Test di demo', 'test_spread_filter: can_execute bertipe bool. test_vwap_executor: kirim 0.10 lot via VWAP horizon 5 menit \u2192 positions_get(symbol=XAUUSD) harus len > 0 \u2192 lalu close posisi. Semua test di akun DEMO; pantau fill rate & slippage aktual yang tercatat di log, bukan hasil "berhasil submit".'),
+    ('Pitfall & tuning', 'Pitfall: child order terlalu cepat \u2192 market impact tetap besar; terlalu lambat \u2192 harga sudah menjauh dan target volume terlewat. Tuning interval child order: mulai 5 menit utk VWAP 60 menit, amati fill rate & slippage, sesuaikan 1-10 menit dgn catatan. Ukur kualitas eksekusi setelah 20-30 eksekusi, bukan dari 1 trade.'),
+    ('Checklist & integrasi', 'Aturan dari agent_instructions: JANGAN market order utk size > 0.10 lot \u2014 wajib lewat algo. Checklist: 5 modul selesai; test demo lulus (kirim, fill, close); slippage & fill rate terekam; max_participation ditaati; docs diperbarui. Keluar sprint saat eksekusi konsisten dan tercatat, bukan hanya "bisa kirim order".'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
@@ -2224,6 +2236,7 @@ class _EducationPanelState extends State<_EducationPanel> {
        15 => _rowsSP2,
        16 => _rowsSP3,
        17 => _rowsSP4,
+       18 => _rowsSP5,
        _ => _rowsOP,
     };
     return Container(
@@ -2309,6 +2322,7 @@ class _EducationPanelState extends State<_EducationPanel> {
              _topicBtn(15, 'SPRINT 2'),
              _topicBtn(16, 'SPRINT 3'),
              _topicBtn(17, 'SPRINT 4'),
+             _topicBtn(18, 'SPRINT 5'),
           ],
         ),
       ),
