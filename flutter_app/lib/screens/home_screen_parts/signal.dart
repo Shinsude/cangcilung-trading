@@ -2051,6 +2051,15 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Siklus lengkap', 'Hukum & regulasi \u2192 konektivitas likuiditas (PB) \u2192 arsitektur teknologi \u2192 logika strategi (SMC) \u2192 manajemen risiko & eksekusi (TCA). Prioritas bukan profit strategi, tapi keandalan infrastruktur dan disiplin risiko.'),
   ];
 
+  static const _rowsIM = <(String, String)>[
+    ('Alur kerja', 'OpenCode jadi orkestrator: MCP Server MT5 (data live + eksekusi), MCP Gold (analisis makro), modul strategi (SMC/VWAP), modul risiko & eksekusi. Agent membaca proyek, menulis/men-debug/menjalankan sistem.'),
+    ('Hubungkan MT5', 'Instal metatrader-mcp-server; jalankan dengan kredensial akun (login, password, server, path terminal64.exe, port). Daftarkan di opencode.json sbg MCP remote (url 127.0.0.1:9090/sse). Verifikasi: cek daftar MCP server \u2014 status connected.'),
+    ('Intelijen data', 'Data harga saja tak cukup: MCP gold memberi DXY, US10Y/02Y, SPX, VIX, korelasi emas, musiman, multi-timeframe, deteksi regime. Alternatif: modul Python ke TickDB/Commodities-API untuk kontrol penuh.'),
+    ('Strategi & eksekusi', 'Kode SMC (order block, liquidity sweep, FVG) dari OHLCV MT5. Eksekusi pecah parent jadi child order (VWAP sepanjang hari, filter spread otomatis). Alur: sinyal \u2192 parent \u2192 VWAP pecah child \u2192 MT5 via MCP \u2192 fill kembali utk manajemen posisi.'),
+    ('Risk & backtest', 'Risk engine independen: pre-trade check (margin, exposure, sizing), ATR dynamic sizing, daily loss 3%, max drawdown 10%, news filter. Validasi: VectorBT + Walk-Forward Optimization anti-overfit; laporan QuantStats.'),
+    ('Deploy & audit', 'VPS utk uptime 24/7, dashboard monitoring, audit trail append-only (tamper-evident) \u2014 mis. SYNX-MT5-MCP. OpenCode = pusat komando: kode, eksekusi, monitoring dalam satu proyek.'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
@@ -2058,6 +2067,7 @@ class _EducationPanelState extends State<_EducationPanel> {
       1 => _rowsSM,
       2 => _rowsEO,
       3 => _rowsPA,
+      4 => _rowsIM,
       _ => _rowsOP,
     };
     return Container(
@@ -2135,6 +2145,7 @@ class _EducationPanelState extends State<_EducationPanel> {
             children: [
               _topicBtn(3, 'PER ASET'),
               _topicBtn(4, 'OPERASI'),
+              _topicBtn(5, 'IMPLEMENTASI'),
             ],
           ),
         ],
