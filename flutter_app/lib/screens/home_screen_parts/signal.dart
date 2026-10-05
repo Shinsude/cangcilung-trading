@@ -2239,6 +2239,18 @@ class _EducationPanelState extends State<_EducationPanel> {
     ('Checklist & integrasi', 'Checklist: data M15 2020-2025 tersimpan & bersih; cost model lulus uji 6.00; engine memakai risk engine nyata; metrik lengkap; laporan pertama selesai; VectorBT siap utk eksplorasi. Integrasi utk Sprint 8: struktur output sudah dirancang utk WFO & Monte Carlo (trades + equity curve + params).'),
   ];
 
+  static const _rowsSP8 = <(String, String)>[
+    ('Tujuan', 'Fase 5b: membuktikan strategi tidak overfit dan robust. Estimasi 30-40 jam. Deliverables: WFO minimal 4 window OOS, Monte Carlo trade shuffling & bootstrap (10.000 simulasi), parameter perturbation test, analisis per regime & sesi, Deflated Sharpe Ratio, laporan validasi lengkap. Milestone: bukti statistik layak live ATAU bukti strategi perlu diperbaiki.'),
+    ('Walk-Forward', 'WFO: optimasi parameter di window in-sample, tes di window out-of-sample berikutnya, lalu geser maju; minimal 4 window OOS. Kriteria lulus: mean OOS Sharpe > 0.5 dan lebih dari 60% window OOS positif. Hasil backtest "bagus" tanpa WFO belum membuktikan apa-apa.'),
+    ('Monte Carlo', 'Dua jenis wajib: trade shuffling (acak urutan trade 10.000x \u2192 distribusi equity & prob of profit) dan bootstrap return (distribusi metrik). Kriteria: prob_profit > 0.8 dan p95 Max DD < 0.30. Monte Carlo menguji keragaman urutan, WFO menguji keragaman data \u2014 keduanya berbeda, keduanya wajib.'),
+    ('Perturbation', 'Parameter perturbation test: geser tiap parameter +/- 1 step, amati degradasi performa. Robust = perubahan kecil tidak mengubah hasil signifikan. Ciri overfit klasik: performa anjlok drastis saat parameter digeser satu langkah.'),
+    ('Regime & sesi', 'Analisis per regime pasar (tren, range, volatilitas) dan per sesi (London/NY/Asia): di mana strategi untung dan rugi. Hasil difilter ke sesi yang terbukti untung. Jika strategi hanya menang di satu regime, keputusan live harus sadar regime \u2014 jangan asumsi pasar selalu tren.'),
+    ('Deflated Sharpe', 'DSR = Sharpe yang dikoreksi jumlah trial (multiple testing). Makin besar parameter grid & jumlah eksplorasi, makin besar koreksi. Gate: DSR > 0.95 baru layak lanjut. DSR rendah setelah banyak eksplorasi parameter = tanda overfit tersembunyi.'),
+    ('Tidak sabar = musuh', 'Pitfall #1: tidak sabar \u2014 skip WFO karena "hasil in-sample sudah bagus". Validasi memang butuh waktu dan itu normal. Jalani semua step berurutan dan catat setiap hasil pass/fail di laporan \u2014 jangan hanya melaporkan yang bagus (survivorship bias).'),
+    ('Laporan validasi', 'Struktur laporan: data & periode; konfigurasi WFO (window, param grid); hasil in-sample vs OOS per window; Monte Carlo (prob profit, p95 DD); ringkasan perturbation; analisis regime/sesi; DSR; kesimpulan layak / rebuild. Semua run tersimpan di backtest/results utk audit.'),
+    ('Checklist & keluar', 'Checklist: WFO >= 4 window dgn kriteria lulus; Monte Carlo 10.000 simulasi lolos threshold; perturbation stabil; analisis regime/sesi selesai; DSR > 0.95; laporan lengkap. Keluar Sprint 8 = keputusan tegas: LAYAK ke Sprint 9 atau kembali review \u2014 tidak ada status "agak layak".'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rows = switch (_topic) {
@@ -2263,6 +2275,7 @@ class _EducationPanelState extends State<_EducationPanel> {
        18 => _rowsSP5,
        19 => _rowsSP6,
        20 => _rowsSP7,
+       21 => _rowsSP8,
        _ => _rowsOP,
     };
     return Container(
@@ -2351,6 +2364,7 @@ class _EducationPanelState extends State<_EducationPanel> {
              _topicBtn(18, 'SPRINT 5'),
              _topicBtn(19, 'SPRINT 6'),
              _topicBtn(20, 'SPRINT 7'),
+             _topicBtn(21, 'SPRINT 8'),
           ],
         ),
       ),
