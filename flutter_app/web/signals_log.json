@@ -380,5 +380,14 @@
   "score": -4.428,
   "close": 4162.3,
   "data_source": "live"
+ },
+ {
+  "date": "2026-10-05",
+  "symbol": "XAUUSD",
+  "action": "SELL",
+  "strength": "STRONG",
+  "score": -3.809,
+  "close": 4186.1,
+  "data_source": "live"
  }
 ]
