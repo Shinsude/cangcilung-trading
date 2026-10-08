@@ -87,7 +87,10 @@ def test_status_mapping():
     assert ft._status_from({"filled": True, "exit": "stop", "r": -1.0}) == ("stop", -1.0)
 
 
-def test_update_seed_then_no_dup(tmp_path):
+def test_update_seed_then_no_dup(tmp_path, monkeypatch):
+    # fixture pendek: bias harian & sesi tak terpenuhi -> buka filter dulu
+    monkeypatch.setattr(ft, "SESSION_UTC", (0, 24))
+    monkeypatch.setattr(ft, "passes_bias", lambda t, direction, bias: True)
     logp = tmp_path / "ft.csv"
     df = _forward_fixture()
     s1 = ft.update(df, log_path=str(logp), seed=True)
@@ -134,6 +137,37 @@ def test_update_resolves_row_reloaded_from_csv(tmp_path):
     row = after[after["signal_time"].astype(str) == r["signal_time"]].iloc[0]
     assert row["status"] != "pending"
     assert row["resolved_at"] != ""
+
+
+def test_passes_bias_follows_prior_day_trend():
+    bias = pd.Series([5.0, -3.0], index=pd.to_datetime(["2026-01-05", "2026-01-06"]))
+    # sinyal 07 Jan: pakai nilai 06 Jan (-3) -> BUY ditolak, SELL diterima
+    assert not ft.passes_bias(pd.Timestamp("2026-01-07 05:00"), "BUY", bias)
+    assert ft.passes_bias(pd.Timestamp("2026-01-07 05:00"), "SELL", bias)
+    # hari penuh sebelum sinyal saja: nilai 06 Jan tidak dipakai utk sinyal tgl 06
+    assert not ft.passes_bias(pd.Timestamp("2026-01-06 23:00"), "SELL", bias)
+    assert ft.passes_bias(pd.Timestamp("2026-01-06 23:00"), "BUY", bias)
+    # tanpa riwayat -> tolak
+    assert not ft.passes_bias(pd.Timestamp("2026-01-04 05:00"), "BUY", bias)
+
+
+def test_in_session_window():
+    assert ft.in_session(pd.Timestamp("2026-01-01 00:00"))
+    assert ft.in_session(pd.Timestamp("2026-01-01 11:59"))
+    assert not ft.in_session(pd.Timestamp("2026-01-01 12:00"))
+    assert not ft.in_session(pd.Timestamp("2026-01-01 23:00"))
+
+
+def test_update_applies_session_and_bias_filters(tmp_path, monkeypatch):
+    df = _forward_fixture()
+    monkeypatch.setattr(ft, "SESSION_UTC", (0, 24))
+    monkeypatch.setattr(ft, "passes_bias", lambda t, direction, bias: True)
+    opened = ft.update(df, log_path=str(tmp_path / "open.csv"), seed=True)
+
+    monkeypatch.setattr(ft, "SESSION_UTC", (24, 25))  # jendela selalu tertutup
+    closed = ft.update(df, log_path=str(tmp_path / "closed.csv"), seed=True)
+    assert opened["new"] > 0
+    assert closed["new"] == 0
 
 
 def test_summary_empty_log(tmp_path):

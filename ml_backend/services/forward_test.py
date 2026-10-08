@@ -6,7 +6,9 @@ Pola jujur:
 - sinyal BARU (signal_time > yang sudah di-log) ditulis sebagai pending
   ``found_at`` = waktu run,
 - baris pending yang sudah lewat window retrace+exit di-resolusi memakai data
-  yang SUDAH terjadi (tanpa lookahead — resolusi hanya di run berikutnya).
+  yang SUDAH terjadi (tanpa lookahead — resolusi hanya di run berikutnya),
+- sinyal baru melewati filter sesi UTC & bias tren harian (lihat
+  ``passes_filters``); baris lama tetap di-resolusi apa adanya.
 
 Cara pakai:
     py -m services.forward_test --source mt5_m30     # default 60m via yfinance
@@ -95,6 +97,41 @@ def load_log(path: str) -> pd.DataFrame:
     return log
 
 
+# Filter sinyal BARU — divalidasi backtest 60m 2y (918 sinyal) dan lolos OOS
+# (split 2025-10): baseline win 36% PF 1.43 DD -37R -> filter win 46% PF 2.03
+# DD -9R. Log lama tidak diubah; resolusi baris lama tetap jalan.
+BIAS_TREND_BARS = 20       # BUY hanya bila tren 20 hari naik, SELL bila turun
+SESSION_UTC = (0, 12)      # hanya jam 00-12 UTC (Asia + awal London)
+
+
+def daily_bias(df: pd.DataFrame) -> pd.Series:
+    """Selisih close harian terhadap BIAS_TREND_BARS hari sebelumnya."""
+    daily = df["Close"].resample("1D").last().dropna()
+    return daily.diff(BIAS_TREND_BARS)
+
+
+def in_session(t: pd.Timestamp) -> bool:
+    return SESSION_UTC[0] <= int(pd.Timestamp(t).hour) < SESSION_UTC[1]
+
+
+def passes_bias(t: pd.Timestamp, direction: str, bias: pd.Series) -> bool:
+    """True bila arah sinyal sejalan tren harian pada hari-hari SEBELUM sinyal.
+
+    Memakai hari penuh sebelum tanggal sinyal (tanpa lookahead bar harian).
+    """
+    idx = bias.index[bias.index < pd.Timestamp(t).normalize()]
+    if len(idx) == 0:
+        return False
+    v = bias.loc[idx[-1]]
+    if pd.isna(v):
+        return False
+    return bool(v > 0) if direction == "BUY" else bool(v < 0)
+
+
+def passes_filters(t: pd.Timestamp, direction: str, bias: pd.Series) -> bool:
+    return in_session(t) and passes_bias(t, direction, bias)
+
+
 def update(df: pd.DataFrame, log_path: str = DEFAULT_LOG, seed: bool = False) -> dict:
     """Perbarui log: tulis sinyal baru, resolusi yang sudah lewat window."""
     recs = build_records(df)
@@ -120,9 +157,12 @@ def update(df: pd.DataFrame, log_path: str = DEFAULT_LOG, seed: bool = False) ->
     else:
         cutoff = df.index[max(0, len(df) - 1 - lookahead)]
 
+    bias = daily_bias(df)
     for r in recs:
         st = pd.Timestamp(r["signal_time"])
         if st > cutoff and st not in existing:
+            if not passes_filters(st, r["direction"], bias):
+                continue
             rows.append(
                 {
                     "signal_time": r["signal_time"],

@@ -4,6 +4,9 @@ Semua perubahan dicatat di sini. Versi mengikuti [Semantic Versioning](https://s
 
 ## [Unreleased] - Scientific Record (research/)
 
+### Ditambahkan (forward-test: filter sinyal baru)
+- **`services/forward_test.py`: dua filter wajib untuk sinyal BARU** (`passes_filters`), hasil uji backtest 60m 2y (918 sinyal) lalu divalidasi in/OOS (split 2025-10): (1) **bias tren 20 hari** — BUY hanya bila tren harian naik, SELL bila turun, memakai hari penuh sebelum tanggal sinyal (tanpa lookahead); (2) **sesi 00-12 UTC** — Asia + awal London, karena 12-21 UTC (New York) jeblok (win 27%, PF 1.05). Hasil: baseline win 36.3% PF 1.43 DD -37R \u2192 terfilter **win 46.1% PF 2.03 DD -9R**; OOS sendiri win 47.3% PF 2.22. Log lama tidak diubah dan resolusi baris lama tetap berjalan (uji: `test_update_applies_session_and_bias_filters`, `test_passes_bias_follows_prior_day_trend`, `test_in_session_window`; 98 test lulus).
+
 ### Diperbaiki (forward-test: resolusi mandek)
 - **`services/forward_test.py`: semua sinyal 60m mandek `pending` selamanya.** `outcome` di-key `str(df.index[i])` tetapi baris yang dibaca dari CSV lewat `parse_dates` berupa `pandas.Timestamp` \u2192 `outcome.get(row[...])` selalu `None` dan loop resolusi `continue`. Seed jalan normal (row masih `str`, diresolusi di run yang sama) sehingga bug tersembunyi. Perbaikan: key di-`pd.Timestamp`-kan dan lookup memakai `st`. Regresi: `test_update_resolves_row_reloaded_from_csv`. Log diperbarui dengan data yfinance 2y: **45 baris \u2192 29 resolved (18 stop, 2 target, 9 timeout), 16 pending** \u2014 kini lolos gate `min_resolved=20`. Hasil jujur: win rate decided 10% (2/20), PF 0.25, avg -0.509R.
 
