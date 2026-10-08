@@ -97,6 +97,45 @@ def test_update_seed_then_no_dup(tmp_path):
     assert s2["rows"] == s1["rows"]
 
 
+def test_update_resolves_row_reloaded_from_csv(tmp_path):
+    """Baris pending dari CSV (parse_dates -> Timestamp) harus bisa ter-resolve.
+
+    Regresi: key outcome berbentuk str sehingga lookup dengan Timestamp selalu
+    None dan semua sinyal 60m mandek di 'pending' selamanya.
+    """
+    df = _forward_fixture()
+    recs = ft.build_records(df)
+    assert recs
+    outcome = ft.outcomes_map(df, recs)
+    decided = [r for r in recs if ft._status_from(outcome[r["signal_time"]])[0] != "pending"]
+    assert decided, "fixture harus punya minimal satu sinyal terdecide"
+    r = decided[0]
+
+    logp = tmp_path / "ft.csv"
+    pd.DataFrame(
+        [{
+            "signal_time": r["signal_time"],
+            "zone_time": r["zone_time"],
+            "direction": r["direction"],
+            "entry": r["entry"],
+            "sl": r["sl"],
+            "tp": r["tp"],
+            "rr": r["rr"],
+            "found_at": "2026-01-01 00:00:00",
+            "status": "pending",
+            "resolved_at": "",
+            "r": None,
+        }]
+    ).to_csv(logp, index=False)
+
+    res = ft.update(df, log_path=str(logp))
+    assert res["resolved"] >= 1
+    after = pd.read_csv(logp)
+    row = after[after["signal_time"].astype(str) == r["signal_time"]].iloc[0]
+    assert row["status"] != "pending"
+    assert row["resolved_at"] != ""
+
+
 def test_summary_empty_log(tmp_path):
     s = ft.summary(log_path=str(tmp_path / "none.csv"))
     assert s["rows"] == 0

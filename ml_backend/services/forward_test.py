@@ -104,7 +104,9 @@ def update(df: pd.DataFrame, log_path: str = DEFAULT_LOG, seed: bool = False) ->
     lookahead = PARAMS["retest_lookahead"]
 
     existing = set(log["signal_time"].astype(str)) if not log.empty else set()
-    outcome = outcomes_map(df, recs)
+    # key harus Timestamp: baris dari CSV dibaca parse_dates -> Timestamp,
+    # bukan str -> lookup dengan str tidak pernah cocok (resolusi mandek).
+    outcome = {pd.Timestamp(k): v for k, v in outcomes_map(df, recs).items()}
 
     rows = []
     if not log.empty:
@@ -144,7 +146,7 @@ def update(df: pd.DataFrame, log_path: str = DEFAULT_LOG, seed: bool = False) ->
         sig_pos = int(df.index.searchsorted(st, side="left"))
         if sig_pos + lookahead >= len(df):
             continue
-        o = outcome.get(row["signal_time"])
+        o = outcome.get(st)
         if o is None:
             continue
         status, r = _status_from(o)
