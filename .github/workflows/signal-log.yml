@@ -22,16 +22,29 @@ jobs:
       - name: Forward-test 60m (paper, harian)
         run: |
           pip install --quiet --disable-pip-version-check yfinance pandas numpy
-          python3 .github/scripts/run_forward_test.py
+          python3 .github/scripts/run_forward_test.py --interval 60m --period 2y \
+            --log research/forward_test_log.csv
+
+      - name: Forward-test M30 (paper, harian)
+        run: |
+          python3 .github/scripts/run_forward_test.py --interval 30m --period 60d \
+            --log research/forward_test_log_m30.csv
+
+      - name: Ringkasan forward-test (pemantauan)
+        run: |
+          python3 .github/scripts/run_forward_test.py --summary \
+            --log research/forward_test_log.csv
+          python3 .github/scripts/run_forward_test.py --summary \
+            --log research/forward_test_log_m30.csv
 
       - name: Commit jika ada perubahan
         run: |
           git config --local user.name "cangcilung-bot"
           git config --local user.email "cangcilung-bot@users.noreply.github.com"
-          git add flutter_app/web/signals_log.json research/forward_test_log.csv
+          git add flutter_app/web/signals_log.json research/forward_test_log.csv research/forward_test_log_m30.csv
           if git diff --cached --quiet; then
             echo "Tidak ada perubahan log"
             exit 0
           fi
-          git commit -m "log: sinyal harian + forward-test 60m $(date -u +%Y-%m-%d)"
+          git commit -m "log: sinyal harian + forward-test 60m/M30 $(date -u +%Y-%m-%d)"
           git push origin HEAD:main
