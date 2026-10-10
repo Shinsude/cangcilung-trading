@@ -154,8 +154,18 @@ def _sl_level(b: dict, sig_index: int, direction: str, sl_bars: int = SL_BARS):
 
 
 def simulate_limit(df, choch: dict, zone: dict, rr: float = RR, lookahead: int = RETEST_LOOKAHEAD,
-                   sl_bars: int = SL_BARS):
-    """Fill the pending order forward; return PnL in R-multiples (or None)."""
+                   sl_bars: int = SL_BARS, be_trigger_r: float = 0.0,
+                   partial_trigger_r: float = 0.0):
+    """Fill the pending order forward; return PnL in R-multiples (or None).
+
+    ``be_trigger_r``: SL dipindah ke entry begitu harga mencapai sejauh itu
+    (dalam R). 0 = nonaktif. Eksekusi konservatif: pada bar yang sama dengan
+    trigger, SL lama tetap dipakai lebih dulu; exit ``be`` = r 0.
+
+    ``partial_trigger_r``: 50% posisi ditutup pada sejauh itu (dalam R),
+    sisanya jalan ke SL/TP; r akhir = rata-rata keduanya. 0 = nonaktif.
+    Urutan dalam satu bar: stop dulu, baru partial, baru target.
+    """
     b = _bars(df)
     n = len(b["close"])
     direction = choch["direction"]
@@ -184,24 +194,54 @@ def simulate_limit(df, choch: dict, zone: dict, rr: float = RR, lookahead: int =
     if fill_j is None:
         return {"filled": False, "r": None, "bars_to_fill": None, "exit": "not_filled"}
 
+    be_price = (entry + be_trigger_r * risk) if be_trigger_r > 0 else None
+    if partial_trigger_r > 0:
+        partial_price = ((entry + partial_trigger_r * risk) if direction == "BULL"
+                         else (entry - partial_trigger_r * risk))
+    else:
+        partial_price = None
+    be_active = False
+    partial_done = False
+    sl_eff = float(sl)
+
+    def _r(base: float) -> float:
+        # 50% sudah keluar pada +partial_trigger_r; sisanya berjalan ``base``
+        if not partial_done:
+            return round(float(base), 4)
+        return round(0.5 * partial_trigger_r + 0.5 * float(base), 4)
+
     end = min(fill_j, n - 1)
     for j in range(fill_j, min(fill_j + 1 + lookahead, n)):
         if direction == "BULL":
-            if b["low"][j] <= sl:  # stop first (conservative)
-                return {"filled": True, "r": -1.0, "bars_to_fill": int(fill_j - sig), "exit": "stop"}
+            if b["low"][j] <= sl_eff:  # stop first (conservative)
+                if be_active:
+                    return {"filled": True, "r": _r(0.0), "bars_to_fill": int(fill_j - sig), "exit": "be"}
+                return {"filled": True, "r": _r(-1.0), "bars_to_fill": int(fill_j - sig), "exit": "stop"}
+            if partial_price is not None and not partial_done and b["high"][j] >= partial_price:
+                partial_done = True
+            if be_price is not None and b["high"][j] >= be_price:
+                be_active = True
+                sl_eff = entry
             if b["high"][j] >= tp:
-                return {"filled": True, "r": float(rr), "bars_to_fill": int(fill_j - sig), "exit": "target"}
+                return {"filled": True, "r": _r(float(rr)), "bars_to_fill": int(fill_j - sig), "exit": "target"}
         else:
-            if b["high"][j] >= sl:
-                return {"filled": True, "r": -1.0, "bars_to_fill": int(fill_j - sig), "exit": "stop"}
+            if b["high"][j] >= sl_eff:
+                if be_active:
+                    return {"filled": True, "r": _r(0.0), "bars_to_fill": int(fill_j - sig), "exit": "be"}
+                return {"filled": True, "r": _r(-1.0), "bars_to_fill": int(fill_j - sig), "exit": "stop"}
+            if partial_price is not None and not partial_done and b["low"][j] <= partial_price:
+                partial_done = True
+            if be_price is not None and b["low"][j] <= be_price:
+                be_active = True
+                sl_eff = entry
             if b["low"][j] <= tp:
-                return {"filled": True, "r": float(rr), "bars_to_fill": int(fill_j - sig), "exit": "target"}
+                return {"filled": True, "r": _r(float(rr)), "bars_to_fill": int(fill_j - sig), "exit": "target"}
         end = j
     # timeout: exit at the last evaluated bar's close
     final = float(b["close"][end]) if end < n else float(b["close"][n - 1])
     if direction == "BULL":
-        return {"filled": True, "r": round((final - entry) / risk, 4), "bars_to_fill": int(fill_j - sig), "exit": "timeout"}
-    return {"filled": True, "r": round((entry - final) / risk, 4), "bars_to_fill": int(fill_j - sig), "exit": "timeout"}
+        return {"filled": True, "r": _r((final - entry) / risk), "bars_to_fill": int(fill_j - sig), "exit": "timeout"}
+    return {"filled": True, "r": _r((entry - final) / risk), "bars_to_fill": int(fill_j - sig), "exit": "timeout"}
 
 
 def _net_r(trade: dict, cost_r: float) -> float:

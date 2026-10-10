@@ -4,6 +4,7 @@ import pandas as pd
 
 from services import forward_test as ft
 from services import mt5_data as mt
+from services.smc_limit_backtester import simulate_limit
 
 
 def _rates_df() -> pd.DataFrame:
@@ -221,3 +222,49 @@ def test_forward_json_serializable():
     assert record[0]["signal_time"] == "2026-01-01T00:00:00Z"
     body = json.loads(json.dumps(ft.summarize_df(df, min_resolved=5)))
     assert body["rows"] == 1
+
+
+def _bull_path(post_lows, post_highs):
+    """20 bar datar sebelum sinyal (SL=95 di index 5) lalu path sesudahnya."""
+    lows = [100.0] * 21
+    lows[5] = 95.0
+    highs = [103.0] * 21
+    closes = [102.0] * 21
+    lows += list(post_lows)
+    highs += list(post_highs)
+    closes += [(l + h) / 2 for l, h in zip(post_lows, post_highs)]
+    opens = [closes[0]] + closes[:-1]
+    idx = pd.date_range("2026-01-01", periods=len(lows), freq="h")
+    return pd.DataFrame({"Open": opens, "High": highs, "Low": lows, "Close": closes},
+                        index=idx)
+
+
+_CHOCH = {"index": 20, "direction": "BULL"}
+_ZONE = {"entry": 100.0}          # risk = 100 - 95 = 5, tp = 110 (rr 2)
+
+
+def test_simulate_limit_be_converts_stop_to_breakeven():
+    df = _bull_path([99.0, 102.0, 94.0], [103.0, 105.5, 104.0])
+    plain = simulate_limit(df, _CHOCH, _ZONE, lookahead=10)
+    assert plain["exit"] == "stop" and plain["r"] == -1.0
+    # harga menyentuh +1R (105) lebih dulu -> SL pindah ke entry, lalu kena di 94
+    be = simulate_limit(df, _CHOCH, _ZONE, lookahead=10, be_trigger_r=1.0)
+    assert be["exit"] == "be" and be["r"] == 0.0
+
+
+def test_simulate_limit_partial_target_and_stop():
+    df = _bull_path([99.0, 102.0, 104.0], [103.0, 105.5, 111.0])
+    full = simulate_limit(df, _CHOCH, _ZONE, lookahead=10)
+    assert full["exit"] == "target" and full["r"] == 2.0
+    part = simulate_limit(df, _CHOCH, _ZONE, lookahead=10, partial_trigger_r=1.0)
+    assert part["exit"] == "target"
+    assert part["r"] == 1.5           # 50% di +1R + 50% di +2R
+
+    df2 = _bull_path([99.0, 102.0, 94.0], [103.0, 105.5, 104.0])
+    part_stop = simulate_limit(df2, _CHOCH, _ZONE, lookahead=10, partial_trigger_r=1.0)
+    assert part_stop["exit"] == "stop"
+    assert part_stop["r"] == 0.0      # 50% di +1R + 50% di -1R
+
+
+def test_status_mapping_includes_be():
+    assert ft._status_from({"filled": True, "exit": "be", "r": 0.0}) == ("be", 0.0)

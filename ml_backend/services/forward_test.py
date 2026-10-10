@@ -35,6 +35,13 @@ CSV_COLUMNS = [
 
 PARAMS = dict(INTRADAY_PARAMS)
 
+# Breakeven paper: SL dipindah ke entry setelah harga berjalan BE_TRIGGER_R
+# (dalam R). 0 = nonaktif. Diuji di backtest 60m 2y sebelum dinaikkan default.
+BE_TRIGGER_R = 0.0
+# Partial paper: 50% posisi ditutup pada PARTIAL_TRIGGER_R (dalam R), sisanya
+# jalan ke SL/TP. 0 = nonaktif.
+PARTIAL_TRIGGER_R = 0.0
+
 
 def build_records(df: pd.DataFrame) -> list[dict]:
     """Semua sinyal choch+zone tertutup lengkap dengan level eksekusinya."""
@@ -73,7 +80,9 @@ def outcomes_map(df: pd.DataFrame, recs: list[dict]) -> dict[str, dict]:
     out = {}
     for r in recs:
         o = simulate_limit(df, r["sig"], r["zone"], rr=PARAMS["rr"],
-                           lookahead=PARAMS["retest_lookahead"], sl_bars=PARAMS["sl_bars"])
+                           lookahead=PARAMS["retest_lookahead"], sl_bars=PARAMS["sl_bars"],
+                           be_trigger_r=BE_TRIGGER_R,
+                           partial_trigger_r=PARTIAL_TRIGGER_R)
         out[r["signal_time"]] = o
     return out
 
@@ -83,6 +92,8 @@ def _status_from(o: dict) -> tuple[str, float | None]:
         if o["exit"] == "not_filled":
             return "no_fill", None
         return "pending", None
+    if o["exit"] == "be":
+        return "be", o["r"]
     if o["exit"] == "target":
         return "target", o["r"]
     if o["exit"] == "stop":
@@ -221,7 +232,7 @@ def summarize_df(log: pd.DataFrame, min_resolved: int = 20) -> dict:
         return {"rows": 0, "statuses": {}, "note": "log kosong"}
     statuses = log["status"].value_counts().to_dict()
     decided = log[log["status"].isin(["target", "stop"])]
-    resolved = log[log["status"].isin(["target", "stop", "timeout"])]
+    resolved = log[log["status"].isin(["target", "stop", "timeout", "be"])]
     n_resolved = int(len(resolved))
     out = {
         "rows": int(len(log)),
@@ -248,9 +259,10 @@ def summarize_df(log: pd.DataFrame, min_resolved: int = 20) -> dict:
 def summary(log_path: str = DEFAULT_LOG, min_resolved: int = 20) -> dict:
     """Agregasi status forward-test untuk pemantauan.
 
-    Status 'target'/'stop' disebut *decided* (RR 2 terkunci); 'timeout' dibawa
-    dalam PF/avg-R sebagai nilai R aslinya. Metrik performa tidak dilaporkan
-    bila resolved < ``min_resolved`` (n terlalu kecil -> angka tak bermakna).
+    Status 'target'/'stop' disebut *decided* (RR 2 terkunci); 'timeout' dan
+    'be' (breakeven, r 0) dibawa dalam PF/avg-R sebagai nilai R aslinya.
+    Metrik performa tidak dilaporkan bila resolved < ``min_resolved`` (n
+    terlalu kecil -> angka tak bermakna).
     """
     return summarize_df(load_log(log_path), min_resolved=min_resolved)
 
